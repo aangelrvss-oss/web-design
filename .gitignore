@@ -7,3 +7,4 @@ qa/out/
 proyectos/*/preview/
 dist/
 entregables/
+__pycache__/
