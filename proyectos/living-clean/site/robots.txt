@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /contacto.php
+Disallow: /gracias/
+Disallow: /envio-no-completado/
+
+Sitemap: https://livingclean.es/sitemap.xml

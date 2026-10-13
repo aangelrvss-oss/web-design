@@ -1,0 +1,13 @@
+{
+  "nota": "Imágenes generadas con Higgsfield (gpt_image_2_5) para la propuesta. Son ilustrativas: espacios vacíos, sin personas, no son trabajos de Living Clean.",
+  "preambulo": "Editorial architectural interior photography of the common areas of a modern residential apartment building in Madrid, Spain. Bright natural daylight, soft directional light from the left, gentle shadows. Spotlessly clean and tidy, freshly cleaned surfaces with subtle reflections. Neutral palette of warm white walls, light stone and terrazzo floors, brushed steel details. Shot on a full-frame camera with a 24mm lens at eye level, verticals corrected, photorealistic, fine natural grain. No people, no text, no letters, no numbers, no logos, no signage. NOT 3D render, NOT CGI, no plastic look.",
+  "imagenes": [
+    { "archivo": "hero-portal.png", "uso": "hero escritorio 16:9 2688x1520", "job": "54a21281-dbf4-4d04-ae10-ffb61a9b1b0c", "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3Em8UmU9WeIkLdqmThwpS9S0uFH/hf_20261013_094234_54a21281-dbf4-4d04-ae10-ffb61a9b1b0c.png" },
+    { "archivo": "hero-portal-movil.png", "uso": "hero móvil 9:16 1520x2688", "job": "8b895efd-ce5d-42ce-98b6-1a0eac56a502", "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3Em8UmU9WeIkLdqmThwpS9S0uFH/hf_20261013_094329_8b895efd-ce5d-42ce-98b6-1a0eac56a502.png" },
+    { "archivo": "ronda-escalera.png", "uso": "parada escalera y ascensor 1024x688", "job": "34fcf8cb-bf5b-4004-a027-f015a66293fd", "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3Em8UmU9WeIkLdqmThwpS9S0uFH/hf_20261013_094342_34fcf8cb-bf5b-4004-a027-f015a66293fd.png" },
+    { "archivo": "ronda-garaje.png", "uso": "parada garaje 1024x688", "job": "b4034b79-8689-4f22-bf29-845d1442707e", "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3Em8UmU9WeIkLdqmThwpS9S0uFH/hf_20261013_094341_b4034b79-8689-4f22-bf29-845d1442707e.png" },
+    { "archivo": "ronda-jardin.png", "uso": "parada zonas comunes y jardín 1024x688", "job": "937628fa-33b5-470b-a78e-f6455f30ed48", "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3Em8UmU9WeIkLdqmThwpS9S0uFH/hf_20261013_094234_937628fa-33b5-470b-a78e-f6455f30ed48.png" },
+    { "archivo": "ronda-mantenimiento.png", "uso": "parada mantenimiento 1024x688", "job": "67be34f7-4aa0-432e-afd3-0939339d9fc2", "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3Em8UmU9WeIkLdqmThwpS9S0uFH/hf_20261013_094233_67be34f7-4aa0-432e-afd3-0939339d9fc2.png" },
+    { "archivo": "ronda-fachada.png", "uso": "parada fachada 1024x688", "job": "28ee5de0-5f62-4ed9-979e-22c897c1cd7f", "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3Em8UmU9WeIkLdqmThwpS9S0uFH/hf_20261013_094233_28ee5de0-5f62-4ed9-979e-22c897c1cd7f.png" }
+  ]
+}
