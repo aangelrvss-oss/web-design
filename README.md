@@ -5,7 +5,7 @@ Repositorio de propuestas de rediseño web para negocios locales. Cada web vive 
 | Proyecto | Carpeta | Estado |
 |---|---|---|
 | MRI · Martínez Rojas Instalaciones | `proyectos/mr-instalaciones/` | Terminada · zip de demostración para Netlify |
-| Living Clean Multiservicios | `proyectos/living-clean/` | En construcción |
+| Living Clean Multiservicios | `proyectos/living-clean/` | Construida y verificada · faltan por descargar las 7 imágenes generadas (red bloqueada) |
 
 ## Estructura
 

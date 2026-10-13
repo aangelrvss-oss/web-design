@@ -70,10 +70,20 @@
       var cue = e.target.closest('[data-sc-cue]');
       if (!cue) return;
       var n = cue.getAttribute('data-sc-cue').split(/\s+/).map(parseFloat);
-      var target = isNaN(n[1]) ? Math.min(n[0] + 0.12, 1) : (n[0] + Math.min(n[1], 1)) / 2;
+      var target = isNaN(n[1]) ? Math.min(n[0] + 0.22, 0.98) : (n[0] + Math.min(n[1], 1)) / 2;
       var travel = act.offsetHeight - innerHeight;
       if (travel > 0) window.scrollTo({ top: Math.round(act.getBoundingClientRect().top + scrollY + travel * target), behavior: 'instant' });
     });
+  });
+
+  /* Foco con teclado fuera de la pantalla (tras un tramo largo sin enlaces):
+     llevarlo a la vista al instante en lugar de con el desplazamiento suave.
+     Los actos fijados y el carril ya lo han colocado antes de llegar aquí. */
+  document.addEventListener('focusin', function (e) {
+    var el = e.target;
+    if (!el.matches || !el.matches(':focus-visible') || el.closest('.bar, .sheet')) return;
+    var r = el.getBoundingClientRect();
+    if (r.bottom < 0 || r.top > innerHeight) el.scrollIntoView({ block: 'center', behavior: 'instant' });
   });
 
   /* --------------------------------------------------------------- menú -- */

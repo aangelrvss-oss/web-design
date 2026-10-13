@@ -8,6 +8,8 @@
     "serve:mri": "SITE_ROOT=proyectos/mr-instalaciones/site php -S 127.0.0.1:4500 tools/dev/router.php",
     "qa:mri": "node proyectos/mr-instalaciones/qa/functional.mjs http://127.0.0.1:4500 qa/out/mri",
     "build:living": "node proyectos/living-clean/src/build.mjs",
-    "serve:living": "SITE_ROOT=proyectos/living-clean/site php -S 127.0.0.1:4600 tools/dev/router.php"
+    "serve:living": "SITE_ROOT=proyectos/living-clean/site php -S 127.0.0.1:4600 tools/dev/router.php",
+    "qa:living": "node proyectos/living-clean/qa/functional.mjs http://127.0.0.1:4600 qa/out/living",
+    "demo:living": "cd proyectos/living-clean && node tools/demo/build-netlify.mjs"
   }
 }

@@ -84,8 +84,8 @@ export function home() {
       </li>`).join('\n      ');
 
   return `${head({
-    title: 'Limpieza de comunidades, oficinas y viviendas en Rivas-Vaciamadrid | Living Clean',
-    description: 'Limpieza de comunidades de vecinos, conserje multifunción, oficinas, viviendas y fin de obra. Personal propio y asegurado. Visita previa sin compromiso.',
+    title: 'Limpieza de comunidades y conserje en Rivas-Vaciamadrid | Living Clean',
+    description: 'Limpieza de comunidades, conserje, oficinas, viviendas y fin de obra en Rivas-Vaciamadrid. Personal propio y asegurado. Visitamos antes de presupuestar.',
     path: '/',
     jsonld: [businessJsonLd(), { '@context': 'https://schema.org', '@type': 'WebSite', name: SITE.brandLong, url: `${SITE.origin}/`, inLanguage: 'es' }],
     preload: '<link rel="preload" as="image" type="image/webp" href="/assets/img/hero-portal-1800.webp" imagesrcset="/assets/img/hero-portal-1200.webp 1200w, /assets/img/hero-portal-1800.webp 1800w, /assets/img/hero-portal-2688.webp 2688w" imagesizes="60vw" media="(min-width: 761px)">\n<link rel="preload" as="image" type="image/webp" href="/assets/img/hero-portal-movil-760.webp" imagesrcset="/assets/img/hero-portal-movil-760.webp 760w, /assets/img/hero-portal-movil-1200.webp 1200w" imagesizes="100vw" media="(max-width: 760px)">\n',

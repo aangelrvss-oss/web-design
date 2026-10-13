@@ -45,7 +45,7 @@ Por qué no las ocho existentes: *filmic* exige vídeo continuo y una sola entra
 
 | Acto | Dispositivo | Span |
 |---|---|---|
-| 1 Hero «la pasada» | `pin` + máscara por bandas desde `--sc-p` | 1.7 |
+| 1 Hero «la pasada» | `pin` + máscara por bandas desde `--sc-p` | 2.0 |
 | 2 ¿Para quién? | `flow` + `in` + pestañas | natural |
 | 3 La ronda (pico) | `pan` + raíl propio | 5.6 |
 | 4 Conserje multifunción | `pin` + `kinetic` | 2.4 |
@@ -63,8 +63,10 @@ Familias: pin, flow, pan, reveal, kinetic. Nunca dos iguales seguidos salvo `flo
 | Gramática | Lámina de instalaciones | La ronda | Sí |
 | Nav | Barra con desplegable | Barra + raíl de ronda en el pico | Sí |
 | Hero | Flow con 4 planos SVG en parallax | Pin corto, foto tras cristal, rasqueta por bandas | Sí |
-| Forma de actos | 7 actos, pico pin 5.2, pan secundario | 8 actos, pico pan 5.6, pin hero | Sí |
+| Forma de actos | 7 actos, pico pin 5.2, pan secundario | 8 actos, pico pan 5.6, pin hero 2.0 | Sí |
 | Cierre | Cajetín sobre grafito | Hoja de visita sobre rojo con el plan | Sí |
 | Firma | Capas SVG por `--sc-p` | Ronda con paradas que forman el plan | Sí |
 
 6 de 6 distintas: pasa.
+
+Nota de construcción: el hero pasó de 1.7 a 2.0 de span para que cada banda de la rasqueta tenga ~0,28 de recorrido (≈ 250 px de scroll en un portátil).

@@ -131,7 +131,7 @@ export const SERVICES = [
   {
     slug: 'conserje-multifuncion', nav: 'Conserje multifunción', audience: 'comunidad', img: 'ronda-jardin',
     title: 'Conserje multifunción para comunidades | Living Clean',
-    description: 'Conserjería, limpieza y mantenimiento de la comunidad en un solo puesto de trabajo: accesos, correspondencia, llaves, limpieza, alumbrado, pequeños arreglos y jardín.',
+    description: 'Conserjería, limpieza y mantenimiento de la comunidad en un solo puesto: accesos, correspondencia, llaves, limpieza, alumbrado, pequeños arreglos y jardín.',
     h1: 'Conserje multifunción',
     intro: 'Conserjería, limpieza y mantenimiento de la comunidad en un solo puesto de trabajo. Una forma más sencilla y económica de gestionar el edificio.',
     does: [
