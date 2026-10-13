@@ -3,7 +3,7 @@ import { icon } from './icons.mjs';
 
 export const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-export const ASSET_V = '20261013a';
+export const ASSET_V = '20261013c';
 const a = (p) => `${p}?v=${ASSET_V}`;
 
 const BUSINESS_ID = `${SITE.origin}/#empresa`;
@@ -100,6 +100,19 @@ ${ld}
 </head>`;
 }
 
+// ----------------------------------------------------------- logotipo --
+// El logotipo real (raster) dentro de un SVG con una máscara: en la portada, un
+// trazo en zigzag (el gesto del garabato amarillo de la marca) lo descubre al
+// cargar. La imagen no se redibuja ni se deforma. Fuera de la portada la
+// máscara ya está completa.
+export const LOGO_ZIGZAG = 'M-60 400L20 -60L100 400L180 -60L260 400L340 -60L420 400L500 -60L580 400L660 -60L740 400';
+export function logoMark() {
+  return `<svg class="logo" viewBox="0 0 640 333" width="640" height="333" aria-hidden="true" focusable="false">
+        <defs><mask id="logo-m" maskUnits="userSpaceOnUse" x="0" y="0" width="640" height="333"><path class="logo__trace" d="${LOGO_ZIGZAG}" pathLength="1"/></mask></defs>
+        <image href="/assets/brand/logo-living-clean-1280.webp" width="640" height="333" mask="url(#logo-m)"/>
+      </svg>`;
+}
+
 // ------------------------------------------------------------- header --
 export function header({ current = '', form = true } = {}) {
   const q = form ? '#visita' : '/#visita';
@@ -107,8 +120,8 @@ export function header({ current = '', form = true } = {}) {
   return `<a class="skip" href="#contenido">Saltar al contenido</a>
 <header class="bar" data-bar>
   <div class="bar__in">
-    <a class="bar__logo" href="/" aria-label="Living Clean Multiservicios, inicio">
-      <img src="/assets/brand/logo-living-clean-320.webp" srcset="/assets/brand/logo-living-clean-320.webp 320w, /assets/brand/logo-living-clean.webp 640w" sizes="120px" width="640" height="333" alt="Living Clean Multiservicios">
+    <a class="bar__logo" href="/" aria-label="Living Clean Multiservicios, inicio" data-logo>
+      ${logoMark()}
     </a>
     <nav class="bar__nav" aria-label="Principal">
       <ul class="bar__links">

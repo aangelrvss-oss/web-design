@@ -12,11 +12,17 @@ Las 7 imágenes generadas con Higgsfield están creadas (ver `assets-src/higgsfi
 |---|---|
 | Suite funcional `qa/functional.mjs` (13 páginas × 1440 y 375 px; enlaces; pestañas; ronda → plan → formulario → correo; validación; envío real; error de servidor simulado; sin JavaScript; teclado; menús) | **234/234** |
 | Arnés de Scroll-craft `shoot.mjs`: 1440×900, 390×844, 360×640 y movimiento reducido | Sin errores de consola (salvo los 404 de las imágenes pendientes), sin scroll muerto, contraste de los textos animados ≥ 4,5:1 en su peor fotograma |
-| Lighthouse 12 (sin las imágenes del hero), portada | Móvil 95 / 100 / 96 / 100 · Escritorio 100 / 100 / 96 / 100 (rendimiento / accesibilidad / buenas prácticas / SEO). Buenas prácticas baja solo por los 404 de las imágenes |
+| Lighthouse 12 (sin las imágenes generadas), portada con la entrada del logotipo | Móvil 95 / 100 / 96 / 100 · Escritorio 100 / 100 / 96 / 100 (rendimiento / accesibilidad / buenas prácticas / SEO). Buenas prácticas baja solo por los 404 de las imágenes |
 | Lighthouse, `/limpieza-de-comunidades/` | Móvil 97 / 100 / 96 / 100 · Escritorio 100 / 100 / 96 / 100 |
 | CLS | 0 en todas las mediciones |
 
 Compresión y caché no se miden bien con `php -S`: en producción las aplica `.htaccess`.
+
+## Portada: entrada del logotipo
+
+- Fotogramas congelados de la entrada (0–1,5 s, `qa/intro.mjs`): el titular y los CTA son legibles desde el primer pintado; el logotipo queda completo a ~1,3 s.
+- Vuelo con scroll (1440×900 y 390×844): el logotipo llega exactamente a su sitio en la cabecera y el portal se abre en su hueco. Con movimiento reducido o sin motor, el logotipo queda quieto en la portada y la cabecera lleva el suyo.
+- Cabecera comprobada a 320, 360, 375, 390 y 414 px: nada se sale ni se solapa.
 
 ## Qué se comprueba en concreto
 
@@ -32,4 +38,4 @@ Compresión y caché no se miden bien con `php -S`: en producción las aplica `.
 
 - No probado en Safari/iOS real ni en Apache real (CSP y redirecciones de `.htaccess`).
 - El envío de correo solo se ha probado con `sendmail` simulado.
-- La revisión visual del hero «la pasada» y de las tarjetas de la ronda con las fotos reales está pendiente de descargar las imágenes.
+- La revisión visual del portal que se abre en la portada y de las tarjetas de la ronda con las fotos reales está pendiente de descargar las imágenes.

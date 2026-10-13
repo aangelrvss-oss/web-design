@@ -37,10 +37,11 @@ const visitSection = ({ preset = [], type = '', origin, heading = 'Pide una visi
 
 // ------------------------------------------------------------------ home --
 export function home() {
-  // Acto 1 · la pasada. El cristal empañado se limpia en tres bandas en «S».
-  const glassImg = (fog) => `<picture>
-          <source media="(max-width: 760px)" type="image/webp" srcset="/assets/img/hero-portal-movil${fog ? '-niebla' : ''}-760.webp 760w, /assets/img/hero-portal-movil${fog ? '-niebla' : ''}-1200.webp 1200w" sizes="100vw">
-          <img src="/assets/img/hero-portal${fog ? '-niebla' : ''}-1800.webp" srcset="/assets/img/hero-portal${fog ? '-niebla' : ''}-1200.webp 1200w, /assets/img/hero-portal${fog ? '-niebla' : ''}-1800.webp 1800w, /assets/img/hero-portal${fog ? '-niebla' : ''}-2688.webp 2688w" sizes="(max-width: 760px) 100vw, 60vw" width="2688" height="1520" alt=""${fog ? '' : ' fetchpriority="high"'} decoding="async">
+  // Acto 1 · el logotipo. Aparece grande, descubierto por el trazo en zigzag;
+  // con el scroll vuela a su sitio en la cabecera y en su hueco se abre el portal.
+  const heroImg = `<picture>
+          <source media="(max-width: 760px)" type="image/webp" srcset="/assets/img/hero-portal-movil-760.webp 760w, /assets/img/hero-portal-movil-1200.webp 1200w" sizes="100vw">
+          <img src="/assets/img/hero-portal-1800.webp" srcset="/assets/img/hero-portal-1200.webp 1200w, /assets/img/hero-portal-1800.webp 1800w, /assets/img/hero-portal-2688.webp 2688w" sizes="(max-width: 760px) 100vw, 56vw" width="2688" height="1520" alt="" decoding="async">
         </picture>`;
 
   const tabs = AUDIENCES.map((a, i) => `<button class="who__tab" type="button" role="tab" id="tab-${a.key}" aria-controls="para-${a.key}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}" data-tab>${esc(a.label)}</button>`).join('');
@@ -88,14 +89,14 @@ export function home() {
     description: 'Limpieza de comunidades, conserje, oficinas, viviendas y fin de obra en Rivas-Vaciamadrid. Personal propio y asegurado. Visitamos antes de presupuestar.',
     path: '/',
     jsonld: [businessJsonLd(), { '@context': 'https://schema.org', '@type': 'WebSite', name: SITE.brandLong, url: `${SITE.origin}/`, inLanguage: 'es' }],
-    preload: '<link rel="preload" as="image" type="image/webp" href="/assets/img/hero-portal-1800.webp" imagesrcset="/assets/img/hero-portal-1200.webp 1200w, /assets/img/hero-portal-1800.webp 1800w, /assets/img/hero-portal-2688.webp 2688w" imagesizes="60vw" media="(min-width: 761px)">\n<link rel="preload" as="image" type="image/webp" href="/assets/img/hero-portal-movil-760.webp" imagesrcset="/assets/img/hero-portal-movil-760.webp 760w, /assets/img/hero-portal-movil-1200.webp 1200w" imagesizes="100vw" media="(max-width: 760px)">\n',
+    preload: '<link rel="preload" as="image" type="image/webp" href="/assets/brand/logo-living-clean-1280.webp">\n',
   })}
 <body class="page-home">
 <span data-sc-progress></span>
 ${header()}
 <main id="contenido">
 
-  <section id="inicio" class="hero" data-sc-act="pin" data-sc-span="2" aria-labelledby="hero-h">
+  <section id="inicio" class="hero" data-sc-act="pin" data-sc-span="1.6" aria-labelledby="hero-h" data-hero>
     <div class="hero__stage" data-sc-stage>
       <div class="hero__copy">
         <p class="hero__eyebrow">${esc(SITE.city)} · ${esc(SITE.region)}</p>
@@ -103,17 +104,11 @@ ${header()}
         <p class="hero__lede">Personal propio, uniformado y asegurado. Antes de darte precio, visitamos el inmueble.</p>
         ${ctaPair('hero', { short: true })}
       </div>
-      <figure class="glass" data-glass>
-        <div class="glass__clean">${glassImg(false)}</div>
-        <div class="glass__fog glass__fog--1" aria-hidden="true">${glassImg(true)}</div>
-        <div class="glass__fog glass__fog--2" aria-hidden="true">${glassImg(true)}</div>
-        <div class="glass__fog glass__fog--3" aria-hidden="true">${glassImg(true)}</div>
-        <span class="blade blade--1" aria-hidden="true"></span>
-        <span class="blade blade--2" aria-hidden="true"></span>
-        <span class="blade blade--3" aria-hidden="true"></span>
-        <p class="glass__hint" aria-hidden="true">Desliza y pasa la rasqueta</p>
-        <figcaption class="glass__tag">Imagen ilustrativa de un portal</figcaption>
-      </figure>
+      <div class="stage-logo" data-logo-slot>
+        <img class="stage-logo__static" src="/assets/brand/logo-living-clean-1280.webp" width="1280" height="666" alt="">
+        <figure class="stage-logo__photo" aria-hidden="true">${heroImg}<figcaption class="glass__tag">Imagen ilustrativa de un portal</figcaption></figure>
+        <div class="stage-logo__box" data-logo-box></div>
+      </div>
     </div>
   </section>
 

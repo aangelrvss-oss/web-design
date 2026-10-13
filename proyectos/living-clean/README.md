@@ -6,7 +6,7 @@ Rediseño de [livingclean.es](https://livingclean.es/): sitio estático, sin dep
 
 ## La idea
 
-**La ronda por tu edificio.** El visitante recorre un edificio parada a parada (portal, escaleras, garaje, jardín, mantenimiento, fachada), ve qué se hace y cada cuánto, quita lo que su comunidad no tiene y el plan resultante llega con la solicitud de presupuesto. El hero pasa una rasqueta por el cristal empañado de la puerta del portal al hacer scroll.
+**La ronda por tu edificio.** El visitante recorre un edificio parada a parada (portal, escaleras, garaje, jardín, mantenimiento, fachada), ve qué se hace y cada cuánto, quita lo que su comunidad no tiene y el plan resultante llega con la solicitud de presupuesto. La portada abre con el logotipo real «pintado» por un trazo en zigzag (el gesto del garabato amarillo de la marca); al hacer scroll vuela a su sitio en la cabecera y en su hueco se abre la foto del portal.
 
 ## Estructura
 

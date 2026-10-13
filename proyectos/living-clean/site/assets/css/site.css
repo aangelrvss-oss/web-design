@@ -117,7 +117,7 @@ figure { margin: 0; }
 .bar { position: fixed; inset: 0 0 auto 0; z-index: 50; background: #fff; border-bottom: 1px solid rgb(27 27 30 / .08); color: #1B1B1E; }
 .bar__in { height: var(--bar-h); display: flex; align-items: center; gap: 1.5rem; padding-inline: var(--sc-gutter); max-width: 96rem; margin-inline: auto; }
 .bar__logo { flex: none; display: block; border-radius: 4px; }
-.bar__logo img { height: 58px; width: auto; }
+.logo { display: block; height: 58px; width: calc(58px * 640 / 333); overflow: visible; }
 .bar__nav { margin-right: auto; }
 .bar__links { display: flex; gap: .25rem; list-style: none; margin: 0; padding: 0; align-items: center; }
 .bar__links > li > a, .bar__dropbtn {
@@ -153,123 +153,95 @@ body.menu-open { overflow: hidden; }
 }
 @media (max-width: 640px) {
   :root { --bar-h: 62px; }
-  .bar__logo img { height: 48px; }
+  .logo { height: 48px; width: calc(48px * 640 / 333); }
   .bar__tel { width: 44px; height: 44px; justify-content: center; padding: 0; }
   .bar__tel .ic { width: 22px; height: 22px; }
   .bar__tel span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
   .bar__act .btn--sm { padding: .5rem .8rem; font-size: .86rem; }
 }
-@media (max-width: 359px) { .bar__act .btn--sm { font-size: .8rem; padding: .45rem .6rem; } .bar__logo img { height: 42px; } }
+@media (max-width: 400px) {
+  .logo { height: 40px; width: calc(40px * 640 / 333); }
+  .bar__in { padding-inline: 12px; gap: .25rem; }
+  .bar__act { gap: .15rem; }
+  .bar__tel, .bar__burger { width: 42px; height: 42px; }
+  .bar__act .btn--sm { font-size: .82rem; padding: .45rem .7rem; }
+}
+@media (max-width: 340px) { .logo { height: 34px; width: calc(34px * 640 / 333); } .bar__act .btn--sm { font-size: .78rem; padding: .4rem .55rem; } }
 
-/* =================================================== Acto 1 · la pasada ==
-   El cristal de la puerta del portal está empañado. Con el scroll pasa una
-   rasqueta en tres bandas («S»): izquierda→derecha, derecha→izquierda,
-   izquierda→derecha. Todo sale de --sc-p, que publica el motor. El texto vive
-   fuera del cristal, sobre blanco: legible desde el primer fotograma. */
-.hero { background: var(--sc-canvas); }
+/* ================================================ Acto 1 · el logotipo ==
+   El logotipo real aparece grande en la portada, descubierto por un trazo en
+   zigzag (el gesto del garabato amarillo de la marca). Con el scroll vuela a su
+   sitio en la cabecera (site.js publica --lf, 0→1, y el desplazamiento --lx,
+   --ly, --ls) y en su hueco se abre la foto del portal. El texto y los CTA
+   están fuera del logotipo: legibles desde el primer fotograma. */
+.logo__trace { fill: none; stroke: #fff; stroke-width: 124; stroke-linecap: round; stroke-linejoin: round; }
+html.lc-fly .bar__logo .logo {
+  position: relative; z-index: 2; transform-origin: 0 0; will-change: transform;
+  transform: translate3d(calc(var(--lx, 0) * (1 - var(--lf, 1)) * 1px), calc(var(--ly, 0) * (1 - var(--lf, 1)) * 1px), 0) scale(calc(1 + (var(--ls, 1) - 1) * (1 - var(--lf, 1))));
+}
+.menu-open .bar__logo .logo { transform: none !important; }
+
+.hero { background: #fff; }
 .hero__stage {
-  --t1: clamp(0, (var(--sc-p, 0) - 0.04) / 0.28, 1);
-  --t2: clamp(0, (var(--sc-p, 0) - 0.34) / 0.28, 1);
-  --t3: clamp(0, (var(--sc-p, 0) - 0.64) / 0.28, 1);
   display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: center; gap: clamp(1.5rem, 4vw, 4.5rem);
   padding: calc(var(--bar-h) + clamp(1rem, 3vh, 2.5rem)) var(--sc-gutter) clamp(1rem, 3vh, 2.5rem);
   max-width: 100rem; margin-inline: auto;
 }
 .hero__eyebrow { margin: 0 0 1.1rem; font: 600 .82rem/1.2 var(--sc-font-text); letter-spacing: .1em; text-transform: uppercase; color: var(--sc-accent); }
 .hero__h { margin: 0; font: 600 clamp(2.3rem, 1.3rem + 3.3vw, 4.7rem)/1.0 var(--sc-font-display); letter-spacing: -0.035em; text-wrap: balance; }
-.hero__h .ln { display: inline; }
 .hero__lede { margin: 1.3rem 0 2rem; max-width: 36ch; font-size: clamp(1.1rem, 1.02rem + .4vw, 1.34rem); line-height: 1.45; color: #36373C; }
 
-.glass {
-  position: relative; height: calc(100svh - var(--bar-h) - clamp(2rem, 6vh, 5rem)); min-height: 18rem; max-height: 58rem;
-  border: clamp(7px, .8vw, 12px) solid var(--frame); border-radius: 8px; overflow: hidden; background: #DAD6CF;
-  box-shadow: var(--sc-e3), inset 0 0 0 1px rgb(255 255 255 / .12);
+/* El hueco del logotipo: aquí empieza grande y aquí se abre luego el portal. */
+.stage-logo { position: relative; height: calc(100svh - var(--bar-h) - clamp(2rem, 6vh, 5rem)); min-height: 16rem; max-height: 52rem; }
+.stage-logo__box, .stage-logo__static { position: absolute; left: 50%; top: 50%; width: min(84%, 44rem); aspect-ratio: 640 / 333; translate: -50% -50%; }
+.stage-logo__static { height: auto; }
+html.lc-fly .stage-logo__static { visibility: hidden; }
+.stage-logo__photo {
+  --g: clamp(0, (var(--lf, 0) - 0.12) / 0.88, 1);
+  position: absolute; inset: 0; display: none; border-radius: 22px; overflow: hidden; background: #E4E0D8;
+  clip-path: inset(calc((1 - var(--g)) * 50%) round 22px); box-shadow: var(--sc-e3);
 }
+html.lc-fly .stage-logo__photo { display: block; }
+.stage-logo__photo picture, .stage-logo__photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.stage-logo__photo img { transform: scale(calc(1.08 - .08 * var(--g))); }
+.stage-logo__photo .glass__tag { opacity: calc(var(--g) * 3 - 2); }
+
+/* Marco de foto de las páginas de servicio. */
+.glass { position: relative; border-radius: 22px; overflow: hidden; background: #E4E0D8; box-shadow: var(--sc-e2); }
 .glass picture, .glass img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.glass__clean, .glass__fog { position: absolute; inset: 0; }
-.glass__fog { z-index: 1; will-change: clip-path; }
-/* Cada banda conserva el vaho hasta que pasa la rasqueta. */
-.glass__fog--1 { clip-path: inset(0 0 66.6% calc(var(--t1) * 100%)); }
-.glass__fog--2 { clip-path: inset(33.3% calc(var(--t2) * 100%) 33.3% 0); }
-.glass__fog--3 { clip-path: inset(66.6% 0 0 calc(var(--t3) * 100%)); }
-/* Gotas de condensación sobre el vaho: puntos claros, sin imágenes extra. */
-.glass__fog::after {
-  content: ""; position: absolute; inset: 0;
-  background:
-    radial-gradient(circle at 20% 30%, rgb(255 255 255 / .5) 0 1.5px, transparent 2.5px) 0 0 / 34px 41px,
-    radial-gradient(circle at 70% 60%, rgb(255 255 255 / .38) 0 1px, transparent 2px) 0 0 / 23px 29px,
-    linear-gradient(rgb(250 249 246 / .28), rgb(250 249 246 / .28));
-}
-
-/* La rasqueta: hoja de goma y mango, en el frente de limpieza de su banda. */
-.blade {
-  position: absolute; z-index: 2; width: 12px; height: calc(33.3% - 18px); margin-top: 9px;
-  border-radius: 6px; background: linear-gradient(90deg, #2B2B2F, #46464C 45%, #1B1B1E);
-  box-shadow: 0 6px 18px rgb(0 0 0 / .28); pointer-events: none; translate: -50% 0;
-}
-.blade::before { content: ""; position: absolute; top: 50%; width: clamp(48px, 6vw, 88px); height: 12px; margin-top: -6px; border-radius: 6px; background: var(--sc-accent); box-shadow: 0 4px 10px rgb(0 0 0 / .25); }
-.blade--1, .blade--3 { --t: var(--t1); }
-.blade--3 { --t: var(--t3); }
-.blade--2 { --t: var(--t2); }
-.blade--1::before, .blade--3::before { right: 100%; margin-right: -2px; }
-.blade--2::before { left: 100%; margin-left: -2px; }
-.blade--1 { top: 0; left: calc(var(--t1) * 100%); }
-.blade--2 { top: 33.3%; left: calc((1 - var(--t2)) * 100%); }
-.blade--3 { top: 66.6%; left: calc(var(--t3) * 100%); }
-.blade { opacity: calc(min(var(--t), 1 - var(--t)) * 30); }
-
-.glass__hint {
-  position: absolute; z-index: 3; left: 50%; top: 50%; translate: -50% -50%; margin: 0;
-  padding: .6rem 1rem; border-radius: 999px; background: rgb(255 255 255 / .86); color: #1B1B1E;
-  font: 600 .95rem/1.2 var(--sc-font-text); white-space: nowrap; box-shadow: var(--sc-e2);
-  opacity: calc(1 - var(--sc-p, 0) * 14);
-}
 .glass__tag { position: absolute; z-index: 3; right: .6rem; bottom: .6rem; margin: 0; padding: .3rem .6rem; border-radius: 999px; background: rgb(27 27 30 / .72); color: #fff; font: 500 .74rem/1.2 var(--sc-font-text); }
-.glass--still { height: auto; aspect-ratio: 3 / 2; min-height: 0; }
+.glass--still { aspect-ratio: 3 / 2; }
 
-/* Entrada al cargar (≈0,7 s). El estado final es el estado sin animación y el
+/* Entrada al cargar (≈1,3 s). El estado final es el estado sin animación y el
    titular nunca parte de invisible. */
 @media (prefers-reduced-motion: no-preference) {
-  .hero__h { animation: lc-rise .6s var(--sc-ease-out) both; }
-  .hero__lede, .hero__copy .cta-pair { animation: lc-rise .55s var(--sc-ease-out) .08s both; }
-  .glass { animation: lc-glass .8s var(--sc-ease-out) both; }
-  .glass__hint { animation: lc-fade .4s var(--sc-ease-out) .5s both; }
+  .page-home .logo__trace { stroke-dasharray: 1 2; animation: lc-trace 1.15s cubic-bezier(.55, .05, .3, 1) .12s both; }
+  .page-home .stage-logo__static { animation: lc-fade .5s var(--sc-ease-out) .1s both; }
+  .hero__h { animation: lc-rise .6s var(--sc-ease-out) .25s both; }
+  .hero__eyebrow, .hero__lede, .hero__copy .cta-pair { animation: lc-rise .55s var(--sc-ease-out) .35s both; }
 }
+@keyframes lc-trace { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 @keyframes lc-rise { from { transform: translate3d(0, 14px, 0); } }
-@keyframes lc-glass { from { transform: translate3d(0, 18px, 0) scale(.985); } }
 @keyframes lc-fade { from { opacity: 0; } }
 
 @media (max-width: 760px) {
   .hero__stage {
-    grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr) auto; align-items: stretch; gap: .9rem;
-    height: 100svh; padding: calc(var(--bar-h) + .9rem) var(--sc-gutter) 1rem;
+    grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto auto auto auto; align-items: stretch; row-gap: 0;
+    height: 100svh; padding: calc(var(--bar-h) + .6rem) var(--sc-gutter) 1rem;
   }
   .hero__copy { display: contents; }
-  .hero__copy > :not(.cta-pair) { grid-row: 1; }
-  .hero__eyebrow { margin-bottom: .5rem; font-size: .74rem; }
-  .hero__h { font-size: clamp(1.85rem, 1.1rem + 3.9vw, 2.6rem); }
-  .hero__h .ln { display: block; }
-  .hero__lede { margin: .6rem 0 0; font-size: 1.02rem; }
-  .hero__copy > :not(.cta-pair) { order: 0; }
-  .hero__copy > p, .hero__copy > h1 { grid-column: 1; }
-  .glass { grid-row: 2; height: auto; min-height: 9rem; max-height: none; }
-  .hero__copy .cta-pair { grid-row: 3; flex-wrap: nowrap; gap: .6rem; }
+  .stage-logo { grid-row: 1; height: auto; min-height: 9rem; max-height: none; margin-bottom: 1rem; }
+  .stage-logo__box, .stage-logo__static { width: min(88%, 24rem); }
+  .stage-logo__photo { border-radius: 16px; clip-path: inset(calc((1 - var(--g)) * 50%) round 16px); }
+  .hero__eyebrow { grid-row: 2; margin-bottom: .5rem; font-size: .74rem; }
+  .hero__h { grid-row: 3; font-size: clamp(1.85rem, 1.1rem + 3.9vw, 2.6rem); }
+  .hero__lede { grid-row: 4; margin: .6rem 0 1rem; font-size: 1.02rem; }
+  .hero__copy .cta-pair { grid-row: 5; flex-wrap: nowrap; gap: .6rem; }
   .hero__copy .cta-pair .btn { flex: 1 1 0; padding-inline: .8rem; min-height: 52px; }
   .cta-pair__long { display: none; }
   .cta-pair__short { display: inline; }
-  .glass__hint { font-size: .86rem; }
 }
-/* El eyebrow, el H1 y el lede comparten la fila 1 del grid en móvil. */
-@media (max-width: 760px) {
-  .hero__copy > .hero__eyebrow, .hero__copy > .hero__h, .hero__copy > .hero__lede { grid-row: auto; }
-  .hero__stage { grid-template-rows: auto auto auto minmax(0, 1fr) auto; row-gap: 0; }
-  .hero__eyebrow { grid-row: 1; }
-  .hero__h { grid-row: 2; }
-  .hero__lede { grid-row: 3; }
-  .glass { grid-row: 4; margin: .9rem 0; }
-  .hero__copy .cta-pair { grid-row: 5; }
-}
-@media (max-width: 760px) and (max-height: 680px) { .hero__lede { display: none; } }
+@media (max-width: 760px) and (max-height: 680px) { .hero__lede { display: none; } .hero__h { margin-bottom: 1rem; } }
 
 /* ============================================= Acto 2 · ¿Para quién es? == */
 .who { padding-block: var(--sc-section); }
@@ -569,7 +541,6 @@ html:not(.sc-ready) [data-sc-cue],
 html:not(.sc-ready) [data-sc-in],
 html:not(.sc-ready) [data-sc-stagger] > * { opacity: 1 !important; transform: none !important; }
 html:not(.sc-ready) [data-sc-reveal] { clip-path: none !important; }
-html:not(.sc-ready) .glass__fog, html:not(.sc-ready) .blade, html:not(.sc-ready) .glass__hint { display: none; }
 html:not(.sc-ready) .hero__stage { min-height: 100svh; }
 html:not(.sc-ready) .ronda__stage { padding-top: calc(var(--bar-h) + 2rem); }
 html:not(.sc-ready) .ronda__rail { width: auto; flex-wrap: wrap; justify-content: center; }
@@ -578,9 +549,8 @@ html:not(.sc-ready) .track { display: none; }
 html:not(.sc-ready) .cons__stage { padding-block: calc(var(--bar-h) + 3rem) 4rem; }
 html:not(.sc-ready) .cons__roles { --m: 1; }
 
-/* Movimiento reducido: sin rasqueta ni vaho (el portal se ve limpio), el raíl
+/* Movimiento reducido: el logotipo queda quieto en la portada, el raíl
    de la ronda se recorre con scroll horizontal nativo (lo hace el motor). */
 @media (prefers-reduced-motion: reduce) {
-  .glass__fog, .blade, .glass__hint { display: none; }
   .cons__roles { --m: 1; }
 }

@@ -33,6 +33,7 @@ html = html
     missing.add(p.split('/').pop());
     return ''; // imagen generada aún sin descargar: queda el hueco
   })
+  .replace(/<image href="\/(assets\/[^"]+\.webp)"/g, (_, p) => `<image href="${dataUri(p)}"`)
   .replace(/<form class="hv" /g, '<form class="hv" data-demo ')
   .replace(/href="\/#/g, 'href="#')
   .replace(/href="\/(?!\/)[^"]*"/g, 'href="#servicios"');

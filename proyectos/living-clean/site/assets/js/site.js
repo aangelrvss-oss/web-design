@@ -86,6 +86,43 @@
     if (r.bottom < 0 || r.top > innerHeight) el.scrollIntoView({ block: 'center', behavior: 'instant' });
   });
 
+  /* ---------------------------------------- Acto 1: vuelo del logotipo --
+     El logotipo de la cabecera empieza en el hueco grande de la portada y,
+     durante el tramo fijado del hero, vuela a su sitio. Aquí solo se mide el
+     desplazamiento y se publica el avance (--lf) en <html>; el resto es CSS. */
+  var hero = document.querySelector('[data-hero]');
+  var logoBox = document.querySelector('[data-logo-box]');
+  var logoEl = document.querySelector('[data-logo] .logo');
+  if (hero && logoBox && logoEl && pinned) {
+    var measure = function () {
+      doc.classList.remove('lc-fly');
+      var stage = hero.querySelector('[data-sc-stage]');
+      var t = logoBox.getBoundingClientRect();
+      var l = logoEl.getBoundingClientRect();
+      var top = t.top - stage.getBoundingClientRect().top; // posición dentro del escenario fijado
+      doc.style.setProperty('--lx', (t.left - l.left).toFixed(1));
+      doc.style.setProperty('--ly', (top - l.top).toFixed(1));
+      doc.style.setProperty('--ls', (t.width / l.width).toFixed(4));
+      doc.classList.add('lc-fly');
+    };
+    var ease = function (x) { return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+    var fly = 0;
+    var flyFrame = function () {
+      fly = 0;
+      var travel = hero.offsetHeight - innerHeight;
+      var p = travel > 0 ? Math.min(Math.max((scrollY - hero.offsetTop) / travel, 0), 1) : 1;
+      var f = Math.min(Math.max((p - 0.04) / 0.56, 0), 1);
+      doc.style.setProperty('--lf', ease(f).toFixed(4));
+    };
+    var queueFly = function () { if (!fly) fly = requestAnimationFrame(flyFrame); };
+    measure();
+    flyFrame();
+    addEventListener('scroll', queueFly, { passive: true });
+    var rt = 0;
+    addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(function () { measure(); flyFrame(); }, 120); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { measure(); flyFrame(); });
+  }
+
   /* --------------------------------------------------------------- menú -- */
   var drop = document.querySelector('[data-drop]');
   if (drop) {

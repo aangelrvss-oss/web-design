@@ -1,15 +1,15 @@
 """Prepara las imágenes de la web a partir de los originales.
 
 - assets-src/higgsfield/*.png (generadas, ilustrativas) -> site/assets/img/<nombre>-<ancho>.webp
-- El portal del hero, además, en versión «empañada» (vaho) para la pasada de rasqueta,
-  y un recorte 3:2 (ronda-portal) para la tarjeta de la ronda y las páginas de servicio.
+- El portal del hero, además, en un recorte 3:2 (ronda-portal) para la tarjeta de la
+  ronda y las páginas de servicio.
 - Iconos (favicon, 192, apple-touch) a partir del logotipo original.
 
 Uso (desde proyectos/living-clean): python3 -I tools/images.py
 """
 import sys
 from pathlib import Path
-from PIL import Image, ImageFilter, ImageEnhance
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / 'assets-src'
@@ -26,16 +26,6 @@ def save(img, name, widths, q=78):
         print(f'  {name}-{w}.webp  {w}x{h}')
 
 
-def fog(img):
-    """Vaho: desenfoque fuerte, menos contraste y velo claro."""
-    r = max(8, round(img.width / 90))
-    f = img.filter(ImageFilter.GaussianBlur(r))
-    f = ImageEnhance.Color(f).enhance(0.55)
-    f = ImageEnhance.Contrast(f).enhance(0.6)
-    veil = Image.new('RGB', f.size, (246, 244, 240))
-    return Image.blend(f, veil, 0.42)
-
-
 def generated():
     d = SRC / 'higgsfield'
     if not d.exists():
@@ -43,7 +33,6 @@ def generated():
         return
     hero = Image.open(d / 'hero-portal.png').convert('RGB')
     save(hero, 'hero-portal', [1200, 1800, 2688], q=76)
-    save(fog(hero), 'hero-portal-niebla', [1200, 1800, 2688], q=60)
     # recorte 3:2 centrado para la tarjeta del portal
     w, h = hero.size
     cw = round(h * 1.5)
@@ -51,7 +40,6 @@ def generated():
     save(hero.crop((x, 0, x + cw, h)), 'ronda-portal', [640, 1024])
     mob = Image.open(d / 'hero-portal-movil.png').convert('RGB')
     save(mob, 'hero-portal-movil', [760, 1200], q=74)
-    save(fog(mob), 'hero-portal-movil-niebla', [760, 1200], q=58)
     for n in ['escalera', 'garaje', 'jardin', 'mantenimiento', 'fachada']:
         im = Image.open(d / f'ronda-{n}.png').convert('RGB')
         save(im, f'ronda-{n}', [640, 1024])

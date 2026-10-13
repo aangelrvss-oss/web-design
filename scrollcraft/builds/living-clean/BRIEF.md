@@ -17,7 +17,7 @@
 
 - **Qué es una sección**: una parada de la ronda del personal por un edificio.
 - **Chrome**: barra blanca con logotipo, servicios, teléfono `tel:` y un único CTA «Pedir presupuesto». En el pico, un **raíl de ronda** con las paradas, que se marcan al pasar y se pueden quitar.
-- **Hero**: acto fijado corto. La foto del portal tras un cristal empañado; el scroll pasa una rasqueta en «S» (tres bandas) que deja el cristal limpio. Texto y CTA legibles desde el primer fotograma.
+- **Hero**: acto fijado corto. El logotipo real aparece grande, descubierto por un trazo en zigzag (el gesto del garabato amarillo de la marca); con el scroll vuela a su sitio en la cabecera y en su hueco se abre la foto del portal. Texto y CTA legibles desde el primer fotograma. *(Primera versión: rasqueta sobre cristal empañado; descartada por el usuario.)*
 - **Cierre**: «hoja de visita» sobre fondo rojo de marca: el plan construido en la ronda + formulario para pedir visita y presupuesto.
 - **Prohíbe**: vídeo `scrub`, iconos genéricos, carruseles, contadores, tarjetas idénticas en rejilla de tres, degradados, cifras no verificadas, fotos de stock de personas.
 
@@ -33,7 +33,7 @@ Por qué no las ocho existentes: *filmic* exige vídeo continuo y una sola entra
 
 | # | Emoción | Causa |
 |---|---|---|
-| 1 | Alivio | El cristal empañado se limpia con una pasada de rasqueta |
+| 1 | Reconocimiento de marca | El logotipo se pinta con el mismo gesto de su garabato y se instala en la cabecera |
 | 2 | Reconocimiento | «Soy presidente de comunidad / tengo una oficina / es mi casa» |
 | 3 | Control (pico) | Recorrer el edificio y ver qué se hace en cada sitio y cada cuánto |
 | 4 | Claridad | Tres oficios que se funden en un solo puesto: el conserje multifunción |
@@ -45,7 +45,7 @@ Por qué no las ocho existentes: *filmic* exige vídeo continuo y una sola entra
 
 | Acto | Dispositivo | Span |
 |---|---|---|
-| 1 Hero «la pasada» | `pin` + máscara por bandas desde `--sc-p` | 2.0 |
+| 1 Hero «el logotipo» | `pin` + máscara SVG (zigzag) al cargar + vuelo del logotipo a la cabecera y apertura del portal | 1.6 |
 | 2 ¿Para quién? | `flow` + `in` + pestañas | natural |
 | 3 La ronda (pico) | `pan` + raíl propio | 5.6 |
 | 4 Conserje multifunción | `pin` + `kinetic` | 2.4 |
@@ -62,11 +62,11 @@ Familias: pin, flow, pan, reveal, kinetic. Nunca dos iguales seguidos salvo `flo
 |---|---|---|---|
 | Gramática | Lámina de instalaciones | La ronda | Sí |
 | Nav | Barra con desplegable | Barra + raíl de ronda en el pico | Sí |
-| Hero | Flow con 4 planos SVG en parallax | Pin corto, foto tras cristal, rasqueta por bandas | Sí |
-| Forma de actos | 7 actos, pico pin 5.2, pan secundario | 8 actos, pico pan 5.6, pin hero 2.0 | Sí |
+| Hero | Flow con 4 planos SVG en parallax | Pin corto: logotipo pintado en zigzag que vuela a la cabecera; se abre el portal | Sí |
+| Forma de actos | 7 actos, pico pin 5.2, pan secundario | 8 actos, pico pan 5.6, pin hero 1.6 | Sí |
 | Cierre | Cajetín sobre grafito | Hoja de visita sobre rojo con el plan | Sí |
 | Firma | Capas SVG por `--sc-p` | Ronda con paradas que forman el plan | Sí |
 
 6 de 6 distintas: pasa.
 
-Nota de construcción: el hero pasó de 1.7 a 2.0 de span para que cada banda de la rasqueta tenga ~0,28 de recorrido (≈ 250 px de scroll en un portátil).
+Nota de construcción: el hero de la rasqueta (span 2.0) se sustituyó a petición del usuario por la entrada del logotipo (span 1.6). El logotipo de la cabecera es el mismo elemento que vuela: no hay copia ni versión redibujada.
