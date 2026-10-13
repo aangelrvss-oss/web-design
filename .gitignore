@@ -3,3 +3,4 @@ qa/node_modules/
 lab/
 *.log
 .env
+qa/out/

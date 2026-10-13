@@ -1,0 +1,11 @@
+{
+  "name": "mrinstalaciones-web",
+  "private": true,
+  "type": "module",
+  "description": "Web de MRI · Martínez Rojas Instalaciones (sitio estático generado en site/)",
+  "scripts": {
+    "build": "node src/build.mjs",
+    "serve": "php -S 127.0.0.1:4500 tools/dev/router.php",
+    "qa": "node qa/functional.mjs http://127.0.0.1:4500 qa/out"
+  }
+}

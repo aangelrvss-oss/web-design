@@ -59,7 +59,7 @@ Ninguna pareja adyacente comparte emoción. El acto 2 es deliberadamente silenci
 
 > "Bajé y la casa se fue llenando de tuberías, conductos y cables, cada cosa en su sitio, y al final se encendió todo a la vez."
 
-Vive en el acto 3. Recibe: el único activo trabajado a fondo (el dibujo de sección con siete capas), el silencio previo del acto 2 y el mayor recorrido de la página (span 5.2 frente a ≤3.2 del resto).
+Vive en el acto 3. Recibe: el único activo trabajado a fondo (el dibujo de sección con siete capas), el silencio previo del acto 2 y el mayor recorrido de la página (span 5.2 frente a 3.4 del siguiente más largo).
 
 ## Partitura
 
@@ -70,7 +70,7 @@ Vive en el acto 3. Recibe: el único activo trabajado a fondo (el dibujo de secc
 | 3 La casa | Pico | `pin` + dibujo por `--sc-p` | 5.2 | Argumento que avanza mientras el marco se queda quieto |
 | 4 Habilitaciones | Seguridad | `reveal` (barrido izquierda) | natural | Un barrido es un cambio de estado: de promesa a documento |
 | 5 Dudas | Alivio | `flow + in` con `<details>` | natural | Administrativo: corto y comprimido |
-| 6 Sectores | Amplitud | `pan` | 3.2 | Lo lateral se lee como gama de clientes, no como jerarquía |
+| 6 Sectores | Amplitud | `pan` | 3.4 | Lo lateral se lee como gama de clientes, no como jerarquía |
 | 7 Presupuesto | Decisión | `flow` (formulario real, sin pin) | natural | Un formulario no se fija; debe poder rellenarse en un móvil |
 
 Familias: parallax, flow, pin, reveal, pan (cinco). Ningún dispositivo repetido en actos consecutivos. Ninguna `scrub`. Longitud aproximada: 13 alturas de pantalla en escritorio, fuera de la banda 13,6-13,8 con 6-7 actos solo por el número de actos (7) y el reparto; se medirá.
@@ -82,3 +82,43 @@ Familias: parallax, flow, pin, reveal, pan (cinco). Ningún dispositivo repetido
 ## Gate de huellas
 
 `scrollcraft/FINGERPRINTS.md` está vacío: es la primera construcción de este espacio de trabajo. No hay filas contra las que comparar. Se añade la fila al terminar.
+
+---
+
+## Resultado de la construcción (13/10/2026)
+
+### Partitura real
+
+| Acto | Dispositivo | Span |
+|---|---|---|
+| 1 Hero | `flow` + `data-sc-parallax` en 4 planos (1.8, 1.2, 0.6, -2.4) + puntero fino | natural (100svh) |
+| 2 Situaciones | `flow` + `data-sc-in` con escalonado de 45 ms | natural |
+| 3 La casa | `pin` + 9 cues + capas dibujadas por `--sc-p` en CSS | 5.2 |
+| 4 Habilitaciones | `flow` + `data-sc-reveal="left"` sobre la placa de inscripciones | natural |
+| 5 Dudas | `flow` con `<details>` | natural |
+| 6 Sectores | `pan` con asentamiento escalonado por `--sc-p` (desplazamiento, opacidad mínima 0,9) | 3.4 |
+| 7 Presupuesto | `flow` + titular `kinetic` por líneas en cue de sujeción | natural |
+
+Longitud medida por el arnés: 14,0 vh en escritorio (1440×900), 15,9 vh en 390×844, 18,4 vh en 360×640, 12,1 vh con movimiento reducido.
+
+### Comprobación de sensaciones (pasada en frío sobre las hojas de contacto)
+
+| Acto | Previsto | Sentido | Diferencia y cambio |
+|---|---|---|---|
+| 1 | Orientación | Orientación | El titular tapaba las cotas del dibujo: se ocultaron en el hero y se desplazó la casa. |
+| 2 | Reconocimiento | Reconocimiento | Sin cambios. |
+| 3 | Asombro tranquilo | Curiosidad que se convierte en satisfacción | Las fichas de cada sistema se veían a medio fundido en móvil: rampas acortadas del 22 % al 14 % de su ventana. El pico sigue siendo el mayor cambio visual y el tramo más largo. |
+| 4 | Seguridad | Seguridad | Sin cambios. |
+| 5 | Alivio | Neutro, administrativo | Aceptado: es información comprimida a propósito (feel.md §5). |
+| 6 | Amplitud | Amplitud | Las fichas atenuadas al 55 % fallaban contraste: ahora se asientan por desplazamiento. |
+| 7 | Decisión | Decisión | El hueco vacío del cajetín se eliminó; el titular desbordaba su columna y se redujo. |
+
+El final se sostiene: el formulario es lo último con contenido antes del pie y no se desvanece.
+
+### Gate de huellas
+
+Primera fila del registro: nada contra lo que comparar. Fila añadida en `scrollcraft/FINGERPRINTS.md`.
+
+### Activos
+
+Ninguno generado. Coste de generación: 0. Dibujos SVG propios; logotipo y banda Kit Digital recortados de una captura de la web actual (pendiente de sustituir por los originales).

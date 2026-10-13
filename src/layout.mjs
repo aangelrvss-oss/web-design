@@ -82,7 +82,7 @@ export function header({ current = '', form = true } = {}) {
 <header class="bar" data-bar>
   <div class="bar__in">
     <a class="bar__logo" href="/" aria-label="MRI · Martínez Rojas Instalaciones, inicio">
-      <img src="/assets/brand/logo-mri.png" width="284" height="180" alt="MRI · Martínez Rojas Instalaciones">
+      <img src="/assets/brand/logo-mri.webp" width="284" height="180" alt="MRI · Martínez Rojas Instalaciones">
     </a>
     <nav class="bar__nav" aria-label="Principal">
       <ul class="bar__links">
@@ -162,7 +162,7 @@ export function quoteForm({ preset = [], origin = 'home', idp = 'q' } = {}) {
   <input type="hidden" name="t" value="" data-t>
   <div class="tb__foot tb__cell--wide">
     <button class="btn btn--accent btn--lg" type="submit" data-track="form_submit_click">Enviar solicitud</button>
-    <p class="tb__legal">Responsable: ${esc(SITE.legalName)}. Finalidad: responder a tu solicitud y preparar el presupuesto. Base jurídica: medidas precontractuales que nos pides. No cedemos tus datos salvo obligación legal. Puedes acceder, rectificar o suprimirlos escribiendo a ${SITE.privacyEmail}. Más información en la <a href="/politica-de-privacidad/">política de privacidad</a>.</p>
+    <p class="tb__legal">Responsable: ${esc(SITE.legalName)} Finalidad: responder a tu solicitud y preparar el presupuesto. Base jurídica: medidas precontractuales que nos pides. No cedemos tus datos salvo obligación legal. Puedes acceder, rectificar o suprimirlos escribiendo a ${SITE.privacyEmail}. Más información en la <a href="/politica-de-privacidad/">política de privacidad</a>.</p>
   </div>
   <div class="tb__status tb__cell--wide" role="status" aria-live="polite" tabindex="-1" data-status hidden></div>
 </form>`;
@@ -182,7 +182,7 @@ export function footer() {
   return `<footer class="foot">
   <div class="foot__in sc-wrap">
     <div class="foot__brand">
-      <img src="/assets/brand/logo-mri-claro.png" width="284" height="180" alt="MRI · Martínez Rojas Instalaciones" loading="lazy">
+      <img src="/assets/brand/logo-mri-claro.webp" width="284" height="180" alt="MRI · Martínez Rojas Instalaciones" loading="lazy">
       <p>${esc(SITE.legalName)} · NIF ${SITE.taxId}<br>${SITE.street}, ${SITE.postalCode} ${SITE.city}</p>
     </div>
     <nav class="foot__nav" aria-label="Servicios">

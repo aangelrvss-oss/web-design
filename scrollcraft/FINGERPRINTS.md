@@ -28,9 +28,7 @@ changes only grammar and world will fail it.
 
 | Build | Grammar | Nav treatment | Hero device | Act-sequence shape | Close pattern | Signature move | World | Port |
 |---|---|---|---|---|---|---|---|---|
-
-*(empty: your first build has nothing to clear, so build whatever the interview
-points at. From the second onwards, this table is the constraint.)*
+| mr-instalaciones (2026-10-13) | Lámina de instalaciones (nueva: juego de planos de una vivienda; fondos en corte seco papel/grafito; sin scrub) | Barra fija clara: logotipo, índice de servicios desplegable que salta, teléfono `tel:` y un único CTA "Pedir presupuesto" | Flow natural con 4 planos en parallax (cuadrícula, sección de vivienda vacía, tubería con llave en primer plano, aire cálido/frío) + profundidad por puntero; sin cues | flow(parallax) > flow > pin 5.2 > flow+reveal > flow > pan 3.4 > flow · 7 actos · ~14 vh escritorio | Formulario como cajetín de plano sobre grafito, flow (sin pin), teléfono grande al lado, CTA "Enviar solicitud"; selección del pico precargada | La casa que se instala sola: siete capas SVG dibujadas desde `--sc-p`; la leyenda aísla capas y marca los servicios en el formulario | Technical drawing (SVG propio, sin generación) | 4500 |
 
 ---
 
@@ -41,7 +39,10 @@ reusing: a grammar, a nav treatment, a close pattern, a signature move, an
 act-count-and-length band. The shared columns are what the next build inherits
 as a constraint, so writing them down is the whole point.
 
-Nothing is taken yet.
+- Gramática "Lámina de instalaciones" (sección de edificio que se completa por capas).
+- Cierre en forma de cajetín de plano.
+- Movimiento firma: dibujo técnico por capas con `stroke-dashoffset` desde `--sc-p` + leyenda que alimenta el formulario.
+- Banda de 7 actos / ~14 vh con pico `pin` 5.2 seguido de `reveal` y `pan`.
 
 ---
 

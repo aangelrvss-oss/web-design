@@ -303,7 +303,7 @@ ${header({ current: 'certificaciones', form: false })}
     <div class="sc-wrap">
       <nav class="crumbs" aria-label="Ruta de navegación"><ol><li><a href="/">Inicio</a></li><li aria-current="page">Certificaciones</li></ol></nav>
       <h1 id="cert-h" class="sc-display sc-display--lg">Certificaciones y habilitaciones</h1>
-      <p class="sc-lede">Inscripciones oficiales de ${esc(SITE.legalName)}. Cada documento se puede verificar en <a href="https://www.madrid.org/csv" rel="noopener">www.madrid.org/csv</a> con su código seguro de verificación.</p>
+      <p class="sc-lede">Inscripciones oficiales de ${esc(SITE.legalName)} Cada documento se puede verificar en <a href="https://www.madrid.org/csv" rel="noopener">www.madrid.org/csv</a> con su código seguro de verificación.</p>
     </div>
   </section>
   <section class="sc-section certs-sec">
@@ -342,7 +342,7 @@ export function trabaja() {
 <p><a class="btn btn--accent" href="mailto:${SITE.email}?subject=Candidatura" data-track="click_email" data-track-loc="empleo">Enviar currículum a ${SITE.email}</a></p>
 <p>Indica en el correo tu especialidad, tus carnés o habilitaciones profesionales y la zona en la que vives.</p>
 <h2>Tus datos</h2>
-<p>Usaremos tu currículum únicamente para procesos de selección de ${esc(SITE.legalName)}. Lo conservaremos un máximo de un año, salvo que nos pidas antes su supresión escribiendo a ${SITE.privacyEmail}. Más información en la <a href="/politica-de-privacidad/">política de privacidad</a>.</p>`,
+<p>Usaremos tu currículum únicamente para procesos de selección de ${esc(SITE.legalName)} Lo conservaremos un máximo de un año, salvo que nos pidas antes su supresión escribiendo a ${SITE.privacyEmail}. Más información en la <a href="/politica-de-privacidad/">política de privacidad</a>.</p>`,
   });
 }
 
@@ -365,7 +365,7 @@ export function avisoLegal() {
 <li>Empresa instaladora y mantenedora de instalaciones térmicas en edificios y empresa instaladora de gas categoría A: registro industrial ${SITE.registroIndustrial} de la Comunidad de Madrid</li>
 </ul>
 <h2>Condiciones de uso</h2>
-<p>El acceso a esta web no supone el inicio de una relación comercial con ${esc(SITE.legalName)}. Quien la utiliza se compromete a hacerlo conforme a la ley, la buena fe y el orden público, y a no realizar ninguna acción que pueda dañar, inutilizar o sobrecargar la web o impedir su normal utilización.</p>
+<p>El acceso a esta web no supone el inicio de una relación comercial con ${esc(SITE.legalName)} Quien la utiliza se compromete a hacerlo conforme a la ley, la buena fe y el orden público, y a no realizar ninguna acción que pueda dañar, inutilizar o sobrecargar la web o impedir su normal utilización.</p>
 <h2>Propiedad intelectual</h2>
 <p>Los contenidos de esta web (textos, dibujos, diseño y logotipos) pertenecen a ${esc(SITE.legalName)} o se usan con autorización. No se permite su reproducción, distribución o modificación sin autorización previa. Los dibujos de instalaciones son esquemas ilustrativos y no corresponden a un proyecto concreto.</p>
 <h2>Enlaces externos</h2>
@@ -405,7 +405,7 @@ export function privacidad() {
 <h2>Candidaturas</h2>
 <p>Los currículos recibidos se usan solo para procesos de selección y se conservan un máximo de un año.</p>
 <h2>Destinatarios</h2>
-<p>No cedemos tus datos a terceros salvo obligación legal. Los proveedores que alojan esta web y nuestro correo electrónico acceden a ellos únicamente como encargados del tratamiento, con contrato y por cuenta de ${esc(SITE.legalName)}.</p>
+<p>No cedemos tus datos a terceros salvo obligación legal. Los proveedores que alojan esta web y nuestro correo electrónico acceden a ellos únicamente como encargados del tratamiento, con contrato y por cuenta de ${esc(SITE.legalName)}</p>
 <h2>Tus derechos</h2>
 <p>Puedes ejercer los derechos de acceso, rectificación, supresión, oposición, limitación del tratamiento y portabilidad escribiendo a <a href="mailto:${SITE.privacyEmail}">${SITE.privacyEmail}</a> o por correo postal a la dirección indicada, identificándote adecuadamente. Si consideras que no hemos atendido correctamente tus derechos, puedes reclamar ante la Agencia Española de Protección de Datos (<a href="https://www.aepd.es" rel="noopener">www.aepd.es</a>).</p>
 <h2>Seguridad</h2>

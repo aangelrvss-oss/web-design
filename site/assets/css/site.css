@@ -8,7 +8,7 @@
 @font-face {
   font-family: "Archivo";
   src: url("../fonts/archivo-wdth.woff2") format("woff2");
-  font-weight: 100 900; font-stretch: 62% 125%; font-style: normal; font-display: swap;
+  font-weight: 500 700; font-stretch: 102% 110%; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: "Geist";
@@ -356,7 +356,8 @@ body.menu-open { overflow: hidden; }
     gap: .6rem; padding: calc(var(--bar-h) + .5rem) var(--sc-gutter) .9rem;
   }
   .peak__draw, .peak__legend, .peak__copy { grid-column: 1; }
-  .peak__draw { grid-row: 1; }
+  .peak__draw { grid-row: 1; overflow: hidden; margin-inline: calc(var(--sc-gutter) * -1); }
+  .peak__draw .house { width: 116%; max-width: none; max-height: none; flex: none; translate: -5% 0; }
   .peak__legend { grid-row: 2; gap: .35rem; }
   .peak__legend-h { display: none; }
   .lgs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: calc(var(--sc-gutter) * -1); padding-inline: var(--sc-gutter); }
@@ -425,7 +426,7 @@ body.menu-open { overflow: hidden; }
 .sect__l { list-style: none; margin: 0; padding: 0; font: 450 .9rem/1.4 var(--sc-font-mono); }
 .sect__l li { padding: .35rem 0; border-top: 1px solid var(--hair); }
 @media (prefers-reduced-motion: no-preference) {
-  .js .sect__item { --i: 0; opacity: clamp(.55, calc((var(--sc-p, 0) * 5 - var(--i)) * 1.4 + .55), 1); }
+  .js .sect__item { --i: 0; --settle: clamp(0, calc((var(--sc-p, 0) * 5 - var(--i)) * 1.4 + .2), 1); opacity: calc(.9 + .1 * var(--settle)); transform: translate3d(0, calc((1 - var(--settle)) * 28px), 0); }
   .js .sect__item:nth-of-type(1) { --i: 0; } .js .sect__item:nth-of-type(2) { --i: .8; }
   .js .sect__item:nth-of-type(3) { --i: 1.6; } .js .sect__item:nth-of-type(4) { --i: 2.4; }
 }
@@ -489,6 +490,7 @@ fieldset.tb__cell { display: block; }
 .tb__help { padding: .55rem .95rem; font-size: .86rem; color: #A9B2B8; }
 .tb__err { padding: 0 .95rem .6rem; color: #FF9F7A; font-size: .9rem; font-weight: 500; }
 .tb__cell .tb__err { padding: 0; }
+.tb [hidden] { display: none !important; }
 .tb__hp { position: absolute !important; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 .tb__foot { padding: 1.1rem .95rem 1.2rem; display: grid; gap: 1rem; justify-items: start; }
 .tb__legal { margin: 0; font-size: .78rem; line-height: 1.5; color: #A9B2B8; max-width: 72ch; }
@@ -534,13 +536,15 @@ fieldset.tb__cell { display: block; }
 .svc-hero--plain .sc-lede { margin-top: 1.25rem; max-width: 60ch; }
 .crumbs ol { display: flex; flex-wrap: wrap; gap: .4rem; list-style: none; margin: 0 0 1.25rem; padding: 0; font: 450 .82rem/1.4 var(--sc-font-mono); color: var(--sc-ink-soft); }
 .crumbs li + li::before { content: "/"; margin-right: .4rem; color: #8B959B; }
-.crumbs a { text-decoration: none; display: inline-block; padding-block: .3rem; }
+.crumbs li { display: inline-flex; align-items: center; min-height: 28px; }
+.crumbs a { text-decoration: none; display: inline-flex; align-items: center; min-height: 28px; }
 .prose li a { display: inline-block; padding-block: .2rem; }
 .prose .btn { white-space: normal; text-align: center; max-width: 100%; }
 .crumbs a:hover { text-decoration: underline; }
 @media (max-width: 860px) { .svc-hero__grid { grid-template-columns: 1fr; } }
 @media (max-width: 560px) { .svc-hero .cta-pair .btn { flex: 1 1 100%; } }
 
+.svc-does { padding-top: clamp(1.5rem, 3vw, 3rem); }
 .svc-does h2 { margin-bottom: 2rem; }
 .does { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: clamp(2rem, 5vw, 5rem); border-top: 1.5px solid var(--sc-ink); }
 .does li { padding: 1.2rem 0; border-bottom: 1px solid var(--hair); }
@@ -579,6 +583,7 @@ fieldset.tb__cell { display: block; }
 .cert__meta dd { margin: .3rem 0 0; font-size: .95rem; word-break: break-all; }
 .cert__pdf { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; padding: .5rem .9rem; border: 1px solid var(--sc-ink); border-radius: var(--r); text-decoration: none; font-weight: 600; white-space: nowrap; }
 .certs__note { margin-top: 2rem; }
+.certs-sec { padding-top: clamp(1rem, 2vw, 2rem); }
 @media (max-width: 860px) { .cert { grid-template-columns: 1fr; } .cert__pdf { justify-self: start; } }
 
 .prose { max-width: 70ch; }
