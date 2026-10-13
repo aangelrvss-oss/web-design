@@ -4,16 +4,16 @@
 // corte de bola. Se dibuja con dos trazos (contorno y alma) para dar volumen.
 export const heroPipe = `<svg class="pipe" viewBox="0 0 900 520" aria-hidden="true" focusable="false">
   <g class="pipe__run">
-    <path class="pipe__out" d="M-40 430H300q40 0 40-40V250q0-40 40-40H960"/>
-    <path class="pipe__in" d="M-40 430H300q40 0 40-40V250q0-40 40-40H960"/>
-    <path class="pipe__hi" d="M-40 420H296q34 0 34-34V246q0-34 34-34H960"/>
+    <path class="pipe__out" pathLength="1" d="M-40 430H300q40 0 40-40V250q0-40 40-40H960"/>
+    <path class="pipe__in" pathLength="1" d="M-40 430H300q40 0 40-40V250q0-40 40-40H960"/>
+    <path class="pipe__hi" pathLength="1" d="M-40 420H296q34 0 34-34V246q0-34 34-34H960"/>
   </g>
-  <g class="pipe__joint"><rect x="120" y="404" width="26" height="52" rx="4"/><rect x="314" y="300" width="52" height="26" rx="4"/><rect x="760" y="184" width="26" height="52" rx="4"/></g>
+  <g class="pipe__joint"><rect class="j1" x="120" y="404" width="26" height="52" rx="4"/><rect class="j2" x="314" y="300" width="52" height="26" rx="4"/><rect class="j3" x="760" y="184" width="26" height="52" rx="4"/></g>
   <g class="valve">
     <path class="valve__body" d="M520 176h96l14 18v32l-14 18h-96l-14-18v-32z"/>
     <path class="valve__nut" d="M546 176v-22h44v22"/>
     <rect class="valve__stem" x="560" y="128" width="16" height="28" rx="3"/>
-    <path class="valve__lever" d="M552 120h214q14 0 14 14v4q0 14-14 14H552q-10 0-10-10v-12q0-10 10-10z"/>
+    <g class="valve__handle"><path class="valve__lever" d="M552 120h214q14 0 14 14v4q0 14-14 14H552q-10 0-10-10v-12q0-10 10-10z"/><circle class="valve__pin" cx="568" cy="136" r="6"/></g>
   </g>
 </svg>`;
 

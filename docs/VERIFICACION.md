@@ -68,3 +68,7 @@ Capturas de referencia en `docs/capturas/`.
 - **`.htaccess` en Apache.** Las reglas no se han ejecutado en un Apache real; el router de desarrollo replica la CSP y el 404.
 - **La web original**: sin Core Web Vitals, cabeceras ni consola (acceso bloqueado por la red de este entorno; ver `docs/AUDITORIA.md`).
 - **Navegadores distintos de Chromium** (Firefox, Safari).
+
+## Hero 2.0 (13/10/2026)
+
+Verificación específica de la nueva entrada y de la transición de scroll en `docs/HERO-2.md` (sección «Resultado y verificación»). Tras el cambio se repitieron el arnés de Scroll-craft (5 pasadas limpias), la suite funcional (278/278) y Lighthouse (móvil 95/100/100/100, escritorio 100).

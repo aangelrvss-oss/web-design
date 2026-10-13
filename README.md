@@ -23,7 +23,7 @@ tools/scroll-craft/    La skill completa de Scroll-craft (MIT) tal como está en
 tools/dev/router.php   Router para probar en local con las mismas cabeceras que producción
 tools/og/render.mjs    Genera la imagen Open Graph a partir del dibujo
 scrollcraft/           Espacio de trabajo de Scroll-craft: BRIEF.md y registro de huellas
-qa/                    Pruebas con Playwright (snap.mjs, functional.mjs)
+qa/                    Pruebas con Playwright (snap.mjs, functional.mjs, intro.mjs para la entrada del hero)
 docs/                  Auditoría, estrategia, medición, verificación y capturas
 ```
 
@@ -85,3 +85,4 @@ Si se cambia CSS o JS, subir `ASSET_V` en `src/layout.mjs` y regenerar (la cach�
 - `scrollcraft/builds/mr-instalaciones/BRIEF.md` — brief, gramática, curva, pico, partitura y comprobación de sensaciones
 - `docs/MEDICION.md` — eventos y plan de medición
 - `docs/VERIFICACION.md` — qué se ha probado, resultados y límites
+- `docs/HERO-2.md` — secuencia de entrada y transición del hero, con su verificación

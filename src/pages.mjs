@@ -82,11 +82,15 @@ ${header()}
     <div class="hero__scene" aria-hidden="true" data-hero>
       <div class="plane plane--grid" data-sc-parallax="1.8"><div class="plane__pt" data-depth="0.15"></div></div>
       <div class="plane plane--air" data-sc-parallax="1.2"><div class="plane__pt" data-depth="0.3"><span class="air air--warm"></span><span class="air air--cool"></span></div></div>
-      <div class="plane plane--house" data-sc-parallax="0.6"><div class="plane__pt" data-depth="0.55">${house({ id: 'h', structureOnly: true })}</div></div>
+      <div class="plane plane--house" data-sc-parallax="0.6"><div class="plane__pt" data-depth="0.55">${house({ id: 'h', only: ['calefaccion'], className: 'house--hero' })}</div></div>
       <div class="plane plane--pipe" data-sc-parallax="-2.4"><div class="plane__pt" data-depth="1">${heroPipe}</div></div>
+      <div class="stamp" data-sc-parallax="1.8"><div class="stamp__in">
+        <img src="/assets/brand/logo-mri.webp" width="284" height="180" alt="">
+        <p class="stamp__l"><span>Sección tipo · vivienda</span><span>Esquema ilustrativo</span></p>
+      </div></div>
     </div>
     <div class="hero__copy sc-wrap">
-      <h1 id="hero-h" class="sc-display hero__h">Instaladores de fontanería y climatización</h1>
+      <h1 id="hero-h" class="sc-display hero__h"><span class="ln-m"><span class="ln-i">Instaladores</span></span> <span class="ln-m"><span class="ln-i">de fontanería</span></span> <span class="ln-m"><span class="ln-i">y climatización</span></span></h1>
       <p class="hero__lede">Empresa instaladora habilitada, con sede en Rivas-Vaciamadrid, para hogares, comercios, industria y obra nueva.</p>
       ${ctaPair('hero')}
       <p class="hero__hours">${icon.clock}<span>${SITE.hours}</span></p>

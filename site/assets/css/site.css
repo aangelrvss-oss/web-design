@@ -177,7 +177,7 @@ body.menu-open { overflow: hidden; }
 .hero { position: relative; min-height: 100vh; min-height: 100svh; padding-top: var(--bar-h); overflow: clip; display: flex; flex-direction: column; justify-content: center; isolation: isolate; }
 .hero__scene { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
 .plane { position: absolute; }
-.plane__pt { width: 100%; height: 100%; transform: translate3d(calc(var(--px, 0) * var(--d, 0) * 1px), calc(var(--py, 0) * var(--d, 0) * 1px), 0); }
+.plane__pt { width: 100%; height: 100%; transform: translate3d(calc(var(--px, 0) * var(--d, 0) * 1px), calc(var(--py, 0) * var(--d, 0) * 1px), 0) scale(var(--s, 1)); }
 .plane--grid { inset: -6% -4%; }
 .plane--grid .plane__pt {
   --d: 6;
@@ -205,6 +205,65 @@ body.menu-open { overflow: hidden; }
 .hero__lede { margin: 1.4rem 0 2rem; max-width: 34ch; font-size: clamp(1.12rem, 1.02rem + .45vw, 1.4rem); line-height: 1.45; color: #2B3338; }
 .hero__hours { display: flex; align-items: center; gap: .5rem; margin: 1.25rem 0 0; color: var(--sc-ink-soft); font-size: .95rem; }
 
+/* Titular por líneas: cada línea es una máscara; el texto sigue siendo un solo H1. */
+.hero__h .ln-m { display: block; overflow: hidden; padding: .1em 0 .14em; margin: -.1em 0 -.14em; }
+.hero__h .ln-i { display: block; }
+
+/* Cajetín de la lámina: el logotipo real firma el dibujo y aclara que es un esquema. */
+.stamp { position: absolute; right: var(--sc-gutter); top: calc(var(--bar-h) + clamp(1rem, 3vh, 2rem)); z-index: 1; }
+.stamp__in { display: flex; align-items: center; gap: .85rem; padding: .55rem .8rem .55rem .7rem; background: rgb(246 246 243 / .9); border: 1.25px solid rgb(21 25 28 / .6); }
+.stamp img { width: 88px; height: auto; display: block; }
+.stamp__l { margin: 0; display: grid; gap: .3rem; padding-left: .85rem; border-left: 1px solid rgb(21 25 28 / .25); font: 500 .66rem/1.2 var(--sc-font-mono); letter-spacing: .07em; text-transform: uppercase; color: #3E474D; }
+
+/* Lo que llega con la llave abierta: calor en el suelo radiante. */
+.house--hero .sys { --c: var(--c-calefaccion); }
+
+/* Disolución hacia la lámina siguiente: aumenta al salir del hero. */
+.hero::after { content: ""; position: absolute; inset: auto 0 0 0; height: 14vh; z-index: 2; pointer-events: none; background: linear-gradient(to bottom, rgb(237 238 235 / 0), var(--sc-canvas)); opacity: calc(.35 + .65 * var(--q, 0)); }
+
+/* ---- Hero 2.0 · entrada (≈1,75 s). Estado final = estado sin animación. ---- */
+@media (prefers-reduced-motion: no-preference) {
+  .hero__h .ln-i { animation: mri-line .5s var(--sc-ease-out) both; }
+  .hero__h .ln-m:nth-child(2) .ln-i { animation-delay: .07s; }
+  .hero__h .ln-m:nth-child(3) .ln-i { animation-delay: .14s; }
+  .hero__lede { animation: mri-rise .4s var(--sc-ease-out) .1s both; }
+
+  /* A · el plano: retícula y estructura */
+  .plane--grid .plane__pt { animation: mri-sweep .62s var(--sc-ease-out) both; }
+  .house--hero .st-ground { stroke-dasharray: 1 1; animation: mri-draw .5s var(--sc-ease-out) .08s both; }
+  .house--hero .st-wall { stroke-dasharray: 1 1; animation: mri-draw .6s var(--sc-ease-out) .16s both; }
+  .house--hero .st-roof { stroke-dasharray: 1 1; animation: mri-draw .5s var(--sc-ease-out) .34s both; }
+  .house--hero .st-thin { stroke-dasharray: 1 1; animation: mri-draw .5s var(--sc-ease-out) .44s both; }
+  .house--hero .st-solid, .house--hero .st-earth, .house--hero rect[fill^="url"] { animation: mri-fade .45s var(--sc-ease-out) .32s both; }
+
+  /* B · la instalación: tubería, uniones, llave que se abre */
+  .pipe__out, .pipe__in, .pipe__hi { stroke-dasharray: 1 1; animation: mri-draw .52s cubic-bezier(.45, 0, .2, 1) .6s both; }
+  .pipe__joint rect { transform-box: fill-box; transform-origin: center; animation: mri-pop .22s var(--sc-ease-out) both; }
+  .pipe__joint .j1 { animation-delay: .7s; } .pipe__joint .j2 { animation-delay: .86s; } .pipe__joint .j3 { animation-delay: 1.04s; }
+  .valve__body, .valve__nut, .valve__stem { animation: mri-fade .2s var(--sc-ease-out) .98s both; }
+  .valve__handle { transform-box: view-box; transform-origin: 568px 136px; animation: mri-open .46s var(--sc-ease-out) 1.02s both; }
+  .house--hero .sys .ln { stroke-dasharray: 1 1; animation: mri-draw .42s var(--sc-ease-out) 1.4s both; }
+  .house--hero .sys .nd { animation: mri-fade .3s var(--sc-ease-out) 1.38s both; }
+  .air--warm { animation: mri-fade .42s var(--sc-ease-out) 1.36s both; }
+
+  /* C · firma */
+  .stamp__in { animation: mri-wipe .36s var(--sc-ease-out) 1.25s both; }
+
+  /* Al hacer scroll: las capas se separan en profundidad (sin pin). */
+  .hero { --q: clamp(0, (var(--sc-p, .5) - .5) * 2, 1); }
+  .plane--grid .plane__pt { --s: calc(1 + .06 * var(--q, 0)); opacity: calc(1 - .5 * var(--q, 0)); }
+  .plane--house .plane__pt { --s: calc(1 - .1 * var(--q, 0)); transform-origin: 50% 80%; }
+  .plane--pipe .plane__pt { --s: calc(1 + .1 * var(--q, 0)); transform-origin: 75% 60%; }
+}
+@keyframes mri-line { from { transform: translate3d(0, 20%, 0); } to { transform: none; } }
+@keyframes mri-rise { from { opacity: 0; transform: translate3d(0, 8px, 0); } to { opacity: 1; transform: none; } }
+@keyframes mri-sweep { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes mri-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes mri-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mri-pop { from { opacity: 0; transform: scale(.95); } to { opacity: 1; transform: none; } }
+@keyframes mri-open { from { opacity: 0; transform: rotate(-90deg); } 18% { opacity: 1; } to { opacity: 1; transform: none; } }
+@keyframes mri-wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+
 .pipe { width: 100%; height: auto; overflow: visible; }
 .pipe__out { fill: none; stroke: #2A3136; stroke-width: 38; stroke-linejoin: round; }
 .pipe__in { fill: none; stroke: #C4CACC; stroke-width: 33; stroke-linejoin: round; }
@@ -220,7 +279,7 @@ body.menu-open { overflow: hidden; }
   .hero__copy { order: 1; padding-block: 1.75rem 0; }
   .hero__scene { order: 2; position: relative; inset: auto; height: 86vw; max-height: 52svh; min-height: 220px; margin-top: .5rem; }
   .plane--house { right: auto; left: 50%; bottom: 2%; width: 150vw; translate: -47% 0; }
-  .plane--pipe { right: -30vw; bottom: -12vw; width: 104vw; }
+  .plane--pipe { right: -12vw; bottom: -10vw; width: 100vw; }
   .plane--grid { inset: 0; }
   .air--warm { width: 70vw; height: 50vw; right: 10vw; bottom: 6vw; }
   .air--cool { width: 60vw; height: 40vw; top: 0; }
@@ -228,6 +287,8 @@ body.menu-open { overflow: hidden; }
   .hero__lede { margin: 1rem 0 1.4rem; }
   .hero .cta-pair .btn { flex: 1 1 100%; }
   .hero__hours { font-size: .9rem; }
+  .stamp { display: none; }
+  .hero::after { display: none; }
 }
 
 /* ----------------------------------------------------------------- needs -- */

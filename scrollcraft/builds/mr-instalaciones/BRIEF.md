@@ -122,3 +122,9 @@ Primera fila del registro: nada contra lo que comparar. Fila añadida en `scroll
 ### Activos
 
 Ninguno generado. Coste de generación: 0. Dibujos SVG propios; logotipo y banda Kit Digital recortados de una captura de la web actual (pendiente de sustituir por los originales).
+
+## Hero 2.0 (13/10/2026)
+
+El acto 1 añade una entrada de 1,82 s en CSS (plano que se traza, tubería que conecta, llave que se abre, calor en el suelo radiante, cajetín con el logotipo) y profundidad por scroll a partir del `--sc-p` del propio acto `flow` (retícula 1→1,06, vivienda 1→0,9, tubería 1→1,1). Sin pin, sin vídeo, sin cambios en el motor. Detalle en `docs/HERO-2.md`.
+
+Comprobación de sensaciones del acto 1 tras el cambio: antes «orientación», ahora «orientación + precisión que se pone en marcha». Era el objetivo: la emoción del pico (acto 3) sigue siendo mayor, porque la entrada solo enciende un sistema y el pico monta los siete.
