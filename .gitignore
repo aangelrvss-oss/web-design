@@ -4,3 +4,4 @@ lab/
 *.log
 .env
 qa/out/
+/preview/
