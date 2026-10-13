@@ -1,6 +1,6 @@
 // Verificación funcional sobre el servidor local con CSP (php -S + router).
 // Uso: node qa/functional.mjs http://127.0.0.1:4500 <outdir>
-import { chromium } from 'playwright-core';
+import { chromium } from '../../../qa/node_modules/playwright-core/index.mjs';
 import { mkdirSync, readFileSync } from 'node:fs';
 
 const BASE = process.argv[2] || 'http://127.0.0.1:4500';

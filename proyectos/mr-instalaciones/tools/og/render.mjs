@@ -1,6 +1,7 @@
 // Genera site/assets/og/og-mri.png (1200x630) a partir del propio dibujo de la web.
-// Requiere el servidor local: php -S 127.0.0.1:4501 tools/dev/router.php (con MRI_NO_CSP=1)
-import { chromium } from '../../qa/node_modules/playwright-core/index.mjs';
+// Ejecutar desde proyectos/mr-instalaciones. Requiere el servidor local sin CSP:
+// SITE_ROOT=proyectos/mr-instalaciones/site MRI_NO_CSP=1 php -S 127.0.0.1:4501 tools/dev/router.php
+import { chromium } from '../../../../qa/node_modules/playwright-core/index.mjs';
 const b = await chromium.launch({ executablePath: process.env.SCROLLCRAFT_CHROME || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
 const p = await (await b.newContext({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 })).newPage();
 await p.goto('http://127.0.0.1:4501/', { waitUntil: 'networkidle' });

@@ -4,6 +4,6 @@ lab/
 *.log
 .env
 qa/out/
-/preview/
+proyectos/*/preview/
 dist/
 entregables/

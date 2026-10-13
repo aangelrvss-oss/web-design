@@ -1,6 +1,7 @@
 <?php
-// Router para `php -S`: sirve site/ con las mismas cabeceras y 404 que .htaccess.
-$root = realpath(__DIR__ . '/../../site');
+// Router para `php -S`: sirve el site/ de un proyecto (variable SITE_ROOT) con CSP y 404.
+// Ej.: SITE_ROOT=proyectos/living-clean/site php -S 127.0.0.1:4600 tools/dev/router.php
+$root = realpath(getenv('SITE_ROOT') ?: __DIR__ . '/../../proyectos/mr-instalaciones/site');
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 if (!getenv('MRI_NO_CSP')) header("Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'self'; base-uri 'self'; object-src 'none'");
 header('X-Content-Type-Options: nosniff');
