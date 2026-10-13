@@ -3,7 +3,7 @@ import { icon } from './icons.mjs';
 
 export const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-export const ASSET_V = '20261013c';
+export const ASSET_V = '20261013e';
 const a = (p) => `${p}?v=${ASSET_V}`;
 
 const BUSINESS_ID = `${SITE.origin}/#empresa`;
@@ -125,18 +125,18 @@ export function header({ current = '', form = true } = {}) {
     </a>
     <nav class="bar__nav" aria-label="Principal">
       <ul class="bar__links">
+        <li><a href="/#comunidades">Comunidades</a></li>
+        <li><a href="/#conserjeria">Conserjería</a></li>
+        <li><a href="/#como-trabajamos">Cómo trabajamos</a></li>
         <li class="bar__drop">
           <button class="bar__dropbtn" type="button" aria-expanded="false" aria-controls="menu-servicios" data-drop>Servicios ${icon.chevron}</button>
           <ul class="bar__menu" id="menu-servicios" hidden>${svc}</ul>
         </li>
-        <li><a href="/#ronda">Comunidades</a></li>
-        <li><a href="/#equipo">Equipo</a></li>
-        <li><a href="/#dudas">Dudas</a></li>
       </ul>
     </nav>
     <div class="bar__act">
       <a class="bar__tel" href="${SITE.phoneHref}" data-track="click_phone" data-track-loc="header" aria-label="Llamar al ${SITE.phone}">${icon.phone}<span>${SITE.phone}</span></a>
-      <a class="btn btn--accent btn--sm" href="${q}" data-track="click_cta" data-track-loc="header">Pedir presupuesto</a>
+      <a class="btn btn--accent btn--sm" href="${q}" data-track="click_cta" data-track-loc="header"><span class="bar__cta-l">Solicitar presupuesto</span><span class="bar__cta-s" aria-hidden="true">Presupuesto</span></a>
       <button class="bar__burger" type="button" aria-expanded="false" aria-controls="menu-movil" data-burger><span class="vh">Menú</span>${icon.menu}</button>
     </div>
   </div>
@@ -145,11 +145,12 @@ export function header({ current = '', form = true } = {}) {
       <p class="sheet__h">Servicios</p>
       <ul>${svc}</ul>
       <ul class="sheet__more">
-        <li><a href="/#ronda">La ronda por tu comunidad</a></li>
-        <li><a href="/#equipo">Equipo</a></li>
-        <li><a href="/#dudas">Dudas frecuentes</a></li>
+        <li><a href="/#comunidades">Comunidades de vecinos</a></li>
+        <li><a href="/#como-trabajamos">Cómo trabajamos</a></li>
+        <li><a href="/#equipo">Equipo y medios</a></li>
+        <li><a href="/#dudas">Preguntas frecuentes</a></li>
       </ul>
-      <a class="btn btn--accent" href="${q}" data-track="click_cta" data-track-loc="menu">Pedir presupuesto</a>
+      <a class="btn btn--accent" href="${q}" data-set-type="comunidad" data-track="click_cta" data-track-loc="menu">Solicitar visita y presupuesto</a>
       <a class="sheet__tel" href="${SITE.phoneHref}" data-track="click_phone" data-track-loc="menu">${icon.phone} ${SITE.phone}</a>
     </nav>
   </div>
@@ -158,36 +159,53 @@ export function header({ current = '', form = true } = {}) {
 
 // -------------------------------------------------------- hoja de visita --
 // Funciona sin JavaScript (POST a /contacto.php). Con JavaScript se envía por
-// fetch y muestra la respuesta real del servidor. El plan de la ronda se añade
-// como campo oculto solo cuando el visitante lo ha tocado.
+// fetch, enseña solo los campos del tipo de cliente elegido y muestra la
+// respuesta real del servidor. Sin JavaScript se ven todos los campos.
 export function visitForm({ preset = [], type = '', origin = 'home', idp = 'v', plan = false } = {}) {
   const types = FORM_TYPES.map((t) => `<label class="opt"><input type="radio" name="tipo" value="${t.value}"${type === t.value ? ' checked' : ''}><span>${esc(t.label)}</span></label>`).join('');
   const checks = FORM_SERVICES.map((s) => `<label class="opt"><input type="checkbox" name="servicio[]" value="${s.value}"${preset.includes(s.value) ? ' checked' : ''}><span>${esc(s.label)}</span></label>`).join('');
-  const planBox = plan ? `<div class="hv__plan" data-plan-box hidden>
-    <p class="hv__label">Plan de tu comunidad</p>
+  const planBox = plan ? `<div class="hv__plan" data-plan-box data-for="comunidad administrador" hidden>
+    <p class="hv__label">Zonas de tu edificio</p>
     <p class="hv__plan-t" data-plan-text></p>
-    <a class="hv__plan-edit" href="#ronda">Cambiar las paradas</a>
+    <a class="hv__plan-edit" href="#comunidades">Cambiar las zonas</a>
     <input type="hidden" name="plan" value="" data-plan-input disabled>
   </div>` : '';
   return `<form class="hv" action="/contacto.php" method="post" novalidate data-visit data-origin="${esc(origin)}">
   <fieldset class="hv__row">
-    <legend class="hv__label">Es para <span class="hv__opt">opcional</span></legend>
+    <legend class="hv__label">Es para</legend>
     <div class="hv__opts">${types}</div>
   </fieldset>
+  <div class="hv__grid">
+    <div class="hv__field" data-for="comunidad">
+      <label class="hv__label" for="${idp}-portales">Número aproximado de portales <span class="hv__opt">opcional</span></label>
+      <input id="${idp}-portales" name="portales" type="number" inputmode="numeric" min="1" max="999" step="1">
+    </div>
+    <div class="hv__field" data-for="administrador">
+      <label class="hv__label" for="${idp}-comunidades">¿Cuántas comunidades gestionas? <span class="hv__opt">opcional</span></label>
+      <input id="${idp}-comunidades" name="comunidades" type="number" inputmode="numeric" min="1" max="999" step="1">
+    </div>
+    <div class="hv__field hv__check" data-for="administrador">
+      <label class="opt opt--box"><input type="checkbox" name="llamada" value="1"><span>Prefiero empezar con una conversación comercial</span></label>
+    </div>
+    <div class="hv__field" data-for="empresa">
+      <label class="hv__label" for="${idp}-instalacion">Tipo de instalación <span class="hv__opt">opcional</span></label>
+      <input id="${idp}-instalacion" name="instalacion" type="text" maxlength="120" placeholder="Oficina, local, nave, colegio…">
+    </div>
+  </div>
   <fieldset class="hv__row">
-    <legend class="hv__label">Qué necesitas <span class="hv__opt">puedes marcar varias</span></legend>
+    <legend class="hv__label">Qué necesitas <span class="hv__opt">opcional · puedes marcar varias</span></legend>
     <div class="hv__opts">${checks}</div>
   </fieldset>
   ${planBox}
   <div class="hv__grid">
     <div class="hv__field">
-      <label class="hv__label" for="${idp}-nombre">Nombre</label>
+      <label class="hv__label" for="${idp}-nombre">Nombre y apellidos</label>
       <input id="${idp}-nombre" name="nombre" type="text" autocomplete="name" required maxlength="120" aria-describedby="${idp}-nombre-err">
       <p class="hv__err" id="${idp}-nombre-err" hidden></p>
     </div>
     <div class="hv__field">
-      <label class="hv__label" for="${idp}-localidad">Localidad del inmueble <span class="hv__opt">opcional</span></label>
-      <input id="${idp}-localidad" name="localidad" type="text" autocomplete="address-level2" maxlength="120">
+      <label class="hv__label" for="${idp}-localidad">Código postal o localidad del inmueble <span class="hv__opt">opcional</span></label>
+      <input id="${idp}-localidad" name="localidad" type="text" autocomplete="postal-code" maxlength="120">
     </div>
     <div class="hv__field">
       <label class="hv__label" for="${idp}-telefono">Teléfono</label>
@@ -197,18 +215,18 @@ export function visitForm({ preset = [], type = '', origin = 'home', idp = 'v', 
       <label class="hv__label" for="${idp}-email">Correo electrónico</label>
       <input id="${idp}-email" name="email" type="email" autocomplete="email" maxlength="160" aria-describedby="${idp}-contacto-help ${idp}-contacto-err">
     </div>
-    <p class="hv__help hv__wide" id="${idp}-contacto-help">Indica al menos un teléfono o un correo para poder responderte.</p>
+    <p class="hv__help hv__wide" id="${idp}-contacto-help">Basta con un teléfono o un correo para poder responderte.</p>
     <p class="hv__err hv__wide" id="${idp}-contacto-err" hidden></p>
     <div class="hv__field hv__wide">
-      <label class="hv__label" for="${idp}-mensaje">Cuéntanos <span class="hv__opt">opcional</span></label>
-      <textarea id="${idp}-mensaje" name="mensaje" rows="4" maxlength="3000" placeholder="Por ejemplo: comunidad de 2 portales y 24 viviendas con garaje y jardín."></textarea>
+      <label class="hv__label" for="${idp}-mensaje">Comentario <span class="hv__opt">opcional</span></label>
+      <textarea id="${idp}-mensaje" name="mensaje" rows="4" maxlength="3000" placeholder="Por ejemplo: 2 portales, 24 viviendas, garaje y jardín. Ahora limpian dos días por semana."></textarea>
     </div>
   </div>
   <div class="hv__hp" aria-hidden="true"><label for="${idp}-web">No rellenar</label><input id="${idp}-web" name="web" type="text" tabindex="-1" autocomplete="off"></div>
   <input type="hidden" name="origen" value="${esc(origin)}">
   <input type="hidden" name="t" value="" data-t>
   <div class="hv__foot">
-    <button class="btn btn--accent btn--lg" type="submit" data-track="form_submit_click">Pedir visita y presupuesto</button>
+    <button class="btn btn--accent btn--lg" type="submit" data-track="form_submit_click">Solicitar visita y presupuesto</button>
     <p class="hv__legal">Responsable: ${esc(SITE.legalName)} Finalidad: responder a tu solicitud y preparar la visita y el presupuesto. Base jurídica: medidas precontractuales que nos pides. No cedemos tus datos salvo obligación legal. Puedes acceder, rectificar o suprimirlos escribiendo a ${SITE.email}. Más información en la <a href="/politica-privacidad.html">política de privacidad</a>.</p>
   </div>
   <div class="hv__status" role="status" aria-live="polite" tabindex="-1" data-status hidden></div>

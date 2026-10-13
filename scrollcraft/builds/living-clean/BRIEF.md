@@ -41,20 +41,21 @@ Por qué no las ocho existentes: *filmic* exige vídeo continuo y una sola entra
 | 6 | Tranquilidad | Dudas resueltas en corto |
 | 7 | Decisión | La hoja de visita con el plan ya hecho |
 
-## Partitura
+## Partitura (v2, rediseño comercial)
 
-| Acto | Dispositivo | Span |
-|---|---|---|
-| 1 Hero «el logotipo» | `pin` + máscara SVG (zigzag) al cargar + vuelo del logotipo a la cabecera y apertura del portal | 1.6 |
-| 2 ¿Para quién? | `flow` + `in` + pestañas | natural |
-| 3 La ronda (pico) | `pan` + raíl propio | 5.6 |
-| 4 Conserje multifunción | `pin` + `kinetic` | 2.4 |
-| 5 Equipo | `flow` + `reveal` | natural |
-| 6 Más servicios | `flow` | natural |
-| 7 Dudas | `flow` | natural |
-| 8 Hoja de visita | `flow` | natural |
+| Acto | Dispositivo escritorio | Móvil | Span |
+|---|---|---|---|
+| 1 Hero: logotipo pintado en zigzag que vuela a la cabecera; se abre el portal | `pin` | `flow` (sin tramo fijado; el portal se ve debajo de los CTA) | 1.4 |
+| 2 Confianza (cuatro hechos) | `flow` + `in` escalonado | igual | natural |
+| 3 Comunidades: zonas del edificio (pico) | `pan` + raíl de zonas | `flow`, lista vertical compacta | 4.6 |
+| 4 Cómo se contrata: hilo que se completa con `--sc-p` | `flow` | hilo vertical | natural |
+| 5 Conserjería multifunción | `pin` + `kinetic` | `flow`, sin fundido de los «+» | 2.0 |
+| 6 Otros servicios | `flow` + `in` | igual | natural |
+| 7 Equipo y medios | `flow` + `reveal` | igual | natural |
+| 8 Preguntas frecuentes | `flow` | igual | natural |
+| 9 Solicitud de visita (rojo) | `flow` + `kinetic` | igual | natural |
 
-Familias: pin, flow, pan, reveal, kinetic. Nunca dos iguales seguidos salvo `flow` en los tramos administrativos (6-8), separados por fondos distintos.
+Los actos marcados con `data-mobile-flow` pasan a `flow` en `site.js` **antes** de montar el motor (el motor no se toca). Fondos alternos para separar los tramos `flow`: blanco, cálido, blanco, grafito, cálido, blanco cálido, rojo.
 
 ## Gate de huellas (contra la fila de MRI)
 
@@ -63,7 +64,7 @@ Familias: pin, flow, pan, reveal, kinetic. Nunca dos iguales seguidos salvo `flo
 | Gramática | Lámina de instalaciones | La ronda | Sí |
 | Nav | Barra con desplegable | Barra + raíl de ronda en el pico | Sí |
 | Hero | Flow con 4 planos SVG en parallax | Pin corto: logotipo pintado en zigzag que vuela a la cabecera; se abre el portal | Sí |
-| Forma de actos | 7 actos, pico pin 5.2, pan secundario | 8 actos, pico pan 5.6, pin hero 1.6 | Sí |
+| Forma de actos | 7 actos, pico pin 5.2, pan secundario | 9 actos, pico pan 4.6, pin hero 1.4; en móvil todo flow | Sí |
 | Cierre | Cajetín sobre grafito | Hoja de visita sobre rojo con el plan | Sí |
 | Firma | Capas SVG por `--sc-p` | Ronda con paradas que forman el plan | Sí |
 

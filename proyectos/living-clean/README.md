@@ -6,7 +6,9 @@ Rediseño de [livingclean.es](https://livingclean.es/): sitio estático, sin dep
 
 ## La idea
 
-**La ronda por tu edificio.** El visitante recorre un edificio parada a parada (portal, escaleras, garaje, jardín, mantenimiento, fachada), ve qué se hace y cada cuánto, quita lo que su comunidad no tiene y el plan resultante llega con la solicitud de presupuesto. La portada abre con el logotipo real «pintado» por un trazo en zigzag (el gesto del garabato amarillo de la marca); al hacer scroll vuela a su sitio en la cabecera y en su hueco se abre la foto del portal.
+Una web para conseguir **comunidades de vecinos** y contratos recurrentes de limpieza y conserjería. La portada abre con el logotipo real «pintado» por un trazo en zigzag (el gesto del garabato de la marca), que en escritorio vuela a la cabecera mientras se abre la foto del portal. La sección principal recorre las zonas del edificio: el visitante desmarca lo que su comunidad no tiene y eso llega a la solicitud. Hay caminos propios para administradores de fincas y para empresas o servicios puntuales.
+
+Documentación del rediseño comercial: `docs/AUDITORIA-2.md`, `docs/ESTRATEGIA.md`, `docs/INFORME-REDISENO.md`.
 
 ## Estructura
 

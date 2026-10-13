@@ -25,6 +25,21 @@
 
   /* ------------------------------------------------------- motor de scroll */
   var sc = null;
+  /* En móvil no hay tramos fijados ni carriles horizontales: los actos marcados
+     con data-mobile-flow pasan a «flow» ANTES de montar el motor, y el CSS los
+     maqueta en vertical. El motor no se toca. Cambiar de orientación o de
+     tamaño de ventana después de cargar mantiene la elección inicial. */
+  var mobile = matchMedia('(max-width: 760px)').matches;
+  if (mobile) $$('[data-mobile-flow]').forEach(function (act) {
+    act.setAttribute('data-sc-act', 'flow');
+    act.removeAttribute('data-sc-span');
+    $$('[data-sc-pan]', act).forEach(function (r) { r.removeAttribute('data-sc-pan'); });
+    $$('[data-sc-stage]', act).forEach(function (st) { st.removeAttribute('data-sc-stage'); });
+    // Sus apariciones estaban pensadas para el tramo fijado: en flujo, cada
+    // bloque aparece al entrar en pantalla.
+    $$('[data-sc-cue]', act).forEach(function (c) { c.setAttribute('data-sc-cue', '0'); });
+    act.classList.add('is-mobile-flow');
+  });
   if (window.ScrollCraft && document.querySelector('[data-sc-act]')) {
     try { sc = window.ScrollCraft.mount(document.body); } catch (err) { sc = null; doc.classList.remove('sc-ready'); }
   }
@@ -93,7 +108,7 @@
   var hero = document.querySelector('[data-hero]');
   var logoBox = document.querySelector('[data-logo-box]');
   var logoEl = document.querySelector('[data-logo] .logo');
-  if (hero && logoBox && logoEl && pinned) {
+  if (hero && logoBox && logoEl && pinned && hero.getAttribute('data-sc-act') === 'pin') {
     var measure = function () {
       doc.classList.remove('lc-fly');
       var stage = hero.querySelector('[data-sc-stage]');
@@ -155,53 +170,50 @@
     var box = form.querySelector('input[name="servicio[]"][value="' + value + '"]');
     if (box) box.checked = on;
   };
-  var setType = function (value) {
+  /* Campos según el tipo de cliente: solo se enseñan los del tipo elegido.
+     Sin JavaScript se ven todos (cada uno dice para quién es). */
+  var syncType = function () {
+    if (!form) return;
+    var r = form.querySelector('input[name="tipo"]:checked');
+    var k = r ? r.value : '';
+    $$('[data-for]', form).forEach(function (el) {
+      if (el.hasAttribute('data-plan-box')) return; // la caja de zonas tiene su propia lógica
+      var show = !!k && el.getAttribute('data-for').split(' ').indexOf(k) > -1;
+      el.hidden = !show;
+      $$('input, select, textarea', el).forEach(function (i) { i.disabled = !show; });
+    });
+  };
+  var setType = function (value, source) {
     if (!form) return;
     var r = form.querySelector('input[name="tipo"][value="' + value + '"]');
-    if (r) r.checked = true;
+    if (r && !r.checked) { r.checked = true; track('select_service', { type: value, location: source || '' }); }
+    syncType();
   };
+  if (form) {
+    syncType();
+    form.addEventListener('change', function (e) {
+      if (e.target.name === 'tipo') { syncType(); track('select_service', { type: e.target.value, location: 'form' }); }
+      if (e.target.name === 'servicio[]' && e.target.checked) track('select_service', { service: e.target.value, location: 'form' });
+    });
+  }
   document.addEventListener('click', function (e) {
     var t = e.target.closest && e.target.closest('[data-set-type], [data-set-service]');
     if (!t) return;
+    var loc = t.getAttribute('data-track-loc') || '';
     if (t.hasAttribute('data-set-type')) {
       var k = t.getAttribute('data-set-type');
-      setType(k);
-      setService({ comunidad: 'comunidades', empresa: 'oficinas', particular: 'viviendas' }[k], true);
+      setType(k, loc);
+      if (k === 'comunidad' && !t.hasAttribute('data-set-service')) setService('comunidades', true);
     }
-    if (t.hasAttribute('data-set-service')) { setType('comunidad'); setService(t.getAttribute('data-set-service'), true); }
+    if (t.hasAttribute('data-set-service')) { setService(t.getAttribute('data-set-service'), true); track('select_service', { service: t.getAttribute('data-set-service'), location: loc }); }
   });
   var params = new URLSearchParams(location.search);
   if (form && params.get('servicio')) params.get('servicio').split(',').forEach(function (v) { setService(v, true); });
 
-  /* ------------------------------------- Acto 2: pestañas «¿Para quién?» -- */
-  var tablist = document.querySelector('[data-tabs]');
-  if (tablist) {
-    var tabs = $$('[data-tab]', tablist);
-    var select = function (tab, focus) {
-      tabs.forEach(function (t) {
-        var on = t === tab;
-        t.setAttribute('aria-selected', String(on));
-        t.tabIndex = on ? 0 : -1;
-        var panel = document.getElementById(t.getAttribute('aria-controls'));
-        if (on) panel.removeAttribute('data-off'); else panel.setAttribute('data-off', '');
-      });
-      if (focus) tab.focus();
-    };
-    tabs.forEach(function (t, i) {
-      t.addEventListener('click', function () { select(t); track('audience_select', { audience: t.id.replace('tab-', '') }); });
-      t.addEventListener('keydown', function (e) {
-        var j = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1 : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : null;
-        if (j === null) return;
-        e.preventDefault();
-        select(tabs[(j + tabs.length) % tabs.length], true);
-      });
-    });
-    tablist.hidden = false;
-  }
-
-  /* --------------------------------------- Acto 3: la ronda y el plan ---- */
-  var ronda = document.getElementById('ronda');
+  /* ------------------------- Comunidades: zonas del edificio y el plan -- */
+  var ronda = document.getElementById('comunidades');
   if (ronda) {
+    var railPinned = pinned && ronda.getAttribute('data-sc-act') === 'pan';
     var stops = $$('[data-stop]', ronda);
     var links = $$('[data-goto]', ronda);
     var planItems = $$('[data-plan-item]', ronda);
@@ -221,11 +233,12 @@
       planBox.hidden = false;
       planInput.disabled = false;
       planInput.value = keys.join(',');
-      planText.textContent = on.length ? on.map(nameOf).join(', ') + '.' : 'Ninguna parada marcada.';
+      planText.textContent = on.length ? on.map(nameOf).join(', ') + '.' : 'Ninguna zona marcada.';
     };
     var commit = function () {
       touched = true;
-      setType('comunidad');
+      var cur = form && form.querySelector('input[name="tipo"]:checked');
+      if (!cur || (cur.value !== 'comunidad' && cur.value !== 'administrador')) setType('comunidad', 'comunidades');
       setService('comunidades', true);
       renderPlan();
     };
@@ -235,26 +248,26 @@
         b.setAttribute('aria-pressed', String(now));
         b.closest('[data-stop]').classList.toggle('is-off', !now);
         commit();
-        track('ronda_stop_toggle', { stop: b.getAttribute('data-stop-toggle'), included: now });
+        track('zone_toggle', { zone: b.getAttribute('data-stop-toggle'), included: now });
       });
     });
     var go = ronda.querySelector('[data-plan-go]');
-    if (go) go.addEventListener('click', function () { commit(); track('ronda_plan_to_form', { stops: included().length }); });
+    if (go) go.addEventListener('click', function () { commit(); track('zones_to_form', { zones: included().length }); });
 
     /* Raíl: ir a una parada. Con el carril fijado, a la posición de scroll
        que la centra; sin él (movimiento reducido), desplazando el carril. */
     links.forEach(function (a) {
       a.addEventListener('click', function (e) {
-        var item = document.getElementById('parada-' + a.getAttribute('data-goto'));
+        var item = document.getElementById('zona-' + a.getAttribute('data-goto'));
         if (!item) return;
         e.preventDefault();
-        if (pinned) {
+        if (railPinned) {
           var y = panTarget(ronda, item);
           if (y !== null) window.scrollTo({ top: y, behavior: 'smooth' });
         } else {
-          item.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', inline: 'center', block: 'nearest' });
+          item.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', inline: 'center', block: mobile ? 'center' : 'nearest' });
         }
-        track('ronda_track_click', { stop: a.getAttribute('data-goto') });
+        track('zone_track_click', { zone: a.getAttribute('data-goto') });
       });
     });
 
@@ -338,6 +351,8 @@
       e.preventDefault();
       var v = validate();
       if (!v.ok) { v.first.focus(); track('form_invalid', { origin: origin }); return; }
+      var tipo = form.querySelector('input[name="tipo"]:checked');
+      track('form_submit', { origin: origin, type: tipo ? tipo.value : '' });
       /* Copias de demostración (data-demo): se valida, pero no se envía ningún dato. */
       if (form.hasAttribute('data-demo')) {
         track('form_demo_submit', { origin: origin });
@@ -355,7 +370,7 @@
         .then(function (j) {
           if (j.ok) {
             var services = $$('input[name="servicio[]"]:checked', form).map(function (c) { return c.value; });
-            track('form_submit_success', { origin: origin, services: services.join(','), plan: !!(field('plan') && !field('plan').disabled) });
+            track('form_success', { origin: origin, type: tipo ? tipo.value : '', services: services.join(','), zones: !!(field('plan') && !field('plan').disabled) });
             $$('.hv > fieldset, .hv__plan, .hv__grid, .hv__foot', form).forEach(function (el) { el.hidden = true; });
             say('ok', '<strong>Solicitud enviada</strong>Gracias. La hemos recibido y te llamaremos para concertar la visita. Si lo prefieres, llámanos al ' + TEL + '.');
             return;
@@ -367,7 +382,7 @@
           throw j;
         })
         .catch(function (j) {
-          track('form_submit_error', { origin: origin, status: (j && j.status) || 0 });
+          track('form_error', { origin: origin, status: (j && j.status) || 0 });
           var msg = (j && j.message) ? esc(j.message) : 'No hemos podido enviar tu solicitud.';
           var body = encodeURIComponent(['Nombre: ' + field('nombre').value, 'Teléfono: ' + field('telefono').value, 'Correo: ' + field('email').value, 'Localidad: ' + field('localidad').value, '', field('mensaje').value].join('\n'));
           say('err', '<strong>No se ha enviado</strong>' + msg + ' Puedes llamarnos al ' + TEL + ' o <a href="mailto:info@livingclean.es?subject=' + encodeURIComponent('Solicitud de visita y presupuesto') + '&body=' + body + '" data-track="click_email" data-track-loc="form-error">enviarla por correo con tus datos</a>.');

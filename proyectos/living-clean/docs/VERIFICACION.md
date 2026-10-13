@@ -1,41 +1,48 @@
-# Verificación
+# Verificación (v2, rediseño comercial)
 
-Fecha: 13 de octubre de 2026. Servidor local `php -S` con el router compartido (`tools/dev/router.php`), CSP igual a la de `.htaccess`, y `sendmail` simulado (el correo se escribe en un archivo).
+Fecha: 13 de octubre de 2026. Servidor local `php -S` con el router compartido (`tools/dev/router.php`), la misma CSP que `.htaccess` y `sendmail` simulado (el correo se escribe en un archivo). Navegador: Chromium sin interfaz (Playwright). Estado previo recuperable: etiqueta local `living-clean-v1-antes-rediseno` (commit `9376316`).
 
-## Estado de las imágenes
+## Imágenes pendientes
 
-Las 7 imágenes generadas con Higgsfield están creadas (ver `assets-src/higgsfield.json`), pero **todavía no se han podido descargar**: la política de red de este entorno bloquea su servidor (`d8j0ntlcm91z4.cloudfront.net`). Mientras tanto, sus huecos se ven vacíos y todas las pruebas de abajo se han hecho **sin esas imágenes**. Las pruebas cuentan esos 404 aparte para no esconder otros errores. Cuando se descarguen (`sh tools/fetch-higgsfield.sh`) hay que repetir la revisión visual del hero, la ronda y Lighthouse.
+Las 7 imágenes generadas con Higgsfield (ya pagadas) siguen sin poder descargarse: la red de este entorno bloquea `d8j0ntlcm91z4.cloudfront.net`. Sus huecos se ven grises y **todas las pruebas se han hecho sin ellas**; esos 404 se cuentan aparte. Al descargarlas (`sh tools/fetch-higgsfield.sh`) hay que repetir la revisión visual del hero, de las zonas y Lighthouse.
 
 ## Resultados
 
 | Prueba | Resultado |
 |---|---|
-| Suite funcional `qa/functional.mjs` (13 páginas × 1440 y 375 px; enlaces; pestañas; ronda → plan → formulario → correo; validación; envío real; error de servidor simulado; sin JavaScript; teclado; menús) | **234/234** |
-| Arnés de Scroll-craft `shoot.mjs`: 1440×900, 390×844, 360×640 y movimiento reducido | Sin errores de consola (salvo los 404 de las imágenes pendientes), sin scroll muerto, contraste de los textos animados ≥ 4,5:1 en su peor fotograma |
-| Lighthouse 12 (sin las imágenes generadas), portada con la entrada del logotipo | Móvil 95 / 100 / 96 / 100 · Escritorio 100 / 100 / 96 / 100 (rendimiento / accesibilidad / buenas prácticas / SEO). Buenas prácticas baja solo por los 404 de las imágenes |
-| Lighthouse, `/limpieza-de-comunidades/` | Móvil 97 / 100 / 96 / 100 · Escritorio 100 / 100 / 96 / 100 |
+| Suite funcional `qa/functional.mjs` (13 páginas a 1440 y 375 px; enlaces y **anclas**; botones sin texto; caminos A/B/C; campos por tipo; zonas → formulario → correo; validación; envío real; error de servidor sin pérdida de datos; sin JavaScript; teclado; menús; móvil sin pin y sin bloques invisibles) | **256/256** |
+| Arnés de Scroll-craft `shoot.mjs`: 1440×900, 1366×768, 360×640 y movimiento reducido | Sin errores de consola (salvo los 404 pendientes), sin scroll muerto, contraste de textos animados ≥ 4,5:1 en su peor fotograma |
+| Lighthouse 12 · portada | Móvil 95 / 100 / 96 / 100 · Escritorio 100 / 100 / 96 / 100 (rendimiento / accesibilidad / buenas prácticas / SEO). Buenas prácticas baja solo por los 404 de las imágenes pendientes |
+| Lighthouse · `/limpieza-de-comunidades/` | Móvil 97 / 100 / 96 / 100 · Escritorio 100 / 100 / 96 / 100 |
+| Lighthouse · `/aviso-legal.html` (sin imágenes generadas) | Móvil 99 / 100 / 100 / 100 · Escritorio 100 / 100 / 100 / 100 |
 | CLS | 0 en todas las mediciones |
+| Vista previa de un solo archivo | 9 páginas incluidas como capas; **ninguna ancla sin destino**, ningún id duplicado, ninguna ruta relativa; legales, privacidad desde el formulario, servicio → formulario con tipo y servicio: probados a 1440 y 390 px sin errores |
+| Menú móvil | Se abre, se cierra con Escape y al navegar a una sección (la sección queda bajo la cabecera) |
+| Cabecera fija | No tapa campos del formulario al recorrerlos (1440 y 390 px); cabe entera de 320 a 414 px |
+| Frontend | Sin claves, tokens ni scripts de seguimiento |
 
-Compresión y caché no se miden bien con `php -S`: en producción las aplica `.htaccess`.
+## Lista del encargo (fase 11)
 
-## Portada: entrada del logotipo
-
-- Fotogramas congelados de la entrada (0–1,5 s, `qa/intro.mjs`): el titular y los CTA son legibles desde el primer pintado; el logotipo queda completo a ~1,3 s.
-- Vuelo con scroll (1440×900 y 390×844): el logotipo llega exactamente a su sitio en la cabecera y el portal se abre en su hueco. Con movimiento reducido o sin motor, el logotipo queda quieto en la portada y la cabecera lleva el suyo.
-- Cabecera comprobada a 320, 360, 375, 390 y 414 px: nada se sale ni se solapa.
-
-## Qué se comprueba en concreto
-
-- Un único H1 por página, jerarquía sin saltos, `title` ≤ 70 y `description` 50–160 caracteres, canónica a `https://livingclean.es/`, `lang="es"`, JSON-LD válido.
-- Todos los `tel:` son `tel:+34608825864`.
-- Objetivos táctiles ≥ 24 px a 375 px; sin desbordamiento horizontal.
-- La ronda: el raíl centra la parada, marca la actual y las pasadas; quitar «Garaje» y «Fachada» las tacha en tarjeta y raíl; el plan aparece en el formulario, marca «Comunidad» y «Limpieza de comunidad», y el correo recibido incluye `Plan ronda: Portal, Escaleras y ascensor, Zonas comunes y jardín, Mantenimiento`.
-- Sin JavaScript: todo el contenido es visible, el formulario hace POST y redirige a `/gracias/` o `/envio-no-completado/`.
-- Teclado: recorrido completo; cada foco visible y en pantalla, también dentro del carril horizontal y del acto fijado del conserje.
-- Error de servidor: nunca se muestra un falso éxito; se ofrece llamar o enviar por correo.
+| # | Comprobación | Estado |
+|---|---|---|
+| 1 | CTA principal visible y funciona | Probado (marca comunidad y servicio) |
+| 2 | Teléfono abre la llamada | Todos los `tel:` son `tel:+34608825864` (probado el enlace; no se ha llamado desde un móvil real) |
+| 3 | Enlaces internos al destino correcto | Probado, incluidas las anclas |
+| 4 | Sin enlaces legales ficticios | Probado en la web y en la vista previa |
+| 5 | Formulario envía de verdad o lo dice | Web: envío real con `contacto.php` (correo simulado). Vista previa y Netlify: aviso visible antes de rellenar y al enviar |
+| 6 | No se pierden datos si hay error | Probado con error 502 simulado |
+| 7 | Scroll sin bloqueos | Arnés: sin scroll muerto |
+| 8 | Sin texto oculto por animaciones no ejecutadas | Probado sin JavaScript y en móvil |
+| 9 | Se entiende con movimiento reducido | Arnés con `reduce`: carril como scroll horizontal nativo, logotipo quieto |
+| 10 | Sin desbordamiento horizontal en móvil | Probado en 13 páginas |
+| 11 | Sin errores de consola nuevos | Ninguno (solo los 404 de imágenes pendientes) |
+| 12 | Proporciones de imágenes | Todas con `width`/`height`; CLS 0 |
+| 13 | Menú móvil con teclado | Probado (abrir, Escape, navegar) |
+| 14 | SEO básico y metadatos | Probado en 13 páginas |
 
 ## Límites
 
-- No probado en Safari/iOS real ni en Apache real (CSP y redirecciones de `.htaccess`).
-- El envío de correo solo se ha probado con `sendmail` simulado.
-- La revisión visual del portal que se abre en la portada y de las tarjetas de la ronda con las fotos reales está pendiente de descargar las imágenes.
+- No probado en Safari/iOS ni en Android reales, ni en Apache real (CSP y cabeceras de `.htaccess`).
+- El correo solo se ha probado con `sendmail` simulado: hace falta un envío real en el alojamiento.
+- Revisión visual con las fotos generadas pendiente de su descarga.
+- Al girar el móvil después de cargar, la página mantiene la composición con la que se cargó (en flujo o con tramos fijados).

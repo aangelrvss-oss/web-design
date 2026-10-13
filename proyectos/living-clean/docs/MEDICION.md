@@ -10,33 +10,43 @@
 
 | Evento | Cuándo | Datos | Qué mide (y qué no) |
 |---|---|---|---|
+| `click_cta` | Clic en cualquier CTA de solicitud (hero, comunidades, cómo se contrata, conserjería, otros servicios, cabecera, menú) | `location` | Interés en solicitar. No es una solicitud. |
 | `click_phone` | Clic en un enlace `tel:` | `location` (header, hero, menu, visita, footer, form…) | Intención de llamar. No mide llamadas hechas ni atendidas. |
 | `click_email` | Clic en `mailto:` | `location` | Intención de escribir. |
-| `click_cta` | Clic en «Pedir presupuesto» y CTA de pestañas/ronda/conserje | `location` | Interés en el formulario. |
-| `audience_select` | Cambio de pestaña en «¿Para quién es?» | `audience` | Qué público llega más. |
-| `ronda_track_click` | Clic en una parada del raíl | `stop` | Interés por cada zona del edificio. |
-| `ronda_stop_toggle` | Quitar o volver a incluir una parada | `stop`, `included` | Qué tienen (o no) los edificios de quien pide. |
-| `ronda_plan_to_form` | «Pedir visita con este plan» | `stops` | Uso del pico como paso hacia la conversión. |
-| `click_service` | Clic en un servicio (lista o conserje) | `location` | Servicios que atraen. |
-| `form_start` / `form_invalid` | Primera escritura / envío con errores | `origin` | Inicio y fricción. |
-| `form_submit_success` | El servidor confirma la recepción | `origin`, `services`, `plan` | **Envío correcto**. No es una solicitud cualificada ni un cliente. |
-| `form_submit_error` | Falla el servidor o la red | `origin`, `status` | Problemas técnicos. |
+| `select_service` | Se elige un tipo de cliente o un servicio (en el formulario o desde un CTA contextual) | `type` o `service`, `location` | Qué caminos (A comunidad, B administrador, C empresa/puntual) y servicios se eligen. |
+| `zone_toggle` / `zone_track_click` / `zones_to_form` | Zonas del edificio: quitar o añadir una zona, ir a una zona, llevar las zonas al formulario | `zone`, `included`, `zones` | Uso de la sección principal como paso hacia la solicitud. |
+| `click_service` | Clic en una página de servicio | `location` | Servicios secundarios que interesan. |
+| `form_start` | Primera escritura en el formulario | `origin` | Inicio. |
+| `form_invalid` | Intento con errores de validación | `origin` | Fricción. |
+| `form_submit` | Envío **validado** que sale hacia el servidor | `origin`, `type` | Intento real de envío. No es un envío correcto. |
+| `form_success` | El servidor **confirma** la recepción | `origin`, `type`, `services`, `zones` | **Solicitud enviada correctamente.** No es una solicitud cualificada ni un cliente. |
+| `form_error` | Falla el servidor o la red | `origin`, `status` | Problemas técnicos (los datos del formulario se conservan). |
 
 Sin JavaScript el formulario funciona y redirige a `/gracias/` (`noindex`), que una herramienta puede contar como envío.
 
 ## Distinciones que hay que mantener
 
 - **Clic en teléfono ≠ llamada ≠ cliente.** Para contar llamadas desde la web haría falta un número de seguimiento o preguntar «¿cómo nos conoció?».
-- **Formulario enviado ≠ solicitud cualificada ≠ visita hecha ≠ contrato.** Propuesta sencilla: una hoja con fecha, `Página:` y `Plan ronda:` del correo, tipo de cliente, localidad, y columnas «cualificada», «visita hecha», «presupuesto enviado», «contratado». Sin más datos personales.
+- **Formulario enviado ≠ solicitud cualificada ≠ visita concertada ≠ contrato recurrente.** Propuesta sencilla: una hoja con fecha, `Página:`, `Cliente:` y `Zonas:` del correo, localidad, y columnas «cualificada», «visita concertada», «propuesta enviada», «contrato recurrente». Sin más datos personales.
 
 ## Si se quiere analítica
 
 Recomendado: herramienta sin cookies alojada en la UE (Plausible, o Matomo sin cookies). Añadir su script en `src/layout.mjs`, su dominio en la CSP de `.htaccess`, escuchar `lc:track` y actualizar las políticas. Con Google Analytics o Tag Manager haría falta además un banner de consentimiento previo. **No se ha instalado ninguna herramienta.**
 
-## Indicadores (revisión mensual)
+## Métricas comerciales (revisión mensual)
 
-1. Envíos correctos por página de origen y por tipo de cliente.
-2. Envíos con plan de ronda / envíos desde la portada.
-3. Visitas concertadas y contratos (hoja interna) / envíos.
-4. Clics en teléfono por ubicación.
-5. Errores del formulario / intentos.
+1. Visitas a la página (cuando haya una herramienta sin cookies instalada).
+2. Clics en teléfono por ubicación.
+3. Formularios enviados correctamente (`form_success`), por tipo de cliente y página de origen.
+4. Solicitudes cualificadas (hoja interna) / envíos correctos.
+5. Visitas comerciales concertadas.
+6. Contratos recurrentes conseguidos, cuando se puedan registrar de forma fiable.
+
+## Hipótesis de mejora (por medir; no hay datos posteriores al lanzamiento)
+
+| Hipótesis | Cómo medirla |
+|---|---|
+| Un hero centrado en la comunidad y un CTA de «visita» aumentan las solicitudes de comunidades | `form_success` con `type=comunidad` / visitas a la portada, antes y después |
+| El camino propio para administradores atrae solicitudes de varias comunidades | `select_service type=administrador` y `form_success type=administrador`; campo «Comunidades» del correo |
+| Las zonas del edificio ayudan a cualificar | Porcentaje de solicitudes con `Zonas:` / solicitudes de comunidad; tasa de cualificación de unas y otras |
+| Pedir pocos datos mantiene el abandono bajo | `form_start` → `form_success` |

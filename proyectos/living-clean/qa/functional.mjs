@@ -43,7 +43,9 @@ for (const vp of [{ width: 1440, height: 900 }, { width: 375, height: 740 }]) {
         if (!r.width || cs.visibility === 'hidden' || el.closest('[hidden]') || el.closest('.hv__hp') || el.closest('.prose p, .hv__legal, .sc-lede, .foot__note') || el.closest('.opt')) return false;
         return r.height < 24 || r.width < 24;
       }).map((el) => (el.textContent || el.name || el.tagName).trim().slice(0, 30));
+      const emptyBtns = [...document.querySelectorAll('.btn')].filter((b) => b.getBoundingClientRect().width && !b.closest('[hidden]') && !b.innerText.trim()).map((b) => b.getAttribute('aria-label') || b.outerHTML.slice(0, 40));
       return {
+        emptyBtns,
         title: document.title, desc: document.querySelector('meta[name=description]')?.content || '',
         canonical: document.querySelector('link[rel=canonical]')?.href || '', robots: document.querySelector('meta[name=robots]')?.content || '',
         h1, skip, ld, imgsNoAlt, imgsBroken, links, tels, overflow: document.documentElement.scrollWidth - innerWidth, smallTargets, lang: document.documentElement.lang,
@@ -65,6 +67,7 @@ for (const vp of [{ width: 1440, height: 900 }, { width: 375, height: 740 }]) {
       ok(`${p}: tel: correcto`, info.tels.length > 0 && info.tels.every((t) => t === 'tel:+34608825864'));
       ok(`${p}: lang=es`, info.lang === 'es');
     } else {
+      ok(`${tag}: ningún botón sin texto visible`, info.emptyBtns.length === 0, info.emptyBtns.join(', '));
       ok(`${tag}: objetivos táctiles >= 24px`, info.smallTargets.length === 0, info.smallTargets.join(', '));
     }
     await page.close();
@@ -82,10 +85,20 @@ for (const vp of [{ width: 1440, height: 900 }, { width: 375, height: 740 }]) {
     if (r.status >= 400) bad.push(`${r.status} ${l}`);
   }
   ok(`enlaces internos (${uniq.length})`, bad.length === 0, bad.join(', '));
+  // Anclas: cada enlace /ruta#id o #id tiene que tener su id en la página destino.
+  const missingAnchors = [];
+  const anchored = [...linkSet].filter((l) => /^\/?[^#]*#[\w-]+$/.test(l) && !l.startsWith('//'));
+  for (const l of anchored) {
+    const [path, id] = l.split('#');
+    const page = path || '/';
+    const html = await (await fetch(BASE + page)).text();
+    if (!new RegExp(` id="${id}"`).test(html)) missingAnchors.push(l);
+  }
+  ok(`anclas internas con destino (${anchored.length})`, missingAnchors.length === 0, missingAnchors.join(', '));
   ok(`imágenes generadas pendientes de descargar`, true, `${pending.size} archivos: ${[...pending].slice(0, 4).join(', ')}${pending.size > 4 ? '…' : ''}`);
 }
 
-// 3. Pestañas, ronda -> plan -> formulario, validación y envío real
+// 3. Caminos A/B/C, zonas -> formulario, campos según el tipo, validación y envío real
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await ctx.newPage();
@@ -94,31 +107,47 @@ for (const vp of [{ width: 1440, height: 900 }, { width: 375, height: 740 }]) {
   await page.addInitScript(() => document.addEventListener('lc:track', (e) => window.__track(e.detail)));
   await page.goto(BASE + '/', { waitUntil: 'networkidle' });
 
-  // Pestañas «¿Para quién es?»
-  await page.evaluate(() => document.querySelector('#para-quien').scrollIntoView({ behavior: 'instant' }));
+  const formState = () => page.evaluate(() => ({
+    tipo: document.querySelector('input[name=tipo]:checked')?.value || '',
+    servicios: [...document.querySelectorAll('input[name="servicio[]"]:checked')].map((c) => c.value).join(),
+    visibles: [...document.querySelectorAll('[data-visit] [data-for]')].filter((e) => !e.hidden && !e.hasAttribute('data-plan-box')).map((e) => e.querySelector('input')?.name).join(),
+  }));
+  const s0 = await formState();
+  ok('formulario: ningún tipo premarcado y sin campos condicionales visibles', s0.tipo === '' && s0.visibles === '', JSON.stringify(s0));
+
+  // Camino A: CTA principal del hero
+  await page.click('.hero .cta-pair .btn--accent');
   await page.waitForTimeout(400);
-  const tabsVisible = await page.isVisible('[data-tabs]');
-  await page.click('#tab-empresa');
-  const tabState = await page.evaluate(() => ({ sel: document.querySelector('#tab-empresa').getAttribute('aria-selected'), shown: !document.querySelector('#para-empresa').hasAttribute('data-off'), hidden: getComputedStyle(document.querySelector('#para-comunidad')).display }));
-  ok('pestañas: cambian el panel', tabsVisible && tabState.sel === 'true' && tabState.shown && tabState.hidden === 'none', JSON.stringify(tabState));
-  await page.focus('#tab-empresa');
-  await page.keyboard.press('ArrowRight');
-  const kb = await page.evaluate(() => document.activeElement.id + ':' + document.activeElement.getAttribute('aria-selected'));
-  ok('pestañas: flechas del teclado', kb === 'tab-particular:true', kb);
-  await page.click('#para-particular [data-set-type]');
-  const typed = await page.evaluate(() => [document.querySelector('input[name=tipo]:checked')?.value, [...document.querySelectorAll('input[name="servicio[]"]:checked')].map((c) => c.value).join()]);
-  ok('pestañas: el CTA marca tipo y servicio', typed[0] === 'particular' && typed[1] === 'viviendas', typed.join(' / '));
+  const sA = await formState();
+  ok('camino A: el CTA del hero marca «Comunidad» y «Limpieza de comunidad»', sA.tipo === 'comunidad' && sA.servicios === 'comunidades' && sA.visibles === 'portales', JSON.stringify(sA));
+  // Camino B: administrador
+  await page.evaluate(() => scrollTo(0, 0));
+  await page.waitForTimeout(300);
+  await page.click('.hero__paths a[data-set-type="administrador"]');
+  await page.waitForTimeout(400);
+  const sB = await formState();
+  ok('camino B: «Administras varias fincas» marca administrador y enseña sus campos', sB.tipo === 'administrador' && sB.visibles === 'comunidades,llamada', JSON.stringify(sB));
+  // Camino C: servicio puntual desde «Otros servicios»
+  await page.evaluate(() => document.querySelector('#otros-servicios').scrollIntoView({ behavior: 'instant' }));
+  await page.waitForTimeout(400);
+  await page.click('#otros-servicios .link-arrow');
+  await page.waitForTimeout(400);
+  const sC = await formState();
+  ok('camino C: «Otros servicios» marca servicio puntual', sC.tipo === 'puntual' && sC.visibles === '', JSON.stringify(sC));
+  await page.click('label.opt:has(input[value="empresa"])');
+  const sE = await formState();
+  ok('tipo empresa enseña «Tipo de instalación»', sE.visibles === 'instalacion', JSON.stringify(sE));
   await page.evaluate(() => document.querySelectorAll('input[name="servicio[]"], input[name=tipo]').forEach((c) => { c.checked = false; }));
 
-  // La ronda: quitar el garaje y la fachada -> plan -> formulario
-  await page.evaluate(() => document.querySelector('#ronda').scrollIntoView({ behavior: 'instant' }));
+  // Zonas del edificio: quitar garaje y fachada -> formulario
+  await page.evaluate(() => document.querySelector('#comunidades').scrollIntoView({ behavior: 'instant' }));
   await page.waitForTimeout(300);
   await page.click('[data-goto="garaje"]');
   await page.waitForTimeout(1600);
   const cur = await page.evaluate(() => document.querySelector('[aria-current="step"]')?.getAttribute('data-goto'));
-  ok('raíl: ir a una parada la centra y la marca', cur === 'garaje', String(cur));
+  ok('raíl: ir a una zona la centra y la marca', cur === 'garaje', String(cur));
   await page.click('[data-stop-toggle="garaje"]');
-  await page.screenshot({ path: `${OUT}/ronda-garaje-off.png` });
+  await page.screenshot({ path: `${OUT}/zonas-garaje-off.png` });
   await page.click('[data-goto="fachada"]');
   await page.waitForTimeout(1600);
   await page.click('[data-stop-toggle="fachada"]');
@@ -129,8 +158,9 @@ for (const vp of [{ width: 1440, height: 900 }, { width: 375, height: 740 }]) {
     off: [...document.querySelectorAll('.track a.is-off')].map((a) => a.getAttribute('data-goto')).join(),
     tipo: document.querySelector('input[name=tipo]:checked')?.value,
   }));
-  ok('ronda: el plan refleja las paradas quitadas', plan.list === 'portal,escaleras,jardin,mantenimiento' && plan.off === 'garaje,fachada', JSON.stringify(plan));
-  ok('ronda: el plan llega al formulario', !plan.disabled && plan.input === 'portal,escaleras,jardin,mantenimiento' && plan.box && plan.tipo === 'comunidad', plan.text);
+  ok('zonas: el resumen refleja las zonas quitadas', plan.list === 'portal,escaleras,jardin,mantenimiento' && plan.off === 'garaje,fachada', JSON.stringify(plan));
+  ok('zonas: llegan al formulario y marcan «Comunidad»', !plan.disabled && plan.input === 'portal,escaleras,jardin,mantenimiento' && plan.box && plan.tipo === 'comunidad', plan.text);
+  await page.fill('#v-portales', '2');
 
   // Validación
   await page.evaluate(() => document.querySelector('#visita').scrollIntoView({ behavior: 'instant' }));
@@ -163,8 +193,9 @@ for (const vp of [{ width: 1440, height: 900 }, { width: 375, height: 740 }]) {
   ok('envío real: servidor responde ok', resp.status() === 200 && body.ok === true, JSON.stringify(body));
   ok('envío real: confirmación mostrada', !st.hidden && st.cls.includes('is-ok'), st.text.slice(0, 60));
   const mail = readFileSync(process.env.LC_OUTBOX || '/tmp/claude-0/-home-user-web-design/8e7ff4f5-3705-545b-8984-b2ec3735c701/scratchpad/mail/outbox.eml', 'utf8').split('Nueva solicitud').pop();
-  ok('envío real: el correo incluye el plan de la ronda', /Plan ronda:\s+Portal, Escaleras y ascensor, Zonas comunes y jardín, Mantenimiento/.test(mail) && /Cliente:\s+Comunidad de vecinos/.test(mail), (mail.match(/Plan ronda:.*/) || [''])[0]);
-  ok('medición: eventos de ronda y formulario emitidos', ['audience_select', 'ronda_stop_toggle', 'ronda_track_click', 'form_start', 'form_submit_success'].every((e) => tracked.some((t) => t.event === e)), [...new Set(tracked.map((t) => t.event))].join(','));
+  ok('envío real: el correo incluye tipo, portales y zonas', /Zonas:\s+Portal, Escaleras y ascensor, Zonas comunes y jardín, Mantenimiento/.test(mail) && /Cliente:\s+Comunidad de vecinos/.test(mail) && /Portales:\s+2/.test(mail), (mail.match(/Zonas:.*/) || [''])[0]);
+  ok('medición: eventos pedidos emitidos', ['click_cta', 'select_service', 'zone_toggle', 'zone_track_click', 'form_start', 'form_submit', 'form_success'].every((e) => tracked.some((t) => t.event === e)), [...new Set(tracked.map((t) => t.event))].join(','));
+  ok('medición: form_submit no se emite con errores de validación', tracked.filter((t) => t.event === 'form_submit').length === 1, String(tracked.filter((t) => t.event === 'form_submit').length));
   await page.screenshot({ path: `${OUT}/form-ok.png` });
 
   // Error de servidor simulado: no debe mostrar falso éxito
@@ -173,6 +204,7 @@ for (const vp of [{ width: 1440, height: 900 }, { width: 375, height: 740 }]) {
   await p2.goto(BASE + '/conserje-multifuncion/', { waitUntil: 'networkidle' });
   const pre = await p2.evaluate(() => [[...document.querySelectorAll('input[name="servicio[]"]:checked')].map((c) => c.value).join(), document.querySelector('input[name=tipo]:checked')?.value]);
   ok('página de servicio preselecciona servicio y tipo', pre[0] === 'conserje' && pre[1] === 'comunidad', pre.join(' / '));
+  await p2.fill('#v-mensaje', 'Texto que no debe perderse');
   await p2.fill('#v-nombre', 'Prueba QA');
   await p2.fill('#v-email', 'qa@example.com');
   await p2.waitForTimeout(3200);
@@ -180,6 +212,8 @@ for (const vp of [{ width: 1440, height: 900 }, { width: 375, height: 740 }]) {
   await p2.waitForTimeout(500);
   const st2 = await p2.evaluate(() => { const s = document.querySelector('[data-status]'); return { cls: s.className, html: s.innerHTML }; });
   ok('error de servidor: mensaje de error y alternativas (tel/mailto)', st2.cls.includes('is-err') && st2.html.includes('tel:') && st2.html.includes('mailto:'));
+  const kept = await p2.evaluate(() => [document.querySelector('#v-nombre').value, document.querySelector('#v-email').value, document.querySelector('#v-mensaje').value, !document.querySelector('#v-nombre').closest('[hidden]')]);
+  ok('error de servidor: no se pierde ningún dato', kept[0] === 'Prueba QA' && kept[1] === 'qa@example.com' && kept[2] === 'Texto que no debe perderse' && kept[3], JSON.stringify(kept));
   await p2.evaluate(() => document.querySelector('[data-status]').scrollIntoView({ block: 'center', behavior: 'instant' }));
   await p2.screenshot({ path: `${OUT}/form-error-server.png` });
   await ctx.close();
@@ -248,6 +282,27 @@ for (const vp of [{ width: 1440, height: 900 }, { width: 375, height: 740 }]) {
   await mp.click('#menu-movil a[href="/limpieza-de-viviendas/"]');
   await mp.waitForURL('**/limpieza-de-viviendas/');
   ok('menú móvil navega', mp.url().endsWith('/limpieza-de-viviendas/'));
+  // Móvil: sin tramos fijados ni carril; todo el contenido visible al pasar
+  await mp.goto(BASE + '/', { waitUntil: 'networkidle' });
+  const acts = await mp.evaluate(() => [...document.querySelectorAll('[data-mobile-flow]')].map((a) => a.getAttribute('data-sc-act')).join());
+  ok('móvil: hero, zonas y conserjería en flujo (sin pin ni carril)', acts === 'flow,flow,flow', acts);
+  const unseen = await mp.evaluate(async () => {
+    const out = [];
+    for (let y = 0; y < document.documentElement.scrollHeight; y += 300) {
+      scrollTo({ top: y, behavior: 'instant' }); await new Promise((r) => setTimeout(r, 140));
+      document.querySelectorAll('[data-sc-cue], [data-sc-in]').forEach((e) => {
+        const r = e.getBoundingClientRect();
+        if (r.top > 80 && r.bottom < innerHeight * 0.8 && r.height > 0 && +getComputedStyle(e).opacity < 0.5) out.push((e.textContent || '').trim().slice(0, 30));
+      });
+    }
+    return [...new Set(out)];
+  });
+  ok('móvil: ningún bloque queda invisible estando en pantalla', unseen.length === 0, unseen.join(' | '));
+  const ham = await mp.evaluate(() => { const r = document.querySelector('[data-burger]').getBoundingClientRect(); return r.right <= innerWidth; });
+  ok('móvil: la cabecera cabe (botón de menú dentro de la pantalla)', ham);
+  await mp.click('[data-burger]');
+  await mp.keyboard.press('Escape');
+  ok('menú móvil se cierra con Escape', !(await mp.isVisible('#menu-movil')));
   await m.close();
 }
 

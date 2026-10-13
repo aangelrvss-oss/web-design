@@ -1,47 +1,64 @@
-# Estrategia · Living Clean Multiservicios
+# Estrategia comercial · Living Clean Multiservicios
 
-## Públicos y qué necesitan
+## Objetivo
 
-| Público | Qué busca | Qué le damos |
+Conseguir nuevas comunidades de vecinos y contratos recurrentes de limpieza y conserjería en Rivas-Vaciamadrid y las zonas que la empresa confirme que atiende. Los servicios puntuales siguen disponibles, con menos peso.
+
+## Públicos y caminos de conversión
+
+| Camino | Público | Dónde empieza | Qué recibe el formulario |
+|---|---|---|---|
+| **A · Comunidad** (principal) | Presidentes y juntas | CTA del hero «Solicitar visita y presupuesto», sección de comunidades, «Cómo se contrata» | Tipo «Comunidad», servicio «Limpieza de comunidad», nº de portales (opcional), zonas del edificio |
+| **B · Administrador de fincas** | Gestores de varias comunidades | «¿Administras varias fincas? Hablemos» (hero) y «Cuéntanos cuántas» (comunidades) | Tipo «Administrador», nº de comunidades (opcional), casilla «Prefiero empezar con una conversación comercial» |
+| **C · Empresa o puntual** | Oficinas, locales, viviendas, fin de obra, garajes, grafitis, moquetas | «¿Empresa o servicio puntual?» (hero), «Otros servicios», páginas de servicio | Tipo «Empresa» (tipo de instalación) o «Servicio puntual», servicio marcado |
+
+El camino A tiene el titular, el CTA principal y la sección más grande. B y C están siempre a un clic sin competir con A.
+
+## Hechos y posicionamiento
+
+| Mensaje | Tipo | Fuente / validación |
 |---|---|---|
-| Presidente, junta o administrador de fincas de una **comunidad** (principal) | Que el portal, la escalera y el garaje estén limpios sin tener que vigilarlo; saber qué incluye el servicio y cada cuánto; a quién llamar | «La ronda por tu edificio» (qué se hace en cada sitio y con qué frecuencia), lo incluido (garaje semestral, abrillantado anual), personal localizable, visita previa |
-| Comunidad que valora un **conserje** | Unificar conserjería, limpieza y mantenimiento | Acto propio del conserje multifunción y página dedicada |
-| **Empresa, oficina, local o edificio público** | Limpieza planificada según su horario; fin de obra | Pestaña «Empresa u oficina», páginas de oficinas y fin de obra |
-| **Particular** | Limpieza habitual o puntual con alguien de confianza | Pestaña «Vivienda», personal asegurado, limpiezas a fondo y por cambio de inquilino |
+| Personal propio, dado de alta, con seguro de accidentes | Hecho publicado | Web actual de la empresa · **validar vigencia** |
+| Uniformado y con móvil de empresa | Hecho publicado | Web actual · validar |
+| Responsabilidad civil de hasta 150.000 € | Hecho publicado | Web actual · **validar póliza vigente** |
+| Visita al inmueble antes de presupuestar | Hecho publicado | Web actual |
+| Conserjería, limpieza y mantenimiento en un solo puesto | Hecho publicado (servicio) | Web actual |
+| Frecuencias habituales (portal diario, cristales mensual, garaje semestral, abrillantado anual) | **Orientativo** | Web actual; se presentan como «habitualmente» y «se fijan en la propuesta» |
+| «Tu comunidad, limpia y bien atendida» | Posicionamiento | Titular, no es una promesa medible |
+| «Un solo proveedor y un solo interlocutor» | Consecuencia del servicio de conserje multifunción | Sin cifras de ahorro |
+| «Organizamos las visitas contigo» (administradores) | Propuesta comercial | **Validar** con la empresa |
 
-## Propuesta de valor (solo lo comprobable)
+No se usa: antigüedad, número de clientes o comunidades, reseñas, zonas de trabajo, precios, plazos de respuesta o de inicio, «sin compromiso», ahorro económico ni sistemas de inspección o informes.
 
-Personal propio, uniformado y asegurado (RC de hasta 150.000 €), con móvil de empresa; procesos estandarizados para las suplencias; presupuesto **después de visitar** el inmueble; en comunidades, fregado del garaje cada seis meses y abrillantado anual del portal incluidos. Todo sale de la web actual de la empresa (ver `AUDITORIA.md`).
+## Arquitectura de la portada
 
-No se usa: antigüedad, número de clientes, reseñas, zonas de trabajo, precios, plazos, «sin compromiso» ni ninguna cifra que la empresa no publique.
+1. **Hero**: qué hace (limpieza y conserjería), para quién (comunidades), por qué confiar (personal propio y asegurado, visita previa) y qué hacer (CTA + teléfono). Caminos B y C debajo.
+2. **Confianza**: cuatro hechos verificables en una línea.
+3. **Comunidades** (sección principal): zonas del edificio con qué se hace y frecuencia orientativa; el visitante desmarca lo que su edificio no tiene y eso llega a la solicitud.
+4. **Cómo se contrata**: contacto → visita → propuesta → organización; y qué información conviene aportar.
+5. **Conserjería multifunción**: qué puede asumir, qué gana la comunidad y qué depende del alcance.
+6. **Otros servicios** (camino C), con menos peso visual.
+7. **Equipo y medios**: fotos reales, maquinaria, formación y suplencias.
+8. **Opiniones**: sección preparada en `data.mjs` (`TESTIMONIALS`); no se muestra mientras no haya testimonios reales y autorizados.
+9. **Preguntas frecuentes**: las objeciones reales del proceso.
+10. **Formulario** y contacto directo.
+11. **Pie** con contacto, servicios y enlaces legales reales.
 
-## Recorrido y conversión
+## SEO local
 
-1. **Hero**: titular con los tres públicos, teléfono `tel:` y «Pedir presupuesto» visibles desde el primer fotograma (en móvil, fijos en la parte baja del primer pantallazo).
-2. **¿Para quién es?**: tres pestañas; cada una lleva a sus servicios y a un CTA que deja el formulario precargado (tipo y servicio).
-3. **La ronda** (pico): seis paradas con frecuencia real; el visitante quita lo que su edificio no tiene y el plan viaja al formulario y al correo que recibe la empresa («Plan ronda: …»).
-4. **Conserje multifunción**: tres oficios que se funden en un puesto; enlace a su página y CTA.
-5. **Equipo**: fotos reales y el «parte» de garantías verificables.
-6. **Servicios**, **Dudas** y **Hoja de visita** (formulario corto: nombre + teléfono o correo obligatorios; lo demás opcional).
-
-Canal principal: **teléfono** (es un móvil y el negocio se mueve por llamada). Está en cabecera, hero, menú, cierre y pie, y en todas las respuestas del formulario.
-
-## Arquitectura de URLs
-
-| URL | Intención de búsqueda |
+| URL | Intención |
 |---|---|
-| `/` | limpieza de comunidades Rivas-Vaciamadrid, empresa de limpieza |
+| `/` | limpieza de comunidades Rivas-Vaciamadrid, empresa de limpieza para comunidades |
 | `/limpieza-de-comunidades/` | limpieza de comunidades de vecinos, portales, garajes |
-| `/conserje-multifuncion/` | conserje para comunidad, conserjería y mantenimiento |
-| `/limpieza-de-oficinas-y-locales/` | limpieza de oficinas, locales, colegios |
-| `/limpieza-de-viviendas/` | limpieza de pisos y casas, limpieza a fondo |
-| `/limpieza-fin-de-obra/` | limpieza fin de obra, primera ocupación |
-| `/limpiezas-especializadas/` | quitar grafitis, limpieza de moquetas, fregado de garajes |
-| `/aviso-legal.html`, `/politica-privacidad.html`, `/politica-cookies.html` | Se conservan las URLs actuales |
+| `/conserje-multifuncion/` | servicio de conserjería para comunidades |
+| `/limpieza-de-oficinas-y-locales/` | limpieza de oficinas y locales |
+| `/limpieza-fin-de-obra/`, `/limpiezas-especializadas/`, `/limpieza-de-viviendas/` | secundarias: fin de obra, garajes, grafitis, moquetas, viviendas |
 
-La web actual es una sola página, así que no hay URLs de servicio que redirigir.
+JSON-LD `LocalBusiness` sin dirección postal completa (la web actual solo muestra «Rivas-Vaciamadrid») y sin `areaServed` hasta que la empresa confirme la zona. `WebSite` en la portada, `Service`, `FAQPage` y `BreadcrumbList` en las páginas de servicio.
+
+**Perfil de Empresa de Google**: no se ha podido comprobar desde este entorno. Recomendaciones: que el nombre, el teléfono (608 82 58 64) y la web coincidan con los de la web; categoría principal «Servicio de limpieza» y secundaria de conserjería si existe; zona de servicio en lugar de dirección si no atienden público; pedir reseñas a comunidades clientes y enlazarlas desde la web cuando haya permiso.
 
 ## Imágenes
 
-- **Reales** (de la web actual de la empresa): equipo trabajando, maquinaria y furgoneta rotulada. Se muestran como «Foto de Living Clean». Resolución limitada: conviene pedir los originales.
-- **Generadas con Higgsfield** (7 imágenes, ~13 créditos): espacios vacíos de un edificio (portal, escalera, garaje, jardín, pasillo, fachada), sin personas, sin rótulos ni logotipos. Cada una lleva «Imagen ilustrativa» y el pie de página lo explica. No se presentan como trabajos de la empresa.
+- **Reales**: equipo, maquinaria y furgoneta, de la web actual. Resolución limitada: conviene pedir originales y confirmar el permiso de uso de las personas que aparecen.
+- **Generadas con Higgsfield** (7, ya pagadas; ningún gasto nuevo): espacios vacíos de un edificio, sin personas ni rótulos. Siempre con «Imagen ilustrativa» y explicadas en el pie. Pendientes de descarga por la red del entorno.

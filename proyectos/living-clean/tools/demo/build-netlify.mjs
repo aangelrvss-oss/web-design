@@ -43,6 +43,7 @@ for (const f of walk(out).filter((p) => p.endsWith('.html'))) {
     .replace(/(<meta property="og:url" content=")https:\/\/livingclean\.es/, `$1${URL}`)
     .replace(/(<meta property="og:image" content=")https:\/\/livingclean\.es/, `$1${URL}`)
     .replace(/<form class="hv" /g, '<form class="hv" data-demo ')
+    .replace('<p class="hv__title"><span>Solicitud de visita</span><span>Living Clean</span></p>', (m) => `${m}\n      <p class="hv__demo">Copia de demostración: el formulario comprueba los datos, pero <strong>no envía nada</strong>. En la web publicada llegará a info@livingclean.es.</p>`)
     .replace('<p class="foot__copy">', `${NOTE}\n    <p class="foot__copy">`);
   writeFileSync(f, h);
   pages++;

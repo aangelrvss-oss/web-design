@@ -19,53 +19,68 @@ export const SITE = {
   instagram: 'https://www.instagram.com/_living_clean/',
 };
 
-export const AUDIENCES = [
-  {
-    key: 'comunidad', label: 'Comunidad de vecinos',
-    who: 'Presidentes, juntas y administradores de fincas',
-    text: 'Limpieza diaria del portal, escaleras y ascensor, garaje, zonas comunes y jardín. Y, si lo necesitáis, un conserje multifunción que además vigila accesos y hace el mantenimiento.',
-    links: [['Limpieza de comunidades', '/limpieza-de-comunidades/'], ['Conserje multifunción', '/conserje-multifuncion/']],
-  },
-  {
-    key: 'empresa', label: 'Empresa u oficina',
-    who: 'Oficinas, despachos, locales, naves y edificios públicos',
-    text: 'Limpieza diaria o semanal planificada según vuestro horario, limpiezas puntuales de garaje con maquinaria y limpiezas de fin de obra en locales y naves.',
-    links: [['Limpieza de oficinas y locales', '/limpieza-de-oficinas-y-locales/'], ['Limpieza de fin de obra', '/limpieza-fin-de-obra/']],
-  },
-  {
-    key: 'particular', label: 'Vivienda',
-    who: 'Pisos y casas',
-    text: 'Limpieza semanal o diaria con personal asegurado, limpiezas a fondo cuando las necesites y limpiezas puntuales por cambio de inquilino, temporada o tras un siniestro.',
-    links: [['Limpieza de viviendas', '/limpieza-de-viviendas/'], ['Limpiezas especializadas', '/limpiezas-especializadas/']],
-  },
+// Tres caminos de conversión. El A (comunidad) es el principal.
+export const PATHS = {
+  comunidad: { label: 'Comunidad de vecinos', cta: 'Solicitar visita y presupuesto' },
+  administrador: { label: 'Administrador de fincas', cta: 'Hablar de mis comunidades' },
+  empresa: { label: 'Empresa o servicio puntual', cta: 'Pedir presupuesto' },
+};
+
+// Señales de confianza: solo lo que publica la empresa (validar antes de publicar).
+export const TRUST = [
+  ['Personal propio', 'Dado de alta en la Seguridad Social y con seguro de accidentes.'],
+  ['Uniformado y localizable', 'Con un teléfono móvil de la empresa durante el servicio.'],
+  ['Responsabilidad civil', `Póliza de hasta 150.000 € para daños durante el servicio.`],
+  ['Visita previa', 'Estudiamos el edificio antes de preparar el presupuesto.'],
 ];
 
-// Las paradas de la ronda (acto 3). Frecuencias tal como las describe la empresa.
+// Cómo se contrata (operativa descrita por la empresa: visita antes de presupuestar).
+export const PROCESS = [
+  ['Nos cuentas qué necesitas', 'Por teléfono o con el formulario: tipo de edificio, localidad y qué te preocupa.'],
+  ['Visitamos el edificio', 'Vemos portales, plantas, garaje, jardín y zonas comunes, y hablamos con quien gestiona la comunidad.'],
+  ['Te enviamos la propuesta', 'Con las tareas y las frecuencias que necesita ese edificio, para que la junta pueda decidir.'],
+  ['Organizamos el servicio', 'Si se acepta, asignamos el personal y te damos un contacto para el día a día.'],
+];
+export const PROPOSAL_INFO = [
+  'Número de portales y de plantas',
+  'Si hay garaje, jardín, piscina o ascensores',
+  'Qué se hace ahora y qué no funciona',
+  'Horario o días que prefiere la comunidad',
+  'Si interesa también la conserjería',
+];
+
+// Estructura preparada para testimonios reales y autorizados. Vacía: no se
+// muestra ninguna sección mientras no haya pruebas verificables.
+// Formato: { quote, name, role, source, url } — solo con permiso por escrito.
+export const TESTIMONIALS = [];
+
+// Las zonas del edificio (acto principal). Frecuencias ORIENTATIVAS tal como las
+// describe la web actual de la empresa: cada contrato fija las suyas tras la visita.
 export const STOPS = [
   {
     key: 'portal', name: 'Portal', img: 'hero-portal', alt: 'Portal de un edificio de viviendas con suelo de piedra brillante, buzones y ascensor',
     what: 'Fregado del portal, limpieza de la puerta y del ascensor. Espejos y cristales revisados.',
-    when: [['Cada día', 'portal, puerta, ascensor, espejos y cristales'], ['Cada mes', 'espejos y cristales a fondo'], ['Cada año', 'abrillantado del portal']],
+    when: [['Habitual', 'a diario: portal, puerta, ascensor, espejos y cristales'], ['Periódico', 'cristales a fondo cada mes y abrillantado del portal una vez al año']],
   },
   {
     key: 'escaleras', name: 'Escaleras y ascensor', img: 'ronda-escalera', alt: 'Rellano con escalera de piedra, pasamanos, espejo y puertas de ascensor',
     what: 'Escaleras, rellanos, pasamanos y cabina del ascensor dentro del plan de limpieza de la comunidad.',
-    when: [['Según el plan', 'se fija con la comunidad tras la visita']],
+    when: [['Según el edificio', 'se fija con la comunidad tras la visita']],
   },
   {
     key: 'garaje', name: 'Garaje', img: 'ronda-garaje', alt: 'Garaje comunitario con el suelo recién fregado y las plazas pintadas',
-    what: 'Fregado con máquina fregadora. También limpiezas puntuales de garaje con maquinaria.',
-    when: [['Cada seis meses', 'fregado del garaje incluido en la limpieza de comunidades']],
+    what: 'Fregado con máquina fregadora, dentro del plan de la comunidad o como limpieza puntual.',
+    when: [['Periódico', 'habitualmente cada seis meses']],
   },
   {
     key: 'jardin', name: 'Zonas comunes y jardín', img: 'ronda-jardin', alt: 'Patio interior de una comunidad con césped cortado, setos y camino limpio',
     what: 'Limpieza de zonas comunes y retirada de papeleras. Si hay jardín, cuidado del césped, los arbustos y los árboles.',
-    when: [['Con conserje multifunción', 'dentro de sus tareas diarias']],
+    when: [['Según el alcance', 'en la limpieza o con conserje multifunción']],
   },
   {
     key: 'mantenimiento', name: 'Mantenimiento', img: 'ronda-mantenimiento', alt: 'Pasillo de zonas comunes con iluminación LED y puertas',
     what: 'Puertas y alumbrado (bombillas, fluorescentes, LED) y pequeños trabajos de albañilería, fontanería y electricidad.',
-    when: [['Cuando la comunidad lo necesite', 'Living Clean suministra LED y materiales']],
+    when: [['Según el alcance', 'con conserje multifunción o bajo petición']],
   },
   {
     key: 'fachada', name: 'Fachada', img: 'ronda-fachada', alt: 'Fachada de ladrillo claro y piedra de un edificio, limpia y sin pintadas',
@@ -83,6 +98,12 @@ export const CONCIERGE = {
     'Puertas, alumbrado y pequeños trabajos de albañilería, fontanería y electricidad',
     'Jardinería: césped, arbustos y árboles',
   ],
+  benefits: [
+    'Un solo proveedor y un solo interlocutor para el día a día del edificio.',
+    'Tareas coordinadas en un mismo puesto, con un horario conocido.',
+    'Pequeñas incidencias resueltas sin buscar a otro profesional, dentro del alcance acordado.',
+  ],
+  scope: 'Qué tareas asume el conserje, en qué horario y cuáles quedan fuera (por ejemplo, obras o reparaciones que requieren un profesional habilitado) se define en la propuesta de cada comunidad.',
 };
 
 export const TEAM = {
@@ -92,6 +113,11 @@ export const TEAM = {
     ['Identificable', 'Uniformado y con un teléfono móvil de la empresa para que cualquier propietario pueda localizarlo.'],
     ['Asegurado', `Póliza de responsabilidad civil de hasta ${SITE.insurance} para cualquier daño durante el servicio.`],
     ['Sin huecos', 'Los procesos están estandarizados: si un operario falta, el suplente trabaja igual.'],
+  ],
+  means: [
+    ['Maquinaria propia', 'Fregadora, hidrolimpiadora y máquina rotativa, manejadas por personal formado.'],
+    ['Formación y seguridad', 'Formación en los procesos de cada servicio y en prevención de riesgos laborales, con equipos de protección.'],
+    ['Suplencias', 'Procesos estandarizados para que, si un operario falta, el suplente trabaje igual.'],
   ],
   photos: [
     ['real-cristales', 'Limpieza de cristales'],
@@ -105,20 +131,20 @@ export const SERVICES = [
   {
     slug: 'limpieza-de-comunidades', nav: 'Limpieza de comunidades', audience: 'comunidad', img: 'hero-portal',
     title: 'Limpieza de comunidades de vecinos en Rivas-Vaciamadrid | Living Clean',
-    description: 'Limpieza diaria de portales, escaleras y ascensores, garajes y zonas comunes. Fregado de garaje semestral y abrillantado anual del portal incluidos.',
+    description: 'Limpieza de portales, escaleras, ascensores, garajes y zonas comunes en Rivas-Vaciamadrid, con un plan que se fija tras visitar el edificio.',
     h1: 'Limpieza de comunidades de vecinos',
     intro: 'La especialidad de Living Clean: portales, escaleras, ascensores, garajes y zonas comunes, con un plan que se fija con la comunidad después de visitar el edificio.',
     does: [
-      ['Portal a diario', 'Limpieza y fregado del portal, de la puerta y del ascensor.'],
-      ['Espejos y cristales', 'Revisados todos los días y limpiados a fondo cada mes.'],
-      ['Garaje', 'Fregado con máquina cada seis meses, incluido en el servicio.'],
-      ['Abrillantado', 'Abrillantado del portal una vez al año, también incluido.'],
-      ['Zonas comunes', 'Escaleras, rellanos y zonas comunes según el plan de la comunidad.'],
-      ['Frecuencias a medida', 'Los intervalos se ajustan a las necesidades de cada edificio.'],
+      ['Portal', 'Limpieza y fregado del portal, de la puerta y del ascensor; habitualmente a diario.'],
+      ['Espejos y cristales', 'Revisados en cada pasada y limpiados a fondo de forma periódica.'],
+      ['Escaleras y zonas comunes', 'Escaleras, rellanos, pasamanos y zonas comunes según el plan de la comunidad.'],
+      ['Garaje', 'Fregado con máquina fregadora, habitualmente cada seis meses.'],
+      ['Abrillantado', 'Abrillantado del portal con máquina rotativa, habitualmente una vez al año.'],
+      ['Frecuencias a medida', 'Tareas e intervalos se fijan en la propuesta de cada edificio.'],
     ],
     know: [
       ['El presupuesto se hace después de visitar', 'Cada edificio es distinto: número de portales, plantas, garaje, jardín. Por eso se visita y se estudia antes de presupuestar.'],
-      ['Lo incluido cuenta', 'El fregado semestral del garaje y el abrillantado anual del portal están incluidos. Al comparar ofertas, conviene comprobar qué entra en cada una.'],
+      ['Compara lo que incluye cada oferta', 'Garaje, abrillantado, cristales a fondo: al comparar presupuestos, conviene comprobar qué tareas y con qué frecuencia entra en cada uno. En nuestra propuesta van detalladas.'],
       ['Un responsable localizable', 'El personal va uniformado y lleva un móvil de la empresa: cualquier propietario puede localizarlo.'],
     ],
     faqs: [
@@ -133,7 +159,7 @@ export const SERVICES = [
     title: 'Conserje multifunción para comunidades | Living Clean',
     description: 'Conserjería, limpieza y mantenimiento de la comunidad en un solo puesto: accesos, correspondencia, llaves, limpieza, alumbrado, pequeños arreglos y jardín.',
     h1: 'Conserje multifunción',
-    intro: 'Conserjería, limpieza y mantenimiento de la comunidad en un solo puesto de trabajo. Una forma más sencilla y económica de gestionar el edificio.',
+    intro: 'Conserjería, limpieza y mantenimiento de la comunidad en un solo puesto de trabajo. Una forma más sencilla de gestionar el edificio.',
     does: [
       ['Conserjería', 'Control de accesos de personas y vehículos, correspondencia, depósito y custodia de llaves de zonas comunes.'],
       ['Limpieza', 'Zonas comunes y garaje limpios y retirada de papeleras.'],
@@ -179,7 +205,7 @@ export const SERVICES = [
     title: 'Limpieza de viviendas y limpiezas a fondo | Living Clean',
     description: 'Limpieza semanal o diaria de pisos y casas con personal asegurado, limpiezas a fondo y limpiezas puntuales por cambio de inquilino, temporada o siniestro.',
     h1: 'Limpieza de viviendas',
-    intro: 'Limpieza del hogar adaptada a lo que necesitas, con personal asegurado y productos de primera calidad.',
+    intro: 'Limpieza del hogar adaptada a lo que necesitas, con personal propio y asegurado.',
     does: [
       ['Limpieza habitual', 'Limpieza de las estancias que elijas, de forma semanal o diaria.'],
       ['Limpieza a fondo', 'Cuando la pidas, además de la limpieza habitual.'],
@@ -244,18 +270,20 @@ export const SERVICES = [
 ];
 
 export const HOME_FAQS = [
-  ['¿Cómo hacéis el presupuesto?', 'Visitamos el inmueble y estudiamos sus características antes de presupuestar. Así el precio responde a lo que de verdad hay que hacer.'],
+  ['¿Cómo se solicita presupuesto?', `Llamando al ${SITE.phone}, escribiendo a ${SITE.email} o con el formulario de esta página. Te llamamos para concertar la visita.`],
+  ['¿Es necesario visitar el edificio?', 'Sí. Preparamos el presupuesto después de ver el inmueble, porque cada edificio tiene portales, plantas, garaje y zonas comunes distintos.'],
+  ['¿Se puede adaptar la frecuencia de limpieza?', 'Sí. Las tareas y la frecuencia de cada zona se fijan con la comunidad en la propuesta, según lo que necesita el edificio.'],
+  ['¿Qué tareas puede asumir el conserje?', 'Control de accesos, correspondencia y llaves, limpieza de zonas comunes y garaje, puertas y alumbrado, pequeños trabajos de mantenimiento y jardinería. El alcance exacto se acuerda en la propuesta.'],
+  ['¿Cómo se solicitan otros servicios?', 'Igual: indica en el formulario que es para una empresa o un servicio puntual (oficinas, viviendas, fin de obra, garajes, grafitis o moquetas) y cuéntanos qué necesitas.'],
+  ['¿Qué información conviene aportar?', 'Número de portales y plantas, si hay garaje, jardín o ascensores, qué se hace ahora y el horario que prefiere la comunidad. Si no lo tienes todo, lo vemos en la visita.'],
   ['¿Dónde trabajáis?', `Estamos en ${SITE.city} (Madrid). Indícanos la localidad del inmueble y te confirmamos si podemos atenderlo.`],
-  ['¿El personal está asegurado?', `Sí. Es personal propio, dado de alta en la Seguridad Social, y la empresa tiene una póliza de responsabilidad civil de hasta ${SITE.insurance}.`],
-  ['¿Qué pasa si el trabajador habitual falta?', 'Los procesos de cada servicio están estandarizados para que un suplente trabaje igual.'],
-  ['¿Incluís productos y maquinaria?', 'Sí: el personal trabaja con la maquinaria, herramientas y productos específicos de cada limpieza, y en las limpiezas intensivas el servicio los incluye.'],
-  ['¿Cómo os localizo durante el servicio?', `El personal va uniformado y lleva un móvil de la empresa. Y siempre puedes llamar al ${SITE.phone}.`],
 ];
 
 export const FORM_TYPES = [
   { value: 'comunidad', label: 'Comunidad de vecinos' },
-  { value: 'empresa', label: 'Empresa, oficina o local' },
-  { value: 'particular', label: 'Vivienda' },
+  { value: 'administrador', label: 'Administrador de fincas' },
+  { value: 'empresa', label: 'Empresa u oficina' },
+  { value: 'puntual', label: 'Servicio puntual' },
 ];
 
 export const FORM_SERVICES = [

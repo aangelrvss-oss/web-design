@@ -76,8 +76,8 @@ $allowedServices = [
     'fin-de-obra' => 'Fin de obra',
     'especializadas' => 'Grafitis, moquetas o garaje',
 ];
-$allowedTypes = ['' => 'Sin indicar', 'comunidad' => 'Comunidad de vecinos', 'empresa' => 'Empresa, oficina o local', 'particular' => 'Vivienda'];
-// Paradas de «La ronda por tu edificio» (portada).
+$allowedTypes = ['' => 'Sin indicar', 'comunidad' => 'Comunidad de vecinos', 'administrador' => 'Administrador de fincas', 'empresa' => 'Empresa u oficina', 'puntual' => 'Servicio puntual'];
+// Zonas del edificio marcadas en la portada.
 $allowedStops = [
     'portal' => 'Portal',
     'escaleras' => 'Escaleras y ascensor',
@@ -96,6 +96,14 @@ $mensaje = $clean($_POST['mensaje'] ?? '', 3000);
 $origen = $line($_POST['origen'] ?? '', 60);
 $servicios = array_values(array_intersect(array_keys($allowedServices), (array)($_POST['servicio'] ?? [])));
 $planSent = array_key_exists('plan', $_POST);
+$num = static function ($v): string {
+    $n = (int)preg_replace('/\D/', '', is_string($v) ? $v : '');
+    return ($n >= 1 && $n <= 999) ? (string)$n : '';
+};
+$portales = $num($_POST['portales'] ?? '');
+$comunidades = $num($_POST['comunidades'] ?? '');
+$llamada = ($_POST['llamada'] ?? '') === '1';
+$instalacion = $line($_POST['instalacion'] ?? '', 120);
 $plan = array_values(array_intersect(array_keys($allowedStops), explode(',', $line($_POST['plan'] ?? '', 200))));
 
 $errors = [];
@@ -130,7 +138,10 @@ $body = implode("\n", [
     'Localidad:   ' . ($localidad ?: '-'),
     'Cliente:     ' . $allowedTypes[$tipo],
     'Servicios:   ' . ($labels ? implode(', ', $labels) : '-'),
-    'Plan ronda:  ' . ($planSent ? ($plan ? implode(', ', array_map(static fn($k) => $allowedStops[$k], $plan)) : 'ninguna parada marcada') : '-'),
+    'Portales:    ' . ($portales ?: '-'),
+    'Comunidades: ' . ($comunidades ?: '-') . ($llamada ? ' (prefiere una conversación comercial)' : ''),
+    'Instalación: ' . ($instalacion ?: '-'),
+    'Zonas:       ' . ($planSent ? ($plan ? implode(', ', array_map(static fn($k) => $allowedStops[$k], $plan)) : 'ninguna zona marcada') : '-'),
     'Página:      ' . ($origen ?: '-'),
     '',
     'Mensaje:',
