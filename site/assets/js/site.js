@@ -211,6 +211,12 @@
       e.preventDefault();
       var v = validate();
       if (!v.ok) { v.first.focus(); track('form_invalid', { origin: origin }); return; }
+      /* Copias de demostración (data-demo): se valida, pero no se envía ningún dato. */
+      if (form.hasAttribute('data-demo')) {
+        track('form_demo_submit', { origin: origin });
+        say('ok', '<strong>Versión de demostración</strong>El formulario funciona, pero esta copia no envía datos. En la web publicada, la solicitud llegará a info@mrinstalaciones.com. Para contactar ahora con MRI: <a href="tel:+34911662476">911 66 24 76</a>.');
+        return;
+      }
       if (form.classList.contains('is-sending')) return;
       form.classList.add('is-sending');
       btn.setAttribute('aria-disabled', 'true');

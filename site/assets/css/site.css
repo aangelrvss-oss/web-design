@@ -577,6 +577,7 @@ fieldset.tb__cell { display: block; }
 .foot__nav ul { list-style: none; margin: 0; padding: 0; }
 .foot__nav a { display: inline-flex; min-height: 36px; align-items: center; color: #E3E7E9; text-decoration: none; }
 .foot__nav a:hover { text-decoration: underline; text-decoration-color: var(--sc-accent); }
+.foot__demo { grid-column: 1 / -1; margin: 0; padding: .8rem 1rem; border: 1px dashed rgb(238 240 238 / .3); color: #C9D0D4; font-size: .85rem; }
 .foot__copy { grid-column: 1 / -1; margin: 0; padding-top: 1.5rem; border-top: 1px solid rgb(238 240 238 / .1); color: #8E99A0; font-size: .85rem; }
 .foot :focus-visible { outline-color: #FF6500; }
 .kit { background: #fff; color: #4A545B; padding: 1rem var(--sc-gutter) 1.25rem; text-align: center; }

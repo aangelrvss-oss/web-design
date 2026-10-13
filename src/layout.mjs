@@ -3,7 +3,7 @@ import { icon } from './pictos.mjs';
 
 export const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-export const ASSET_V = '20261013';
+export const ASSET_V = '20261013b';
 const a = (p) => `${p}?v=${ASSET_V}`;
 
 const BUSINESS_ID = `${SITE.origin}/#empresa`;
