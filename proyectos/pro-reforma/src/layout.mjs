@@ -3,15 +3,17 @@ import { icon } from './icons.mjs';
 
 export const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-export const ASSET_V = '20261015c';
+export const ASSET_V = '20261015v2e';
 const a = (p) => `${p}?v=${ASSET_V}`;
 export const svcUrl = (slug) => `/servicios/${slug}/`;
 
 // ------------------------------------------------------------- imágenes --
-// Fotos reales de obra en dos recortes: ancho (826×406) y casi cuadrado (392×406).
-// Se muestran a su tamaño o menos: no se amplían.
+// Fotos reales de obra. Recortes publicados (ancha 826×406, cuadrada 392×406)
+// y, de la galería a mayor resolución, banda panorámica (1798×410) y 2:1
+// (820×410). Se muestran a su tamaño o menos: no se amplían más de un 15 %.
+const DIMS = { ancha: [826, 406], cuadrada: [392, 406], banda: [1798, 410], '2x1': [820, 410] };
 export function photo(name, alt, { shape = 'ancha', cls = '', lazy = true, sizes = '' } = {}) {
-  const dims = shape === 'ancha' ? [826, 406] : [392, 406];
+  const dims = DIMS[shape];
   return `<img${cls ? ` class="${cls}"` : ''} src="/assets/img/${name}-${shape}.webp" width="${dims[0]}" height="${dims[1]}" alt="${esc(alt)}"${sizes ? ` sizes="${sizes}"` : ''}${lazy ? ' loading="lazy" decoding="async"' : ' fetchpriority="high"'}>`;
 }
 
@@ -79,15 +81,15 @@ ${jsonld.map((o) => `<script type="application/ld+json">${JSON.stringify(o)}</sc
 }
 
 // --------------------------------------------------------------- header --
-export function header({ current = '' } = {}) {
+export function header({ current = '', over = false } = {}) {
   const main = SERVICES.filter((s) => s.main);
   const trade = SERVICES.filter((s) => !s.main);
   const link = (href, label, key) => `<a href="${href}"${current === key ? ' aria-current="page"' : ''}>${esc(label)}</a>`;
   const svcMenu = `<li class="bar__menu-h">Principales</li>${main.map((s) => `<li>${link(svcUrl(s.slug), s.nav, s.slug)}</li>`).join('')}<li class="bar__menu-h">Oficios</li>${trade.map((s) => `<li>${link(svcUrl(s.slug), s.nav, s.slug)}</li>`).join('')}<li class="bar__menu-all">${link('/servicios/', 'Todos los servicios', 'servicios')}</li>`;
   return `<a class="skip" href="#contenido">Saltar al contenido</a>
-<header class="bar">
+<header class="bar${over ? ' bar--over' : ''}" data-bar>
   <div class="bar__in">
-    <a class="bar__logo" href="/" aria-label="Pro Reforma, inicio">${wordmark()}</a>
+    <a class="bar__logo" href="/" aria-label="ProReforma, inicio">${wordmark()}</a>
     <nav class="bar__nav" aria-label="Principal">
       <ul class="bar__links">
         <li class="bar__drop">
@@ -102,7 +104,7 @@ export function header({ current = '' } = {}) {
     <div class="bar__act">
       <a class="bar__icon" href="${SITE.whatsapp}" rel="noopener" target="_blank" data-track="click_whatsapp" data-track-loc="header" aria-label="Escribir por WhatsApp al ${SITE.phone} (se abre en otra pestaña)">${icon.whatsapp}</a>
       <a class="bar__tel" href="${SITE.phoneHref}" data-track="click_phone" data-track-loc="header" aria-label="Llamar al ${SITE.phone}">${icon.phone}<span>${SITE.phone}</span></a>
-      <a class="btn btn--accent btn--sm" href="/contacto/#presupuesto" data-track="click_cta" data-track-loc="header"><span class="bar__cta-l">Pedir presupuesto</span><span class="bar__cta-s" aria-hidden="true">Presupuesto</span></a>
+      <a class="btn btn--accent btn--sm" href="${over ? '#presupuesto' : '/contacto/#presupuesto'}" data-track="click_cta" data-track-loc="header"><span class="bar__cta-l">Solicitar presupuesto</span><span class="bar__cta-s" aria-hidden="true">Presupuesto</span></a>
       <button class="bar__burger" type="button" aria-expanded="false" aria-controls="menu-movil" data-burger><span class="vh">Menú</span>${icon.menu}</button>
     </div>
   </div>
@@ -117,7 +119,8 @@ export function header({ current = '' } = {}) {
         <li>${link('/conocer-proreforma/', 'Conocer Pro Reforma', 'sobre')}</li>
         <li>${link('/contacto/', 'Contacto', 'contacto')}</li>
       </ul>
-      <a class="btn btn--accent" href="/contacto/#presupuesto" data-track="click_cta" data-track-loc="menu">Pedir presupuesto</a>
+      <a class="btn btn--accent" href="${over ? '#presupuesto' : '/contacto/#presupuesto'}" data-track="click_cta" data-track-loc="menu">Solicitar presupuesto</a>
+      <p class="sheet__hours">${esc(SITE.hours)}</p>
       <div class="sheet__direct">
         <a href="${SITE.phoneHref}" data-track="click_phone" data-track-loc="menu">${icon.phone} ${SITE.phone}</a>
         <a href="${SITE.whatsapp}" rel="noopener" target="_blank" data-track="click_whatsapp" data-track-loc="menu">${icon.whatsapp} WhatsApp<span class="vh"> (se abre en otra pestaña)</span></a>
@@ -128,13 +131,15 @@ export function header({ current = '' } = {}) {
 }
 
 // ---------------------------------------------------- formulario real --
-// POST a /contacto.php. Sin JavaScript redirige a /gracias/ o
-// /envio-no-completado/. Con JavaScript, envío por fetch con la respuesta real.
+// Lo mínimo para empezar a hablar: qué necesitas, nombre, un teléfono o un
+// correo y, si quieres, unas líneas. POST a /contacto.php (PHP) o a Netlify
+// Forms (tools/demo/build-netlify.mjs --forms). Sin JavaScript redirige a
+// /gracias/ o /envio-no-completado/; con JavaScript, fetch con la respuesta real.
 export function quoteForm({ type = '', origin = 'contacto', idp = 'q' } = {}) {
   const types = FORM_TYPES.map((t) => `<label class="opt"><input type="radio" name="tipo" value="${t.value}"${type === t.value ? ' checked' : ''}><span>${esc(t.label)}</span></label>`).join('');
-  return `<form class="qf" action="/contacto.php" method="post" novalidate data-quote data-origin="${esc(origin)}">
+  return `<form class="qf" name="presupuesto" action="/contacto.php" method="post" novalidate data-quote data-origin="${esc(origin)}">
   <fieldset class="qf__row">
-    <legend class="qf__label">¿Qué quieres hacer? <span class="qf__opt">opcional</span></legend>
+    <legend class="qf__label">¿Qué necesitas? <span class="qf__opt">opcional</span></legend>
     <div class="qf__opts">${types}</div>
   </fieldset>
   <div class="qf__grid">
@@ -144,37 +149,21 @@ export function quoteForm({ type = '', origin = 'contacto', idp = 'q' } = {}) {
       <p class="qf__err" id="${idp}-nombre-err" hidden></p>
     </div>
     <div class="qf__field">
-      <label class="qf__label" for="${idp}-localidad">Localidad de la obra <span class="qf__opt">opcional</span></label>
-      <input id="${idp}-localidad" name="localidad" type="text" autocomplete="address-level2" maxlength="120">
+      <label class="qf__label" for="${idp}-contacto">Teléfono o correo</label>
+      <input id="${idp}-contacto" name="contacto" type="text" autocomplete="tel" inputmode="email" required maxlength="160" aria-describedby="${idp}-contacto-help ${idp}-contacto-err">
+      <p class="qf__help" id="${idp}-contacto-help">Te contestamos por donde nos digas.</p>
+      <p class="qf__err" id="${idp}-contacto-err" hidden></p>
     </div>
-    <div class="qf__field">
-      <label class="qf__label" for="${idp}-telefono">Teléfono</label>
-      <input id="${idp}-telefono" name="telefono" type="tel" autocomplete="tel" inputmode="tel" maxlength="40" aria-describedby="${idp}-contacto-help ${idp}-contacto-err">
-    </div>
-    <div class="qf__field">
-      <label class="qf__label" for="${idp}-email">Correo electrónico</label>
-      <input id="${idp}-email" name="email" type="email" autocomplete="email" maxlength="160" aria-describedby="${idp}-contacto-help ${idp}-contacto-err">
-    </div>
-    <p class="qf__help qf__wide" id="${idp}-contacto-help">Con un teléfono o un correo es suficiente.</p>
-    <p class="qf__err qf__wide" id="${idp}-contacto-err" hidden></p>
     <div class="qf__field qf__wide">
       <label class="qf__label" for="${idp}-mensaje">Cuéntanos la obra <span class="qf__opt">opcional</span></label>
-      <textarea id="${idp}-mensaje" name="mensaje" rows="4" maxlength="3000" placeholder="Por ejemplo: reformar el baño, cambiar la bañera por plato de ducha y pintar el pasillo."></textarea>
+      <textarea id="${idp}-mensaje" name="mensaje" rows="3" maxlength="3000" placeholder="Por ejemplo: reformar el baño en Rivas y pintar el pasillo."></textarea>
     </div>
-    <fieldset class="qf__row qf__wide">
-      <legend class="qf__label">¿Cómo prefieres que te contactemos? <span class="qf__opt">opcional</span></legend>
-      <div class="qf__opts">
-        <label class="opt"><input type="radio" name="via" value="llamada"><span>Llamada</span></label>
-        <label class="opt"><input type="radio" name="via" value="whatsapp"><span>WhatsApp</span></label>
-        <label class="opt"><input type="radio" name="via" value="email"><span>Correo</span></label>
-      </div>
-    </fieldset>
   </div>
   <div class="qf__hp" aria-hidden="true"><label for="${idp}-web">No rellenar</label><input id="${idp}-web" name="web" type="text" tabindex="-1" autocomplete="off"></div>
   <input type="hidden" name="origen" value="${esc(origin)}">
   <input type="hidden" name="t" value="" data-t>
   <div class="qf__foot">
-    <button class="btn btn--accent btn--lg" type="submit" data-track="form_submit_click">Enviar solicitud</button>
+    <button class="btn btn--accent btn--lg qf__send" type="submit" data-track="form_submit_click"><span class="qf__send-t">Enviar solicitud</span><span class="qf__spin" aria-hidden="true"></span></button>
     <p class="qf__legal">Responsable: ${esc(SITE.owner)} (Pro Reforma). Finalidad: responder a tu solicitud y preparar el presupuesto. Base jurídica: medidas precontractuales que nos pides. No cedemos tus datos salvo obligación legal. Puedes acceder, rectificar o suprimirlos escribiendo a ${SITE.email}. Más información en la <a href="/politica-de-privacidad/">política de privacidad</a>.</p>
   </div>
   <div class="qf__status" role="status" aria-live="polite" tabindex="-1" data-status hidden></div>
@@ -187,16 +176,17 @@ export function contactList(loc) {
   <li><a href="${SITE.whatsapp}" rel="noopener" target="_blank" data-track="click_whatsapp" data-track-loc="${loc}">${icon.whatsapp}<span>WhatsApp</span><span class="vh"> (se abre en otra pestaña)</span></a></li>
   <li><a href="mailto:${SITE.email}" data-track="click_email" data-track-loc="${loc}">${icon.mail}<span>${SITE.email}</span></a></li>
   <li><a href="${SITE.mapsUrl}" rel="noopener" target="_blank" data-track="click_map" data-track-loc="${loc}">${icon.pin}<span>${SITE.street}, ${SITE.postalCode} ${SITE.city}</span><span class="vh"> (Google Maps, se abre en otra pestaña)</span></a></li>
+  <li class="direct__hours">${icon.clock}<span>${esc(SITE.hours)}</span></li>
 </ul>`;
 }
 
 // --------------------------------------------------------------- footer --
-export function footer() {
+export function footer({ quoteHere = true } = {}) {
   const year = new Date().getFullYear();
   return `<footer class="foot">
   <div class="foot__in sc-wrap">
     <div class="foot__brand">
-      <a class="foot__logo" href="/" aria-label="Pro Reforma, inicio">${wordmark('wm--light')}</a>
+      <a class="foot__logo" href="/" aria-label="ProReforma, inicio">${wordmark('wm--light')}</a>
       <p>Reformas integrales, pintura e insonorización en ${SITE.city}.</p>
       ${contactList('footer')}
     </div>
@@ -224,7 +214,11 @@ export function footer() {
     <p class="foot__copy">© ${year} ${esc(SITE.owner)} · Pro Reforma · NIF ${SITE.taxId}</p>
   </div>
 </footer>
-<a class="wa-float" href="${SITE.whatsapp}" rel="noopener" target="_blank" data-track="click_whatsapp" data-track-loc="flotante" aria-label="Escribir por WhatsApp (se abre en otra pestaña)">${icon.whatsapp}</a>`;
+<nav class="dock" aria-label="Contacto rápido" data-dock>
+  <a class="dock__a" href="${SITE.phoneHref}" data-track="click_phone" data-track-loc="dock">${icon.phone}<span>Llamar</span></a>
+  <a class="dock__a" href="${SITE.whatsapp}" rel="noopener" target="_blank" data-track="click_whatsapp" data-track-loc="dock">${icon.whatsapp}<span>WhatsApp</span><span class="vh"> (se abre en otra pestaña)</span></a>
+  <a class="dock__a dock__a--cta" href="${quoteHere ? '#presupuesto' : '/contacto/#presupuesto'}" data-track="click_cta" data-track-loc="dock" data-dock-cta>Presupuesto</a>
+</nav>`;
 }
 
 export function scripts({ engine = true } = {}) {

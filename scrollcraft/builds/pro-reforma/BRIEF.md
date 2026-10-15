@@ -53,3 +53,22 @@
 | Firma | Sí (capas SVG ≠ fotos reales por fases) | Sí (zonas que se desmarcan ≠ obra por fases) |
 
 **4 de 6 contra MRI, 5 de 6 contra Living Clean: pasa.** Nav y cierre se repiten a propósito: el encargo pide teléfono y presupuesto siempre a mano, y es lo que mejor funciona para un negocio local de reformas.
+
+## v2 · revisión crítica (15/10/2026)
+
+El encargo pidió una experiencia de scroll más rica, las reseñas como momento central y más conversión. Cambios de partitura:
+
+| Acto | Escritorio | Móvil | Span |
+|---|---|---|---|
+| 1 Hero oscuro: titular por líneas, banda panorámica que se abre como plano de cine, parallax suave; franja de confianza | `flow` + entrada CSS + `parallax` + `in` | igual, banda arriba | natural |
+| 2 **Reseñas: el momento** — el 5,0 crece, las estrellas se rellenan, relevo de las tres frases que destaca Google, temas | `pin` + `cue` (primera en *greet*) + CSS desde `--sc-p` | `flow` | 1.9 |
+| 3 Muro de reseñas (destacada fija + columnas) | `flow` + `in` | igual, 4 + botón | natural |
+| 4 Servicios con foto 2:1 alterna | `flow` + `reveal` izquierda/derecha | igual | natural |
+| 5 Pausa: banda con un salón terminado | `flow` + `parallax` | igual | natural |
+| 6 Por qué nos llaman (prueba en cada punto) | `flow` + `in` | igual | natural |
+| 7 Obra fase a fase | `pin` + barridos desde `--sc-p` | `flow` | 2.4 |
+| 8 Proceso: línea de progreso desde `--sc-p` | `flow` | línea vertical | natural |
+| 9 Dudas | `flow` | igual | natural |
+| 10 Presupuesto (azul marino) | `flow` + `kinetic` | igual | natural |
+
+Se retiró la cinta fotográfica del hero v1 y la sección «Más trabajos»; no hay galería horizontal porque obligaba a repetir fotos. El movimiento firma sigue siendo la obra fase a fase; las reseñas son el segundo pico.

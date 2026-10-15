@@ -9,6 +9,8 @@ DirectorySlash On
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteRule ^index\.html?$ / [R=301,L]
+  # Reseñas de Google: ruta sin extensión, igual que en Netlify (netlify.toml).
+  RewriteRule ^api/resenas$ api/resenas.php [L]
 </IfModule>
 
 <IfModule mod_headers.c>

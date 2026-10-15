@@ -6,6 +6,8 @@ $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 if (!getenv('MRI_NO_CSP')) header("Content-Security-Policy: default-src 'self'; img-src 'self' data: https://lh3.googleusercontent.com; style-src 'self'; script-src 'self'; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'self'; base-uri 'self'; object-src 'none'");
 header('X-Content-Type-Options: nosniff');
 if (preg_match('#^/[\w/-]+\.php$#', $path) && is_file($root . $path) && strpos(realpath($root . $path), $root) === 0) { require $root . $path; return true; }
+// Rutas sin extensión servidas por un .php (p. ej. /api/resenas -> api/resenas.php, como el .htaccess).
+if (preg_match('#^/[\w/-]+$#', $path) && is_file($root . $path . '.php') && strpos(realpath($root . $path . '.php'), $root) === 0) { require $root . $path . '.php'; return true; }
 $file = $root . $path;
 if (is_dir($file)) { $file = rtrim($file, '/') . '/index.html'; if (substr($path, -1) !== '/') { header('Location: ' . $path . '/', true, 301); return true; } }
 if (is_file($file)) {

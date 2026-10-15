@@ -8,21 +8,22 @@ Cada evento lleva `event`, `page` (ruta) y, según el caso, `location` (dónde e
 
 | Evento | Cuándo | Datos |
 |---|---|---|
-| `click_phone` | Clic en cualquier `tel:` | `location` (cabecera, hero, formulario, pie…) |
-| `click_whatsapp` | Clic en WhatsApp (cabecera, flotante, contacto…) | `location` |
+| `click_phone` | Clic en cualquier `tel:` | `location` (cabecera, hero, reseñas, dudas, `dock` = barra móvil, formulario, pie…) |
+| `click_whatsapp` | Clic en WhatsApp (cabecera, barra móvil, contacto…) | `location` |
 | `click_email` | Clic en el correo (también el correo de rescate tras un error) | `location` |
 | `click_map` | Clic en la dirección (Google Maps) | `location` |
-| `click_google_reviews` | Clic en la valoración o en «Leer todas en Google» | `location` |
-| `click_cta` | Clic en «Pedir presupuesto» | `location` |
+| `click_google_reviews` | Clic en la valoración, «Leer las 41 en Google», «Ver la ficha» o «Seguir leyendo en Google» | `location` (opiniones, muro, resena-completa, svc-*…) |
+| `click_cta` | Clic en «Solicitar presupuesto», «Cuéntanos qué necesitas», «Pedir presupuesto de …» | `location` (hero, resenas, svc-*, metodo, dock…) |
 | `click_service` | Clic en un servicio desde la portada | `location` |
 | `click_projects` | Clic hacia proyectos | `location` |
-| `select_service` | Cambio del tipo de obra en el formulario | `service`, `location` |
+| `select_service` | Cambio del tipo de obra en el formulario, o enlace «Pedir presupuesto de …» que lo marca | `service`, `location` |
 | `form_start` | Primer campo tocado | `origin` (`home`, el servicio, `contacto`…) |
 | `form_invalid` | Envío con errores de validación | `origin` |
 | `form_submit` | Envío validado (una sola vez por intento) | `origin`, `service` |
 | `form_success` | El servidor confirma la recepción | `origin`, `service` |
 | `form_error` | El servidor o la red fallan | `origin`, `status` (código HTTP o 0) |
 | `reviews_live` | Las reseñas se han cargado desde la API de Google | `count` |
+| `reviews_more` | «Ver más opiniones» en móvil | `open` |
 
 ## Embudo recomendado
 

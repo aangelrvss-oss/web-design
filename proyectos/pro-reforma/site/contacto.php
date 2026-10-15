@@ -72,8 +72,17 @@ $allowedTypes = ['' => 'Sin indicar', 'integral' => 'Reforma integral', 'parcial
 $allowedVia = ['' => 'Sin preferencia', 'llamada' => 'Llamada', 'whatsapp' => 'WhatsApp', 'email' => 'Correo'];
 
 $nombre = $line($_POST['nombre'] ?? '', 120);
+// Un solo campo «Teléfono o correo»; se aceptan también los campos separados.
+$contacto = $line($_POST['contacto'] ?? '', 160);
 $telefono = $line($_POST['telefono'] ?? '', 40);
 $email = $line($_POST['email'] ?? '', 160);
+if ($contacto !== '') {
+    if (strpos($contacto, '@') !== false) {
+        $email = $contacto;
+    } else {
+        $telefono = $contacto;
+    }
+}
 $localidad = $line($_POST['localidad'] ?? '', 120);
 $tipo = $line($_POST['tipo'] ?? '', 20);
 $mensaje = $clean($_POST['mensaje'] ?? '', 3000);
@@ -91,11 +100,11 @@ $telDigits = preg_replace('/\D/', '', $telefono) ?? '';
 $telOk = $telefono !== '' && strlen($telDigits) >= 9 && strlen($telDigits) <= 15;
 $emailOk = $email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
 if ($telefono === '' && $email === '') {
-    $errors['contacto'] = 'Indica un teléfono o un correo electrónico.';
+    $errors['contacto'] = 'Escribe un teléfono o un correo para poder contestarte.';
 } elseif ($telefono !== '' && !$telOk) {
     $errors['contacto'] = 'Revisa el teléfono: debe tener al menos 9 cifras.';
 } elseif ($email !== '' && !$emailOk) {
-    $errors['contacto'] = 'Revisa el correo electrónico.';
+    $errors['contacto'] = 'Revisa el correo: parece incompleto.';
 }
 if (!array_key_exists($tipo, $allowedTypes)) {
     $tipo = '';
@@ -111,8 +120,7 @@ $body = implode("\n", [
     'Nombre:      ' . $nombre,
     'Teléfono:    ' . ($telefono ?: '-'),
     'Correo:      ' . ($email ?: '-'),
-    'Contactar:   ' . $allowedVia[$via],
-    'Localidad:   ' . ($localidad ?: '-'),
+    ($via !== '' ? 'Contactar:   ' . $allowedVia[$via] . "\n" : '') . ($localidad !== '' ? 'Localidad:   ' . $localidad . "\n" : '') .
     'Trabajo:     ' . $allowedTypes[$tipo],
     'Página:      ' . ($origen ?: '-'),
     '',

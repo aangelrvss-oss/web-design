@@ -15,6 +15,8 @@
     "serve:proreforma": "SITE_ROOT=proyectos/pro-reforma/site php -S 127.0.0.1:4700 tools/dev/router.php",
     "qa:proreforma": "node proyectos/pro-reforma/qa/functional.mjs http://127.0.0.1:4700 qa/out/pro-reforma",
     "qa:proreforma:anim": "node proyectos/pro-reforma/qa/animation.mjs http://127.0.0.1:4700/",
-    "preview:proreforma": "node proyectos/pro-reforma/tools/preview/bundle.mjs"
+    "preview:proreforma": "node proyectos/pro-reforma/tools/preview/bundle.mjs",
+    "qa:proreforma:backend": "node proyectos/pro-reforma/qa/backend.mjs",
+    "demo:proreforma": "node proyectos/pro-reforma/tools/demo/build-netlify.mjs"
   }
 }

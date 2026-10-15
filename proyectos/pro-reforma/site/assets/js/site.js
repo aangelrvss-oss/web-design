@@ -29,6 +29,7 @@
     $$('[data-sc-stage]', act).forEach(function (st) { st.removeAttribute('data-sc-stage'); });
     $$('[data-sc-cue]', act).forEach(function (c) { c.setAttribute('data-sc-cue', '0'); });
     act.classList.add('is-mobile-flow');
+    $$('.rail__track', act).forEach(function (r) { r.setAttribute('tabindex', '0'); });
   });
   var sc = null;
   if (window.ScrollCraft && document.querySelector('[data-sc-act]')) {
@@ -90,6 +91,7 @@
   });
 
   /* --------------------------------------------------------------- menú -- */
+  var bar = document.querySelector('[data-bar]');
   var drop = document.querySelector('[data-drop]');
   if (drop) {
     var menu = document.getElementById(drop.getAttribute('aria-controls'));
@@ -100,7 +102,6 @@
     drop.parentNode.addEventListener('focusout', function (e) { if (!drop.parentNode.contains(e.relatedTarget)) setDrop(false); });
   }
   var burger = document.querySelector('[data-burger]');
-  var wa = document.querySelector('.wa-float');
   if (burger) {
     var sheet = document.getElementById(burger.getAttribute('aria-controls'));
     var setSheet = function (open) {
@@ -108,7 +109,7 @@
       sheet.hidden = !open;
       document.body.classList.toggle('menu-open', open);
       burger.querySelector('.vh').textContent = open ? 'Cerrar menú' : 'Menú';
-      if (wa) wa.classList.toggle('is-hidden', open || waHidden);
+      syncDock();
     };
     burger.addEventListener('click', function () { setSheet(burger.getAttribute('aria-expanded') !== 'true'); });
     sheet.addEventListener('click', function (e) { if (e.target.closest('a')) setSheet(false); });
@@ -116,54 +117,115 @@
     matchMedia('(min-width: 1081px)').addEventListener('change', function (m) { if (m.matches) setSheet(false); });
   }
 
-  /* WhatsApp flotante: se oculta mientras el formulario está en pantalla,
-     para no tapar campos ni el botón de enviar. */
-  var waHidden = false;
+  /* -------------------------------------- cabecera sobre el hero oscuro --
+     Transparente mientras el hero está debajo; sólida en cuanto sale. */
+  var hero = document.querySelector('[data-hero]');
+  if (bar && bar.classList.contains('bar--over')) {
+    var syncBar = function () {
+      var solid = !hero || hero.getBoundingClientRect().bottom <= bar.offsetHeight + 1;
+      bar.classList.toggle('is-solid', solid);
+    };
+    addEventListener('scroll', syncBar, { passive: true });
+    addEventListener('resize', syncBar);
+    syncBar();
+  }
+
+  /* --------------------------------------------- barra de contacto móvil --
+     Aparece cuando los botones del hero ya no se ven, y se aparta sobre el
+     formulario y el pie para no tapar campos ni enlaces. */
+  var dock = document.querySelector('[data-dock]');
+  var heroCta = document.querySelector('[data-hero-cta]') || document.querySelector('.page-hero .cta-pair');
   var quote = document.getElementById('presupuesto');
-  if (wa && quote && 'IntersectionObserver' in window) {
-    new IntersectionObserver(function (en) {
-      waHidden = en[0].isIntersecting;
-      wa.classList.toggle('is-hidden', waHidden || document.body.classList.contains('menu-open'));
-    }, { rootMargin: '0px 0px -10% 0px' }).observe(quote);
+  var foot = document.querySelector('.foot');
+  var seen = { cta: true, quote: false, foot: false };
+  function syncDock() {
+    if (!dock) return;
+    var on = !seen.cta && !seen.quote && !seen.foot && !document.body.classList.contains('menu-open');
+    dock.classList.toggle('is-on', on);
+  }
+  if (dock && 'IntersectionObserver' in window) {
+    var watch = function (el, key) {
+      if (!el) { seen[key] = false; return; }
+      new IntersectionObserver(function (en) { seen[key] = en[0].isIntersecting; syncDock(); }).observe(el);
+    };
+    watch(heroCta, 'cta'); watch(quote, 'quote'); watch(foot, 'foot');
+  }
+
+  /* -------------------------- «Pedir presupuesto de …» marca el tipo de obra */
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('[data-set-type]');
+    if (!a) return;
+    var r = document.querySelector('#presupuesto input[name="tipo"][value="' + a.getAttribute('data-set-type') + '"]');
+    if (r) { r.checked = true; track('select_service', { service: r.value, location: a.getAttribute('data-track-loc') || 'enlace' }); }
+  });
+
+  /* ------------------------------------------------- muro de reseñas -- */
+  var wall = document.querySelector('.rwall');
+  var more = wall && wall.querySelector('[data-more]');
+  if (wall && more && wall.querySelectorAll('[data-more-item]').length && matchMedia('(max-width: 760px)').matches) {
+    var hiddenN = wall.querySelectorAll('[data-more-item]').length;
+    wall.classList.add('is-collapsed');
+    more.hidden = false;
+    more.textContent = 'Ver ' + hiddenN + ' opiniones más';
+    more.addEventListener('click', function () {
+      var open = more.getAttribute('aria-expanded') !== 'true';
+      wall.classList.toggle('is-collapsed', !open);
+      more.setAttribute('aria-expanded', String(open));
+      more.textContent = open ? 'Ver menos opiniones' : 'Ver ' + hiddenN + ' opiniones más';
+      if (open) { var first = wall.querySelector('[data-more-item]'); if (first) { first.setAttribute('tabindex', '-1'); first.focus({ preventScroll: false }); } }
+      track('reviews_more', { open: open });
+    });
   }
 
   /* ------------------------------------------- reseñas de Google en vivo --
-     Solo si el servidor tiene configurada la API de Places
-     (site/api/resenas.php). Sin configuración responde {available:false} y
-     se queda el bloque editorial con su fecha de consulta. */
-  var reviews = document.querySelector('[data-reviews]');
+     Si el servidor tiene configurada la API de Places (/api/resenas, PHP o
+     función de Netlify), se sustituyen valoración, número y reseñas por los
+     datos de Google con su atribución. Si no responde, se queda el bloque
+     editorial con su fecha. Nunca se vacía ni se presenta lo antiguo como actual. */
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var STAR = '<svg class="ic ic--star ic--fill" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2l2.6 5.5 6 .7-4.4 4.1 1.2 5.9L12 16.5l-5.4 2.9 1.2-5.9-4.4-4.1 6-.7z"/></svg>';
+  $$('[data-g-checked]').forEach(function (n) {
+    var d = new Date(n.getAttribute('data-g-checked') + 'T12:00:00');
+    if (!isNaN(d) && (Date.now() - d) / 864e5 > 180) { n.textContent += ' · puede haber cambiado'; n.classList.add('is-stale'); }
+  });
+  var live = function (d) {
+    var rating = Number(d.rating).toFixed(1).replace('.', ',');
+    $$('[data-g-rating]').forEach(function (n) { n.textContent = rating; });
+    $$('[data-g-count]').forEach(function (n) { n.textContent = d.count; });
+    $$('[data-g-when]').forEach(function (n) { n.textContent = 'datos de Google en este momento'; n.classList.remove('is-stale'); });
+    $$('[data-g-badge]').forEach(function (n) { if (d.mapsUri) n.href = d.mapsUri; });
+    var mode = document.querySelector('[data-g-mode]');
+    if (mode) mode.textContent = 'Reseñas servidas por Google en este momento. Google elige cuáles devuelve (como máximo cinco) y no verifica las reseñas.';
+    var list = document.querySelector('[data-g-list]');
+    if (!list || !d.reviews || !d.reviews.length) return;
+    var card = function (rv, lead) {
+      var a = rv.author || {};
+      var who = a.uri ? '<a href="' + esc(a.uri) + '" rel="noopener" target="_blank">' + esc(a.name) + '<span class="vh"> (se abre en otra pestaña)</span></a>' : esc(a.name);
+      var av = a.photo ? '<img class="rcard__photo" src="' + esc(a.photo) + '" alt="" width="42" height="42" loading="lazy" referrerpolicy="no-referrer">' : '<span class="rcard__av" aria-hidden="true">' + esc((a.name || '?').charAt(0)) + '</span>';
+      var paras = String(rv.text || '').split(/\n+/).filter(Boolean).map(function (t, i, all) { return '<p>' + (i === 0 ? '«' : '') + esc(t) + (i === all.length - 1 ? '»' : '') + '</p>'; }).join('');
+      return '<figure class="rcard' + (lead ? ' rcard--lead' : '') + '">' +
+        '<p class="rcard__stars"><span class="stars" role="img" aria-label="' + esc(rv.rating) + ' de 5 estrellas">' + new Array((rv.rating | 0) + 1).join(STAR) + '</span>' + esc(rv.rating) + ' de 5</p>' +
+        '<blockquote>' + paras + '</blockquote>' +
+        (rv.uri ? '<a class="rcard__more" href="' + esc(rv.uri) + '" rel="noopener" target="_blank">Ver la reseña en Google Maps<span class="vh"> (se abre en otra pestaña)</span></a>' : '') +
+        '<figcaption>' + av + '<span class="rcard__who"><strong>' + who + '</strong><span>Reseña de Google · ' + esc(rv.when) + '</span></span></figcaption></figure>';
+    };
+    var rs = d.reviews.slice(0, 5);
+    list.innerHTML = card(rs[0], true) + '<div class="rwall__cols">' + rs.slice(1).map(function (r) { return card(r, false); }).join('') + '</div>' +
+      '<p class="rwall__attr">Fuente: Google Maps</p>';
+    if (wall) { wall.classList.remove('is-collapsed'); if (more) more.hidden = true; }
+    track('reviews_live', { count: rs.length });
+  };
+  var reviewsEl = document.querySelector('[data-reviews]') || document.querySelector('[data-g-badge]');
   var loadLive = function () {
     if (!window.fetch) return;
-    fetch('/api/resenas.php', { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+    fetch('/api/resenas', { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) {
-        if (!d || !d.available) return;
-        var rating = String(Number(d.rating).toFixed(1)).replace('.', ',');
-        $$('[data-g-rating]').forEach(function (n) { n.textContent = rating; });
-        $$('[data-g-count]').forEach(function (n) { n.textContent = d.count; });
-        $$('[data-g-when]').forEach(function (n) { n.textContent = 'datos de Google en este momento'; });
-        $$('[data-g-badge]').forEach(function (n) { if (d.mapsUri) n.href = d.mapsUri; });
-        var mode = document.querySelector('[data-g-mode]');
-        if (mode) mode.textContent = 'Reseñas y valoración servidas por Google en este momento. Google elige qué reseñas devuelve (como máximo cinco).';
-        var list = document.querySelector('[data-g-list]');
-        if (!list || !d.reviews || !d.reviews.length) return;
-        list.innerHTML = d.reviews.map(function (rv, i) {
-          var a = rv.author || {};
-          var who = a.uri ? '<a href="' + esc(a.uri) + '" rel="noopener" target="_blank">' + esc(a.name) + '</a>' : esc(a.name);
-          return '<figure class="quote-card' + (i === 0 ? ' quote-card--lead' : '') + '">' +
-            '<blockquote><p>«' + esc(rv.text) + '»</p></blockquote>' +
-            '<figcaption>' + (a.photo ? '<img class="reviews__live-photo" src="' + esc(a.photo) + '" alt="" width="32" height="32" loading="lazy" referrerpolicy="no-referrer">' : '') +
-            '<span class="quote-card__who">' + who + '</span><span class="quote-card__src">' + esc(rv.when) + ' · ' + esc(rv.rating) + ' de 5' +
-            (rv.uri ? ' · <a href="' + esc(rv.uri) + '" rel="noopener" target="_blank">Ver en Google Maps</a>' : '') + '</span></figcaption></figure>';
-        }).join('') + '<p class="reviews__attr">Fuente: Google Maps</p>';
-        track('reviews_live', { count: d.reviews.length });
-      })
+      .then(function (d) { if (d && d.available) live(d); })
       .catch(function () {});
   };
-  if (reviews && 'IntersectionObserver' in window) {
-    var io = new IntersectionObserver(function (en) { if (en[0].isIntersecting) { io.disconnect(); loadLive(); } }, { rootMargin: '400px 0px' });
-    io.observe(reviews);
+  if (reviewsEl && 'IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (en) { if (en[0].isIntersecting) { io.disconnect(); loadLive(); } }, { rootMargin: '600px 0px' });
+    io.observe(reviewsEl);
   }
 
   /* ---------------------------------------------- formulario: envío real -- */
@@ -173,38 +235,37 @@
     if (t) t.value = String(Date.now());
     var status = form.querySelector('[data-status]');
     var btn = form.querySelector('button[type="submit"]');
-    var btnText = btn.textContent;
+    var btnLabel = btn.querySelector('.qf__send-t');
+    var btnText = btnLabel.textContent;
     var started = false;
     var origin = form.getAttribute('data-origin');
     form.addEventListener('input', function () { if (!started) { started = true; track('form_start', { origin: origin }); } });
     form.addEventListener('change', function (e) { if (e.target.name === 'tipo') track('select_service', { service: e.target.value, location: origin }); });
-    var params = new URLSearchParams(location.search);
-    var preset = params.get('tipo');
+    var preset = new URLSearchParams(location.search).get('tipo');
     if (preset) { var r0 = form.querySelector('input[name="tipo"][value="' + preset + '"]'); if (r0) r0.checked = true; }
 
     var field = function (n) { return form.elements[n]; };
-    var errBox = function (id) { return document.getElementById(id); };
+    var idp = field('nombre').id.split('-')[0];
+    var errBox = function (k) { return document.getElementById(idp + '-' + k + '-err'); };
     var showErr = function (input, box, msg) {
       if (input) input.setAttribute('aria-invalid', msg ? 'true' : 'false');
       if (box) { box.textContent = msg || ''; box.hidden = !msg; }
     };
-    var idp = field('nombre').id.split('-')[0];
+    var isMail = function (v) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v); };
     var validate = function () {
-      var ok = true, first = null;
-      var nombre = field('nombre'), tel = field('telefono'), mail = field('email');
+      var first = null;
+      var nombre = field('nombre'), contacto = field('contacto');
       var nErr = nombre.value.trim().length < 2 ? 'Escribe tu nombre.' : '';
-      showErr(nombre, errBox(idp + '-nombre-err'), nErr);
-      if (nErr) { ok = false; first = nombre; }
-      var tv = tel.value.trim(), mv = mail.value.trim(), cErr = '', bad = null;
-      if (!tv && !mv) { cErr = 'Indica un teléfono o un correo electrónico.'; bad = 'both'; }
-      else if (tv && tv.replace(/\D/g, '').length < 9) { cErr = 'Revisa el teléfono: debe tener al menos 9 cifras.'; bad = 'tel'; }
-      else if (mv && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mv)) { cErr = 'Revisa el correo electrónico.'; bad = 'mail'; }
-      showErr(null, errBox(idp + '-contacto-err'), cErr);
-      tel.setAttribute('aria-invalid', String(bad === 'both' || bad === 'tel'));
-      mail.setAttribute('aria-invalid', String(bad === 'both' || bad === 'mail'));
-      if (cErr) { ok = false; first = first || (bad === 'mail' ? mail : tel); }
-      return { ok: ok, first: first };
+      showErr(nombre, errBox('nombre'), nErr);
+      if (nErr) first = nombre;
+      var v = contacto.value.trim(), cErr = '';
+      if (!v) cErr = 'Escribe un teléfono o un correo para poder contestarte.';
+      else if (v.indexOf('@') > -1 ? !isMail(v) : v.replace(/\D/g, '').length < 9) cErr = v.indexOf('@') > -1 ? 'Revisa el correo: parece incompleto.' : 'Revisa el teléfono: debe tener al menos 9 cifras.';
+      showErr(contacto, errBox('contacto'), cErr);
+      if (cErr && !first) first = contacto;
+      return { ok: !first, first: first };
     };
+    field('contacto').addEventListener('blur', function () { if (this.getAttribute('aria-invalid') === 'true') validate(); });
     var say = function (kind, html) {
       status.hidden = false;
       status.className = 'qf__status ' + (kind === 'ok' ? 'is-ok' : 'is-err');
@@ -212,10 +273,26 @@
       status.focus({ preventScroll: false });
     };
     var TEL = '<a href="tel:+34691312106" data-track="click_phone" data-track-loc="form">691 312 106</a>';
-    var WA = '<a href="https://wa.me/34691312106" rel="noopener" target="_blank" data-track="click_whatsapp" data-track-loc="form">WhatsApp</a>';
+    var WA = '<a href="https://wa.me/34691312106" rel="noopener" target="_blank" data-track="click_whatsapp" data-track-loc="form">WhatsApp<span class="vh"> (se abre en otra pestaña)</span></a>';
+    var busy = function (on) {
+      form.classList.toggle('is-sending', on);
+      form.setAttribute('aria-busy', String(on));
+      if (on) btn.setAttribute('aria-disabled', 'true'); else btn.removeAttribute('aria-disabled');
+      btnLabel.textContent = on ? 'Enviando…' : btnText;
+    };
+    var send = function () {
+      if (form.hasAttribute('data-netlify-form')) {
+        /* Netlify Forms: POST codificado a la propia web; 200 = recibido. */
+        return fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(new FormData(form)).toString() })
+          .then(function (r) { return { ok: r.ok, status: r.status }; });
+      }
+      return fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+        .then(function (r) { return r.json().catch(function () { return { ok: false, message: '' }; }).then(function (j) { j.status = r.status; return j; }); });
+    };
 
     form.addEventListener('submit', function (e) {
       e.preventDefault();
+      if (form.classList.contains('is-sending')) return;
       var v = validate();
       if (!v.ok) { v.first.focus(); track('form_invalid', { origin: origin }); return; }
       var tipo = form.querySelector('input[name="tipo"]:checked');
@@ -224,32 +301,28 @@
         say('ok', '<strong>Versión de demostración</strong>El formulario comprueba los datos, pero esta copia no envía nada. En la web publicada la solicitud llegará a daniel@proreforma.es. Para contactar ahora: ' + TEL + ' o ' + WA + '.');
         return;
       }
-      if (form.classList.contains('is-sending')) return;
-      form.classList.add('is-sending');
-      btn.setAttribute('aria-disabled', 'true');
-      btn.textContent = 'Enviando…';
-      fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' }, credentials: 'same-origin' })
-        .then(function (r) { return r.json().catch(function () { return { ok: false, message: '' }; }).then(function (j) { j.status = r.status; return j; }); })
+      busy(true);
+      send()
         .then(function (j) {
           if (j.ok) {
             track('form_success', { origin: origin, service: tipo ? tipo.value : '' });
             $$('.qf > fieldset, .qf__grid, .qf__foot', form).forEach(function (el) { el.hidden = true; });
-            say('ok', '<strong>Solicitud enviada</strong>Gracias. La hemos recibido y te contactaremos para concertar la visita. Si es urgente: ' + TEL + ' o ' + WA + '.');
+            say('ok', '<strong>Solicitud enviada</strong>Gracias, ' + esc(field('nombre').value.trim().split(' ')[0]) + '. La hemos recibido y te contactaremos para concertar la visita (de lunes a viernes, de 9:00 a 19:00). Si es urgente: ' + TEL + ' o ' + WA + '.');
             return;
           }
           if (j.fields) {
-            if (j.fields.nombre) showErr(field('nombre'), errBox(idp + '-nombre-err'), j.fields.nombre);
-            if (j.fields.contacto) showErr(null, errBox(idp + '-contacto-err'), j.fields.contacto);
+            if (j.fields.nombre) showErr(field('nombre'), errBox('nombre'), j.fields.nombre);
+            if (j.fields.contacto) showErr(field('contacto'), errBox('contacto'), j.fields.contacto);
           }
           throw j;
         })
         .catch(function (j) {
           track('form_error', { origin: origin, status: (j && j.status) || 0 });
           var msg = (j && j.message) ? esc(j.message) : 'No hemos podido enviar tu solicitud.';
-          var body = encodeURIComponent(['Nombre: ' + field('nombre').value, 'Teléfono: ' + field('telefono').value, 'Correo: ' + field('email').value, 'Localidad: ' + field('localidad').value, '', field('mensaje').value].join('\n'));
+          var body = encodeURIComponent(['Nombre: ' + field('nombre').value, 'Contacto: ' + field('contacto').value, 'Trabajo: ' + (tipo ? tipo.parentNode.textContent.trim() : ''), '', field('mensaje').value].join('\n'));
           say('err', '<strong>No se ha enviado</strong>' + msg + ' Tus datos siguen en el formulario. Puedes llamar al ' + TEL + ', escribir por ' + WA + ' o <a href="mailto:daniel@proreforma.es?subject=' + encodeURIComponent('Solicitud de presupuesto') + '&body=' + body + '" data-track="click_email" data-track-loc="form-error">enviarla por correo</a>.');
         })
-        .then(function () { form.classList.remove('is-sending'); btn.removeAttribute('aria-disabled'); btn.textContent = btnText; });
+        .then(function () { busy(false); });
     });
   }
   void sc;

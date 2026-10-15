@@ -1,138 +1,209 @@
-import { SITE, REVIEWS, PHOTOS, PROJECTS, SERVICES, METHOD, FAQS } from './data.mjs';
+import { SITE, REVIEWS, PHOTOS, PROJECTS, SERVICES, METHOD, FAQS, quoteFrom } from './data.mjs';
 import { head, header, footer, scripts, quoteForm, contactList, esc, businessJsonLd, breadcrumbLd, photo, svcUrl } from './layout.mjs';
-import { icon } from './icons.mjs';
+import { icon, googleG } from './icons.mjs';
 
 const svcBySlug = Object.fromEntries(SERVICES.map((s) => [s.slug, s]));
 const pad = (n) => String(n).padStart(2, '0');
-const stars = (n) => `<span class="stars" role="img" aria-label="${String(n).replace('.', ',')} de 5 estrellas">${icon.star.repeat(5)}</span>`;
+const stars = (n, cls = '') => `<span class="stars${cls ? ` ${cls}` : ''}" role="img" aria-label="${String(n.toFixed ? n.toFixed(1) : n).replace('.', ',')} de 5 estrellas">${icon.star.repeat(5)}</span>`;
 const ratingTxt = REVIEWS.rating.toFixed(1).replace('.', ',');
+const OUT = '<span class="vh"> (se abre en otra pestaña)</span>';
+const TYPE_OF = { 'reformas-integrales': 'integral', pinturas: 'pintura', insonorizacion: 'insonorizacion' };
 
-const faqList = (faqs, idp = 'f') => `<div class="faq">${faqs.map(([q, a]) => `<details class="faq__i"><summary><span>${esc(q)}</span>${icon.chevron}</summary><p>${esc(a)}</p></details>`).join('')}</div>`;
+const faqList = (faqs) => `<div class="faq">${faqs.map(([q, a]) => `<details class="faq__i"><summary><span>${esc(q)}</span>${icon.chevron}</summary><p>${esc(a)}</p></details>`).join('')}</div>`;
 const crumbs = (items) => `<nav class="crumbs" aria-label="Ruta de navegación"><ol>${items.map(([n, h], i) => i === items.length - 1 ? `<li aria-current="page">${esc(n)}</li>` : `<li><a href="${h}">${esc(n)}</a></li>`).join('')}</ol></nav>`;
 
-// Insignia de Google: valoración con fecha de consulta y enlace a la ficha.
-// site.js la actualiza si la API de Places está configurada en el servidor.
-const googleBadge = (loc) => `<a class="gbadge" href="${SITE.mapsUrl}" rel="noopener" target="_blank" data-track="click_google_reviews" data-track-loc="${loc}" data-g-badge>
-  <span class="gbadge__score" data-g-rating>${ratingTxt}</span>${stars(REVIEWS.rating)}
-  <span class="gbadge__txt"><strong><span data-g-count>${REVIEWS.count}</span> reseñas en Google</strong><span data-g-when>consultado el ${REVIEWS.checkedLabel}</span></span>
-  <span class="vh"> (abre la ficha de Google Maps en otra pestaña)</span>
+// --------------------------------------------------------------- reseñas --
+// Insignia: valoración y número CON su fecha de consulta; enlace a la ficha.
+// site.js la actualiza si la API de Places responde en el servidor.
+const googleBadge = (loc, cls = '') => `<a class="gbadge${cls ? ` ${cls}` : ''}" href="${SITE.mapsUrl}" rel="noopener" target="_blank" data-track="click_google_reviews" data-track-loc="${loc}" data-g-badge>
+  ${googleG}<span class="gbadge__score" data-g-rating>${ratingTxt}</span>${stars(REVIEWS.rating)}
+  <span class="gbadge__txt"><strong><span data-g-count>${REVIEWS.count}</span> reseñas en Google</strong><span data-g-when data-g-checked="${REVIEWS.checked}">consulta del ${REVIEWS.checkedShort}</span></span>${OUT}
 </a>`;
 
+const initials = (name) => name.replace(/[^\p{L}\s]/gu, '').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+// Una reseña literal. Si el original es más largo, se dice y se enlaza.
+function reviewCard(r, { lead = false, extra = false } = {}) {
+  const paras = r.text.map((t, i) => `<p>${i === 0 ? '«' : ''}${esc(t)}${i === r.text.length - 1 ? (r.full ? '»' : ' […]»') : ''}</p>`).join('');
+  return `<figure class="rcard${lead ? ' rcard--lead' : ''}"${extra ? ' data-more-item' : ''}>
+        <blockquote>${paras}</blockquote>
+        ${r.full ? '' : `<a class="rcard__more" href="${SITE.mapsUrl}" rel="noopener" target="_blank" data-track="click_google_reviews" data-track-loc="resena-completa">Seguir leyendo en Google${OUT}</a>`}
+        <figcaption><span class="rcard__av" aria-hidden="true">${esc(initials(r.author))}</span><span class="rcard__who"><strong>${esc(r.author)}</strong><span>Reseña de Google · ${esc(r.when)}</span></span></figcaption>
+      </figure>`;
+}
+const reviewsNote = () => `Reseñas copiadas tal cual de Google (ficha de Pro Reforma y widget de su web). La antigüedad es la que mostraba Google el ${REVIEWS.checkedLabel}. Google no verifica las reseñas.`;
+
+// Muro de reseñas (portada): una destacada y el resto en columnas; en móvil
+// se ven cuatro y un botón real muestra las demás.
+function reviewsWall() {
+  const [lead, ...rest] = REVIEWS.items;
+  return `<section class="rwall" data-sc-act="flow" aria-labelledby="rw-h">
+    <div class="sc-wrap">
+      <div class="rwall__head">
+        <h2 id="rw-h" class="display display--md">Lo que cuentan quienes ya han hecho obra con nosotros</h2>
+        <a class="btn btn--line" href="${SITE.mapsUrl}" rel="noopener" target="_blank" data-track="click_google_reviews" data-track-loc="muro">${googleG} Leer las ${REVIEWS.count} en Google${OUT}</a>
+      </div>
+      <div class="rwall__grid" id="rw-list" data-g-list>
+        ${reviewCard(lead, { lead: true })}
+        <div class="rwall__cols" data-sc-in data-sc-stagger="60">${rest.map((r, i) => reviewCard(r, { extra: i >= 3 })).join('\n        ')}</div>
+      </div>
+      <button class="rwall__toggle btn btn--line" type="button" aria-expanded="false" aria-controls="rw-list" data-more hidden>Ver más opiniones</button>
+      <p class="rwall__note" data-g-mode>${esc(reviewsNote())}</p>
+      <div class="cta-pair rwall__cta">
+        <a class="btn btn--accent btn--lg" href="#presupuesto" data-track="click_cta" data-track-loc="resenas">Solicitar presupuesto</a>
+        <a class="btn btn--line btn--lg" href="${SITE.phoneHref}" data-track="click_phone" data-track-loc="resenas">${icon.phone}<span>Llamar ahora</span></a>
+      </div>
+    </div>
+  </section>`;
+}
+
+// Franja compacta de reseñas para páginas interiores.
+function reviewsBand(authors, { title = 'Opiniones en Google', loc = 'interior' } = {}) {
+  const list = authors.map((a) => REVIEWS.items.find((r) => r.author === a));
+  return `<section class="rband" aria-labelledby="rb-h-${loc}">
+    <div class="sc-wrap rband__grid">
+      <div class="rband__aside">
+        <h2 id="rb-h-${loc}" class="display display--sm">${esc(title)}</h2>
+        ${googleBadge(loc)}
+        <p class="rband__note">${esc(reviewsNote())}</p>
+      </div>
+      <div class="rband__list" data-sc-in data-sc-stagger="70">${list.map((r) => reviewCard(r)).join('')}</div>
+    </div>
+  </section>`;
+}
+
 // Cierre con formulario (todas las páginas comerciales).
-const quoteSection = ({ origin, type = '', heading = 'Pide tu presupuesto', lede = 'Cuéntanos qué quieres hacer. Te llamamos para concertar la visita y te enviamos un presupuesto detallado y sin compromiso.' }) => `<section id="presupuesto" class="quote ground-navy" data-sc-act="flow" aria-labelledby="quote-h">
+const quoteSection = ({ origin, type = '', heading = 'Cuéntanos qué necesitas', lede = 'Te llamamos para concertar la visita y te enviamos un presupuesto detallado y sin compromiso.' }) => `<section id="presupuesto" class="quote ground-navy" data-sc-act="flow" aria-labelledby="quote-h">
   <div class="sc-wrap quote__grid">
     <div class="quote__aside">
-      <p class="label">Presupuesto</p>
+      <p class="label">Presupuesto sin compromiso</p>
       <h2 id="quote-h" class="display display--lg" data-sc-cue="0.02" data-sc-kinetic="lines">${esc(heading)}</h2>
       <p class="lede">${esc(lede)}</p>
       ${contactList(`quote-${origin}`)}
+      <p class="quote__who">Te atiende Daniel, de Pro Reforma.</p>
     </div>
     <div class="quote__sheet">${quoteForm({ origin, type })}</div>
   </div>
 </section>`;
-
-// Reseñas (bloque editorial; en modo API se sustituye en el navegador).
-function reviewsBlock({ heading = 'Lo que cuentan los clientes en Google', compact = false } = {}) {
-  const [lead, ...rest] = REVIEWS.quotes;
-  const card = (q, cls = '') => `<figure class="quote-card${cls}">
-        <p class="quote-card__theme">${esc(q.theme)}</p>
-        <blockquote><p>«${esc(q.text)}»</p></blockquote>
-        <figcaption><span class="quote-card__who">${esc(q.author)}</span><span class="quote-card__src">Reseña en Google${q.work ? ` · ${esc(q.work)}` : ''}</span></figcaption>
-      </figure>`;
-  return `<section id="opiniones" class="reviews" data-sc-act="flow" aria-labelledby="rev-h" data-reviews>
-    <div class="sc-wrap reviews__grid">
-      <div class="reviews__aside">
-        <p class="label">Opiniones verificadas</p>
-        <h2 id="rev-h" class="display display--md">${esc(heading)}</h2>
-        ${googleBadge('opiniones')}
-        <p class="reviews__note" data-g-mode>Fragmentos literales de reseñas publicadas en la ficha de Google de Pro Reforma. Valoración y número de reseñas consultados el ${REVIEWS.checkedLabel}.</p>
-        <div class="reviews__acts">
-          <a class="btn btn--line" href="${SITE.mapsUrl}" rel="noopener" target="_blank" data-track="click_google_reviews" data-track-loc="opiniones-boton">Leer todas en Google ${icon.out}<span class="vh"> (se abre en otra pestaña)</span></a>
-          <a class="btn btn--accent" href="#presupuesto" data-track="click_cta" data-track-loc="opiniones">Pedir presupuesto</a>
-        </div>
-      </div>
-      <div class="reviews__list" data-g-list>
-        ${card(lead, ' quote-card--lead')}
-        <div class="reviews__rest" data-sc-in data-sc-stagger="80">${(compact ? rest.slice(0, 2) : rest).map((q) => card(q)).join('\n        ')}</div>
-      </div>
-    </div>
-    ${compact ? '' : `<div class="sc-wrap themes">
-      <p class="label">Lo que más se repite</p>
-      <ul class="themes__list">${REVIEWS.themes.map(([t, d]) => `<li><h3>${esc(t)}</h3><p>${esc(d)}</p></li>`).join('')}</ul>
-    </div>`}
-  </section>`;
-}
 
 // ------------------------------------------------------------------ home --
 export function home() {
   const main = SERVICES.filter((s) => s.main);
   const trade = SERVICES.filter((s) => !s.main);
   const proj = PROJECTS[0];
-  const other = PROJECTS[1];
+  const why = [
+    ['La casa, protegida', 'Tapamos suelos y cubrimos puertas, ventanas y muebles antes de empezar. Al terminar retiramos todo y limpiamos.', quoteFrom('Ana Maria Coarda', 'Han protegido toda la cocina con plásticos, han trabajado limpio y con mucho cuidado')],
+    ['Acabados de oficio', 'Reparamos y preparamos paredes y techos antes de cerrar o pintar. Es lo que se ve cada día después.', { author: 'Frase destacada por Google', text: REVIEWS.highlights[1] }],
+    ['Sabes qué se hace', 'Daniel te atiende y te explica qué se hace en cada paso y con qué materiales.', quoteFrom('Nicki1309 S', 'Daniel nos explicó con detalle cada parte del proceso y los materiales')],
+  ];
   return `${head({
-    title: 'Reformas integrales en Rivas-Vaciamadrid | Pro Reforma',
-    description: 'Reformas integrales y parciales, pintura e insonorización en Rivas-Vaciamadrid. Visita, presupuesto detallado y la casa protegida durante la obra.',
+    title: 'Reformas, pintura e insonorización en Rivas-Vaciamadrid | Pro Reforma',
+    description: 'Reformas integrales, pintura e insonorización en Rivas-Vaciamadrid. 5,0 en Google con 41 reseñas. Visita, presupuesto detallado y la casa protegida.',
     path: '/',
     jsonld: [businessJsonLd(), { '@context': 'https://schema.org', '@type': 'WebSite', name: 'Pro Reforma', url: `${SITE.origin}/`, inLanguage: 'es' }],
-    preload: '<link rel="preload" as="image" type="image/webp" href="/assets/img/salon-led-cuadrada.webp">\n',
+    preload: '<link rel="preload" as="image" type="image/webp" href="/assets/img/insono-pintura-banda.webp" media="(min-width: 761px)">\n<link rel="preload" as="image" type="image/webp" href="/assets/img/insono-pintura-2x1.webp" media="(max-width: 760px)">\n',
   })}
 <body class="page-home">
 <span data-sc-progress></span>
-${header()}
+${header({ over: true })}
 <main id="contenido">
 
-  <section class="hero" data-sc-act="flow" aria-labelledby="hero-h">
-    <div class="sc-wrap hero__grid">
-      <div class="hero__copy">
-        <p class="label hero__label">Reformas integrales · ${esc(SITE.city)}</p>
-        <h1 id="hero-h" class="display display--xl hero__h"><span class="ln"><span>Reformas bien hechas,</span></span> <span class="ln"><span>con la casa protegida</span></span> <span class="ln"><span><em>y los acabados cuidados</em></span></span></h1>
-        <p class="lede hero__lede">Reformas integrales y parciales, pintura e insonorización. Visitamos la vivienda, te damos un presupuesto detallado y trabajamos con todo protegido para dejarlo limpio al terminar.</p>
-        <div class="cta-pair">
-          <a class="btn btn--accent btn--lg" href="#presupuesto" data-track="click_cta" data-track-loc="hero">Pedir presupuesto</a>
-          <a class="btn btn--line btn--lg" href="/proyectos/" data-track="click_projects" data-track-loc="hero">Ver proyectos</a>
+  <section class="hero ground-ink" data-sc-act="flow" aria-labelledby="hero-h" data-hero>
+    <div class="sc-wrap hero__copy">
+      <p class="label hero__label">${esc(SITE.city)} · Comunidad de Madrid</p>
+      <h1 id="hero-h" class="display display--xl hero__h"><span class="ln"><span>Reformas, pintura</span></span> <span class="ln"><span>e insonorización</span></span> <span class="ln"><span><em>en Rivas‑Vaciamadrid</em></span></span></h1>
+      <div class="hero__side">
+        <p class="lede hero__lede">Visitamos tu casa, te damos un presupuesto detallado por partidas y trabajamos con todo protegido. Al terminar, la dejamos limpia.</p>
+        <div class="cta-pair hero__cta" data-hero-cta>
+          <a class="btn btn--accent btn--lg" href="#presupuesto" data-track="click_cta" data-track-loc="hero">Solicitar presupuesto</a>
+          <a class="btn btn--ghost btn--lg" href="${SITE.phoneHref}" data-track="click_phone" data-track-loc="hero">${icon.phone}<span>Llamar · ${SITE.phone}</span></a>
         </div>
-        ${googleBadge('hero')}
       </div>
-      <div class="hero__pics" aria-label="Fotos de obras de Pro Reforma" role="group">
-        <figure class="hero__pic hero__pic--a" data-sc-parallax="-0.25">${photo('salon-led', PHOTOS['salon-led'], { shape: 'cuadrada', lazy: false })}<figcaption>Salón terminado · foseado con LED</figcaption></figure>
-        <figure class="hero__pic hero__pic--b" data-sc-parallax="0.35">${photo('insono-pintura', PHOTOS['insono-pintura'], { shape: 'cuadrada' })}<figcaption>Pintura con pistola</figcaption></figure>
-        <figure class="hero__pic hero__pic--c" data-sc-parallax="0.12">${photo('insono-placas', PHOTOS['insono-placas'], { shape: 'cuadrada' })}<figcaption>Placas de insonorización</figcaption></figure>
-        <p class="hero__pics-note">Fotos de obras reales publicadas por Pro Reforma</p>
+    </div>
+    <figure class="hero__band">
+      <div class="hero__frame"><picture data-sc-parallax="0.3"><source media="(max-width: 760px)" srcset="/assets/img/insono-pintura-2x1.webp" width="820" height="410">${photo('insono-pintura', 'Operario de Pro Reforma, con la camiseta de la empresa, pintando con pistola las paredes de placas de una habitación', { shape: 'banda', lazy: false })}</picture></div>
+      <figcaption>En obra: pintura con pistola sobre placas de insonorización</figcaption>
+    </figure>
+    <ul class="sc-wrap trust" aria-label="Datos de Pro Reforma" data-sc-in data-sc-stagger="70">
+      <li><a href="#opiniones" class="trust__g">${googleG}<strong data-g-rating>${ratingTxt}</strong>${stars(REVIEWS.rating)}<span><span data-g-count>${REVIEWS.count}</span> reseñas en Google · <span data-g-when data-g-checked="${REVIEWS.checked}">consulta del ${REVIEWS.checkedShort}</span></span></a></li>
+      <li>${icon.check}<span><strong>Presupuesto sin compromiso</strong> tras visitar la vivienda</span></li>
+      <li>${icon.clock}<span><strong>${esc(SITE.hoursShort)}</strong> por teléfono y WhatsApp</span></li>
+      <li>${icon.pin}<span><strong>Calle España, 63</strong> Rivas-Vaciamadrid</span></li>
+    </ul>
+  </section>
+
+  <section id="opiniones" class="rstage" data-sc-act="pin" data-sc-span="1.9" data-mobile-flow aria-labelledby="rev-h" data-reviews>
+    <div class="rstage__stage" data-sc-stage>
+      <div class="sc-wrap rstage__grid">
+        <div class="rstage__score">
+          <h2 id="rev-h" class="label rstage__h">Opiniones en Google</h2>
+          <p class="rstage__num" aria-hidden="true"><span data-g-rating>${ratingTxt}</span></p>
+          <div class="rstage__stars">${stars(REVIEWS.rating, 'stars--xl')}<span class="stars stars--xl stars--fill" aria-hidden="true">${icon.star.repeat(5)}</span></div>
+          <p class="rstage__count"><span class="vh">Valoración ${ratingTxt} de 5 · </span><strong><span data-g-count>${REVIEWS.count}</span> reseñas</strong> en la ficha de Google<span class="rstage__when" data-g-when data-g-checked="${REVIEWS.checked}">consulta del ${REVIEWS.checkedShort}</span></p>
+          <a class="link-arrow rstage__link" href="${SITE.mapsUrl}" rel="noopener" target="_blank" data-track="click_google_reviews" data-track-loc="opiniones">${googleG}Ver la ficha en Google${OUT}</a>
+        </div>
+        <div class="rstage__quotes">
+          <p class="rstage__qh">Lo que Google destaca de las reseñas</p>
+          ${REVIEWS.highlights.map((h, i) => `<blockquote class="rstage__q" data-sc-cue="${['0 0.38 0 0.3', '0.34 0.68', '0.64 1 0.3 0.25'][i]}"><p>«${esc(h)}»</p></blockquote>`).join('\n          ')}
+          <ul class="rstage__topics" aria-label="Temas que más se repiten en las reseñas, según Google" data-sc-cue="0.5 1 0.3 0.15">${REVIEWS.topics.map(([t, n]) => `<li><strong>${esc(t)}</strong> ${n} reseñas</li>`).join('')}</ul>
+        </div>
       </div>
     </div>
   </section>
 
-  ${reviewsBlock()}
+  ${reviewsWall()}
 
-  <section id="servicios" class="svcs" data-sc-act="flow" aria-labelledby="svcs-h">
+  <section id="servicios" class="svc3" data-sc-act="flow" aria-labelledby="svcs-h">
     <div class="sc-wrap">
-      <div class="sec-head">
-        <p class="label">Servicios</p>
-        <h2 id="svcs-h" class="display display--md">Qué hacemos</h2>
+      <div class="sec-head sec-head--split">
+        <div><p class="label">Servicios</p><h2 id="svcs-h" class="display display--md">¿Qué quieres hacer en casa?</h2></div>
+        <p class="lede">Tres servicios principales, con visita y presupuesto detallado. Y los oficios que los completan.</p>
       </div>
-      <ol class="svcs__main">
-        ${main.map((s, i) => `<li class="svc-row" data-sc-reveal="up" data-sc-reveal-at="${(0.06 + i * 0.05).toFixed(2)} ${(0.3 + i * 0.05).toFixed(2)}">
-          <a class="svc-row__a" href="${svcUrl(s.slug)}" data-track="click_service" data-track-loc="home-${s.slug}">
-            <span class="svc-row__n">${pad(i + 1)}</span>
-            <span class="svc-row__body"><span class="svc-row__t">${esc(s.nav)}</span><span class="svc-row__d">${esc(s.lede)}</span></span>
-            <span class="svc-row__pic">${photo(s.photo, PHOTOS[s.photo], { shape: 'cuadrada' })}</span>
-            <span class="svc-row__go">${icon.arrow}</span>
-          </a>
-        </li>`).join('\n        ')}
-      </ol>
+      <div class="svc3__list">
+        ${main.map((s, i) => `<article class="svc3__item" aria-labelledby="svc-${s.slug}">
+          <a class="svc3__pic" href="${svcUrl(s.slug)}" tabindex="-1" aria-hidden="true" data-sc-reveal="${i % 2 ? 'right' : 'left'}" data-sc-reveal-at="${(0.06 + i * 0.09).toFixed(2)} ${(0.26 + i * 0.09).toFixed(2)}">${photo(s.band, PHOTOS[s.band], { shape: '2x1', sizes: '(max-width: 760px) 100vw, 45vw' })}</a>
+          <div class="svc3__body">
+            <p class="svc3__n">${pad(i + 1)}</p>
+            <h3 id="svc-${s.slug}" class="display display--sm"><a href="${svcUrl(s.slug)}">${esc(s.nav)}</a></h3>
+            <p>${esc(s.short)}</p>
+            <div class="svc3__acts">
+              <a class="link-arrow" href="${svcUrl(s.slug)}" data-track="click_service" data-track-loc="home-${s.slug}">Ver ${esc(s.nav.toLowerCase())} ${icon.arrow}</a>
+              <a class="link-quote" href="#presupuesto" data-set-type="${TYPE_OF[s.slug]}" data-track="click_cta" data-track-loc="svc-${s.slug}">Pedir presupuesto de ${esc(s.quoteLabel)}</a>
+            </div>
+          </div>
+        </article>`).join('\n        ')}
+      </div>
       <div class="svcs__trade">
-        <p class="svcs__trade-h">Y trabajos de oficio, también sueltos:</p>
+        <p class="svcs__trade-h">También trabajos de oficio, sueltos o dentro de una reforma:</p>
         <ul>${trade.map((s) => `<li><a href="${svcUrl(s.slug)}" data-track="click_service" data-track-loc="home-${s.slug}">${esc(s.nav)}</a></li>`).join('')}</ul>
       </div>
     </div>
   </section>
 
-  <section id="obra" class="phase ground-plaster" data-sc-act="pin" data-sc-span="2.6" data-mobile-flow aria-labelledby="phase-h">
+  <section class="pause ground-ink" data-sc-act="flow" aria-label="Un trabajo terminado">
+    <figure class="pause__band">
+      <div class="pause__frame"><picture data-sc-parallax="0.9"><source media="(max-width: 760px)" srcset="/assets/img/salon-led-2x1.webp" width="820" height="410">${photo('salon-led', PHOTOS['salon-led'], { shape: 'banda' })}</picture></div>
+      <figcaption class="sc-wrap"><span class="label">Terminado</span> Salón con techo de placas, foseado e iluminación LED. <a class="link-arrow" href="/proyectos/techos-y-acabados/">Ver más techos ${icon.arrow}</a></figcaption>
+    </figure>
+  </section>
+
+  <section id="por-que" class="why ground-paper" data-sc-act="flow" aria-labelledby="why-h">
+    <div class="sc-wrap">
+      <div class="sec-head"><p class="label">Por qué nos llaman</p><h2 id="why-h" class="display display--md">Lo que cuidamos en cada obra, y quién lo dice</h2></div>
+      <ol class="why__list" data-sc-in data-sc-stagger="90">${why.map(([t, d, q], i) => `<li>
+        <span class="why__n">${pad(i + 1)}</span>
+        <h3>${esc(t)}</h3>
+        <p>${esc(d)}</p>
+        <blockquote class="why__q"><p>«${esc(q.text)}${q.text.endsWith('.') ? '' : '…'}»</p><footer>${esc(q.author)}${q.author.startsWith('Frase') ? '' : ' · reseña de Google'}</footer></blockquote>
+      </li>`).join('')}</ol>
+    </div>
+  </section>
+
+  <section id="obra" class="phase ground-plaster" data-sc-act="pin" data-sc-span="2.4" data-mobile-flow aria-labelledby="phase-h">
     <div class="phase__stage" data-sc-stage>
       <div class="sc-wrap phase__grid">
         <div class="phase__copy">
-          <p class="label">Un proyecto real</p>
-          <h2 id="phase-h" class="display display--md">${esc(proj.title)}, fase a fase</h2>
+          <p class="label">Una obra real, fase a fase</p>
+          <h2 id="phase-h" class="display display--md">${esc(proj.title)}</h2>
           <p class="phase__intro">${esc(proj.summary)}</p>
           <ol class="phase__steps">
             ${proj.steps.map(([img, t, d], i) => `<li class="phase__step"><span class="phase__n">${pad(i + 1)}</span><span><strong>${esc(t)}</strong> ${esc(d)}</span></li>`).join('\n            ')}
@@ -146,47 +217,27 @@ ${header()}
     </div>
   </section>
 
-  <section id="metodo" class="method" data-sc-act="flow" aria-labelledby="method-h">
+  <section id="metodo" class="steps" data-sc-act="flow" aria-labelledby="method-h">
     <div class="sc-wrap">
       <div class="sec-head sec-head--split">
-        <div><p class="label">Cómo trabajamos</p><h2 id="method-h" class="display display--md">Del primer contacto a la entrega</h2></div>
-        <p class="lede">Sabes en cada momento qué toca. Y la casa sigue siendo tu casa mientras dura la obra.</p>
+        <div><p class="label">Cómo trabajamos</p><h2 id="method-h" class="display display--md">Del primer mensaje a la entrega</h2></div>
+        <p class="lede">Seis pasos. En cada uno sabes qué toca y con quién hablar.</p>
       </div>
-      <ol class="method__list" data-sc-in data-sc-stagger="70">${METHOD.map(([t, d], i) => `<li><span class="method__n">${pad(i + 1)}</span><h3>${esc(t)}</h3><p>${esc(d)}</p></li>`).join('')}</ol>
-      <a class="link-arrow" href="/como-trabajamos/">Ver el método completo ${icon.arrow}</a>
-    </div>
-  </section>
-
-  <section id="mas-proyectos" class="more" data-sc-act="flow" aria-labelledby="more-h">
-    <div class="sc-wrap more__grid">
-      <div class="more__text">
-        <p class="label">Más trabajos</p>
-        <h2 id="more-h" class="display display--md">${esc(other.title)}</h2>
-        <p>${esc(other.summary)}</p>
-        <a class="link-arrow" href="/proyectos/" data-track="click_projects" data-track-loc="mas-proyectos">Ver todos los proyectos ${icon.arrow}</a>
-      </div>
-      <div class="more__pics">
-        ${other.steps.map(([img, t]) => `<figure data-sc-reveal="left" data-sc-reveal-at="0.1 0.42">${photo(img, PHOTOS[img], { shape: 'cuadrada' })}<figcaption>${esc(t)}</figcaption></figure>`).join('\n        ')}
+      <ol class="steps__list">${METHOD.map(([t, d], i) => `<li><span class="steps__dot" aria-hidden="true"></span><span class="steps__n">${pad(i + 1)}</span><h3>${esc(t)}</h3><p>${esc(d)}</p></li>`).join('')}</ol>
+      <div class="cta-pair steps__cta">
+        <a class="btn btn--accent btn--lg" href="#presupuesto" data-track="click_cta" data-track-loc="metodo">Empezar por el paso 1</a>
+        <a class="link-arrow" href="/como-trabajamos/">Ver el método completo ${icon.arrow}</a>
       </div>
     </div>
   </section>
 
-  <section id="pro-reforma" class="about ground-plaster" data-sc-act="flow" aria-labelledby="about-h">
-    <div class="sc-wrap about__grid">
-      <figure class="about__quote" data-sc-reveal="up" data-sc-reveal-at="0.08 0.4"><blockquote><p>«${esc(REVIEWS.quotes[4].text)}»</p></blockquote><figcaption><strong>${esc(REVIEWS.quotes[4].author)}</strong> · Reseña en Google</figcaption></figure>
-      <div class="about__text">
-        <p class="label">Pro Reforma</p>
-        <h2 id="about-h" class="display display--md">Una empresa de reformas de Rivas, con nombre propio</h2>
-        <p class="lede">Detrás de Pro Reforma está Daniel, a quien los clientes nombran en sus reseñas por el trato y por cómo explica el trabajo.</p>
-        <p>Hacemos reformas integrales y parciales, pintura, insonorización y trabajos de albañilería, fontanería, electricidad, carpintería y cerrajería en ${esc(SITE.city)} y la Comunidad de Madrid.</p>
-        <a class="link-arrow" href="/conocer-proreforma/">Conocer Pro Reforma ${icon.arrow}</a>
-      </div>
-    </div>
-  </section>
-
-  <section id="dudas" class="dudas" data-sc-act="flow" aria-labelledby="faq-h">
+  <section id="dudas" class="dudas ground-paper" data-sc-act="flow" aria-labelledby="faq-h">
     <div class="sc-wrap dudas__grid">
-      <div><p class="label">Dudas</p><h2 id="faq-h" class="display display--md">Preguntas frecuentes</h2></div>
+      <div class="dudas__aside">
+        <p class="label">Dudas</p>
+        <h2 id="faq-h" class="display display--md">Antes de pedir presupuesto</h2>
+        <p class="dudas__call">¿Prefieres hablarlo? <a href="${SITE.phoneHref}" data-track="click_phone" data-track-loc="dudas">${SITE.phone}</a><br><span>${esc(SITE.hours)}</span></p>
+      </div>
       ${faqList(FAQS)}
     </div>
   </section>
@@ -227,11 +278,10 @@ ${scripts()}`;
 }
 
 // ---------------------------------------------------- página de servicio --
-const TYPE_OF = { 'reformas-integrales': 'integral', pinturas: 'pintura', insonorizacion: 'insonorizacion' };
+const SVC_REVIEWS = { 'reformas-integrales': ['Biviana', 'Nicki1309 S', 'sweetie001 sweetie001'], pinturas: ['Alberto López', 'Ana Maria Coarda', 'Nicki1309 S'], insonorizacion: ['Jorge García', 'Adrian', 'Alicia P.'] };
 export function service(s) {
   const path = svcUrl(s.slug);
   const related = PROJECTS.filter((p) => p.service === s.slug || (s.slug === 'pinturas' && p.slug === 'insonorizacion-de-una-habitacion'));
-  const quotes = REVIEWS.quotes.filter((q) => (s.slug === 'insonorizacion' && /insonoriz/i.test(q.text)) || (s.slug === 'pinturas' && /pint|proteg/i.test(q.text)) || (s.slug === 'reformas-integrales' && /reforma|acabados/i.test(q.work + q.text)));
   const ld = [businessJsonLd(), breadcrumbLd([['Inicio', '/'], ['Servicios', '/servicios/'], [s.nav, path]]),
     { '@context': 'https://schema.org', '@type': 'Service', name: s.h1, serviceType: s.nav, description: s.description, url: `${SITE.origin}${path}`, provider: { '@id': `${SITE.origin}/#empresa` } }];
   if (s.faqs) ld.push({ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: s.faqs.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) });
@@ -240,19 +290,18 @@ export function service(s) {
 <body class="page-inner">
 ${header({ current: s.slug })}
 <main id="contenido">
-  <section class="page-hero${s.photo ? ' page-hero--pic' : ''}" data-sc-act="flow" aria-labelledby="pg-h">
-    <div class="sc-wrap page-hero__grid">
-      <div>
-        ${crumbs([['Inicio', '/'], ['Servicios', '/servicios/'], [s.nav, path]])}
-        <h1 id="pg-h" class="display display--lg">${esc(s.h1)}</h1>
-        <p class="lede">${esc(s.lede)}</p>
-        <div class="cta-pair">
-          <a class="btn btn--accent btn--lg" href="#presupuesto" data-track="click_cta" data-track-loc="svc-${s.slug}">Pedir presupuesto</a>
-          <a class="btn btn--line btn--lg" href="${SITE.phoneHref}" data-track="click_phone" data-track-loc="svc-${s.slug}">${icon.phone}<span>${SITE.phone}</span></a>
-        </div>
+  <section class="page-hero" data-sc-act="flow" aria-labelledby="pg-h">
+    <div class="sc-wrap">
+      ${crumbs([['Inicio', '/'], ['Servicios', '/servicios/'], [s.nav, path]])}
+      <h1 id="pg-h" class="display display--lg">${esc(s.h1)}</h1>
+      <p class="lede">${esc(s.lede)}</p>
+      <div class="cta-pair">
+        <a class="btn btn--accent btn--lg" href="#presupuesto" data-track="click_cta" data-track-loc="svc-${s.slug}">Solicitar presupuesto</a>
+        <a class="btn btn--line btn--lg" href="${SITE.phoneHref}" data-track="click_phone" data-track-loc="svc-${s.slug}">${icon.phone}<span>Llamar · ${SITE.phone}</span></a>
       </div>
-      ${s.photo ? `<figure class="page-hero__pic">${photo(s.photo, PHOTOS[s.photo], { shape: 'cuadrada', lazy: false })}<figcaption>Foto de obra de Pro Reforma</figcaption></figure>` : ''}
+      ${googleBadge(`svc-${s.slug}`, 'gbadge--inline')}
     </div>
+    ${s.band ? `<figure class="page-band" data-sc-reveal="iris" data-sc-reveal-at="0 0.22">${photo(s.band, PHOTOS[s.band], { shape: 'banda', lazy: false })}<figcaption>Foto de obra de Pro Reforma</figcaption></figure>` : ''}
   </section>
 
   ${s.problem ? `<section class="svc-why" aria-labelledby="why-h">
@@ -290,13 +339,7 @@ ${header({ current: s.slug })}
     </div>
   </section>` : ''}
 
-  ${quotes.length ? `<section class="svc-quotes" aria-labelledby="sq-h">
-    <div class="sc-wrap">
-      <h2 id="sq-h" class="display display--sm">Lo que cuentan en Google</h2>
-      <div class="svc-quotes__list">${quotes.map((q) => `<figure class="quote-card"><blockquote><p>«${esc(q.text)}»</p></blockquote><figcaption><span class="quote-card__who">${esc(q.author)}</span><span class="quote-card__src">Reseña en Google</span></figcaption></figure>`).join('')}</div>
-      ${googleBadge(`svc-${s.slug}`)}
-    </div>
-  </section>` : ''}
+  ${reviewsBand(SVC_REVIEWS[s.slug] || ['Alicia P.', 'Alberto López'], { title: s.main ? `Opiniones sobre ${s.nav.toLowerCase()}` : 'Opiniones en Google', loc: `svc-${s.slug}` })}
 
   ${s.faqs ? `<section class="dudas" aria-labelledby="sf-h"><div class="sc-wrap dudas__grid"><h2 id="sf-h" class="display display--sm">Preguntas frecuentes</h2>${faqList(s.faqs)}</div></section>` : ''}
 
@@ -314,8 +357,7 @@ ${scripts()}`;
 // ----------------------------------------------------------- proyectos --
 export function projectsIndex() {
   const path = '/proyectos/';
-  const fromReviews = REVIEWS.quotes.filter((q) => q.work);
-  return `${head({ title: 'Proyectos de reformas en Rivas-Vaciamadrid | Pro Reforma', description: 'Fotos reales de obras de Pro Reforma: una insonorización fase a fase, techos de placas e iluminación, y trabajos que describen los clientes en Google.', path, jsonld: [businessJsonLd(), breadcrumbLd([['Inicio', '/'], ['Proyectos', path]])] })}
+  return `${head({ title: 'Proyectos de reformas en Rivas-Vaciamadrid | Pro Reforma', description: 'Fotos reales de obras de Pro Reforma: una insonorización fase a fase, techos de placas e iluminación, y reseñas de clientes en Google.', path, jsonld: [businessJsonLd(), breadcrumbLd([['Inicio', '/'], ['Proyectos', path]])] })}
 <body class="page-inner">
 ${header({ current: 'proyectos' })}
 <main id="contenido">
@@ -323,7 +365,7 @@ ${header({ current: 'proyectos' })}
     <div class="sc-wrap">
       ${crumbs([['Inicio', '/'], ['Proyectos', path]])}
       <h1 id="pg-h" class="display display--lg">Proyectos</h1>
-      <p class="lede">Solo fotos de obras reales publicadas por Pro Reforma, y los trabajos que describen los propios clientes en sus reseñas.</p>
+      <p class="lede">Solo fotos de obras reales publicadas por Pro Reforma, y lo que cuentan los clientes en sus reseñas de Google.</p>
     </div>
   </section>
   <section class="projects" aria-label="Proyectos con fotos">
@@ -336,14 +378,7 @@ ${header({ current: 'proyectos' })}
       </article>`).join('\n      ')}
     </div>
   </section>
-  <section class="from-reviews ground-plaster" aria-labelledby="fr-h">
-    <div class="sc-wrap">
-      <h2 id="fr-h" class="display display--sm">Trabajos que cuentan los clientes</h2>
-      <p class="from-reviews__lede">Obras descritas en reseñas de Google. No hay fotos publicadas de ellas.</p>
-      <ul class="from-reviews__list">${fromReviews.map((q) => `<li><h3>${esc(q.work)}</h3><blockquote><p>«${esc(q.text)}»</p></blockquote><p class="quote-card__src">${esc(q.author)} · Reseña en Google</p></li>`).join('')}</ul>
-      ${googleBadge('proyectos')}
-    </div>
-  </section>
+  ${reviewsBand(['Biviana', 'Jorge García', 'Alberto López'], { title: 'Trabajos que cuentan los clientes', loc: 'proyectos' })}
   ${quoteSection({ origin: 'proyectos', heading: '¿Un proyecto parecido?' })}
 </main>
 ${footer()}
@@ -453,7 +488,7 @@ ${header({ current: 'sobre' })}
       <aside class="about-page__aside">${googleBadge('sobre')}</aside>
     </div>
   </section>
-  ${reviewsBlock({ heading: 'Opiniones en Google', compact: true })}
+  ${reviewsBand(['Alicia P.', 'Nicki1309 S', 'Alberto López'], { title: 'Lo que dicen de Daniel y su equipo', loc: 'sobre' })}
   ${quoteSection({ origin: 'sobre' })}
 </main>
 ${footer()}
@@ -490,7 +525,7 @@ ${header()}
   <section class="page-hero" aria-labelledby="pg-h"><div class="sc-wrap"><h1 id="pg-h" class="display display--lg">${esc(h1)}</h1></div></section>
   <section class="doc"><div class="sc-wrap prose">${body}</div></section>
 </main>
-${footer()}
+${footer({ quoteHere: false })}
 ${scripts({ engine: false })}`;
 }
 
@@ -511,7 +546,7 @@ export function privacidad() {
     path: '/politica-de-privacidad/', title: 'Política de privacidad | Pro Reforma', description: 'Cómo trata Pro Reforma los datos personales del formulario de presupuesto, el correo y WhatsApp: finalidad, base jurídica, conservación y derechos.', h1: 'Política de privacidad',
     body: `<p class="doc__note">Texto preparado para revisión jurídica.</p>
 <h2>Responsable</h2><ul><li>${esc(SITE.owner)} (Pro Reforma) · NIF ${SITE.taxId}</li><li>${esc(SITE.street)}, ${SITE.postalCode} ${esc(SITE.city)}</li><li><a href="mailto:${SITE.email}">${SITE.email}</a></li></ul>
-<h2>Solicitud de presupuesto</h2><ul><li><strong>Datos:</strong> nombre, teléfono y/o correo, localidad de la obra, tipo de trabajo, preferencia de contacto y lo que escribas.</li><li><strong>Finalidad:</strong> responderte, concertar la visita y preparar el presupuesto.</li><li><strong>Base jurídica:</strong> medidas precontractuales a petición tuya (art. 6.1.b RGPD).</li><li><strong>Conservación:</strong> mientras se gestiona la solicitud y, si no se contrata, un máximo de un año.</li><li>No usamos estos datos para enviarte publicidad.</li></ul>
+<h2>Solicitud de presupuesto</h2><ul><li><strong>Datos:</strong> nombre, teléfono o correo, tipo de trabajo y lo que escribas sobre la obra.</li><li><strong>Finalidad:</strong> responderte, concertar la visita y preparar el presupuesto.</li><li><strong>Base jurídica:</strong> medidas precontractuales a petición tuya (art. 6.1.b RGPD).</li><li><strong>Conservación:</strong> mientras se gestiona la solicitud y, si no se contrata, un máximo de un año.</li><li>No usamos estos datos para enviarte publicidad.</li></ul>
 <h2>WhatsApp, teléfono y correo</h2><p>Si nos escribes o llamas, trataremos los datos que nos facilites para atenderte. WhatsApp es un servicio de Meta con su propia política de privacidad.</p>
 <h2>Destinatarios</h2><p>No cedemos datos salvo obligación legal. El alojamiento web y el correo actúan como encargados del tratamiento.</p>
 <h2>Derechos</h2><p>Acceso, rectificación, supresión, oposición, limitación y portabilidad en <a href="mailto:${SITE.email}">${SITE.email}</a>. Puedes reclamar ante la Agencia Española de Protección de Datos (<a href="https://www.aepd.es" rel="noopener">aepd.es</a>).</p>`,
@@ -533,8 +568,8 @@ export function gracias() {
   return simplePage({ path: '/gracias/', title: 'Solicitud recibida | Pro Reforma', description: 'Hemos recibido tu solicitud de presupuesto.', h1: 'Solicitud recibida', noindex: true, body: `<p class="lede">Gracias. Hemos recibido tu solicitud y te contactaremos para concertar la visita.</p><p>Si es urgente, llama o escribe por WhatsApp al <a href="${SITE.phoneHref}">${SITE.phone}</a>.</p><p><a class="link-arrow" href="/">Volver al inicio ${icon.arrow}</a></p>` });
 }
 export function envioError() {
-  return simplePage({ path: '/envio-no-completado/', title: 'No se ha podido enviar | Pro Reforma', description: 'No se ha podido enviar la solicitud.', h1: 'No se ha podido enviar', noindex: true, body: `<p class="lede">Revisa que hayas indicado tu nombre y un teléfono o un correo, y vuelve a intentarlo.</p><p>También puedes llamar o escribir por WhatsApp al <a href="${SITE.phoneHref}">${SITE.phone}</a>, o escribir a <a href="mailto:${SITE.email}">${SITE.email}</a>.</p><p><a class="link-arrow" href="/contacto/">Volver al formulario ${icon.arrow}</a></p>` });
+  return simplePage({ path: '/envio-no-completado/', title: 'No se ha podido enviar | Pro Reforma', description: 'No se ha podido enviar la solicitud.', h1: 'No se ha podido enviar', noindex: true, body: `<p class="lede">Revisa que hayas indicado tu nombre y un teléfono o un correo válidos, y vuelve a intentarlo.</p><p>También puedes llamar o escribir por WhatsApp al <a href="${SITE.phoneHref}">${SITE.phone}</a>, o escribir a <a href="mailto:${SITE.email}">${SITE.email}</a>.</p><p><a class="link-arrow" href="/contacto/">Volver al formulario ${icon.arrow}</a></p>` });
 }
 export function notFound() {
-  return simplePage({ path: '/404.html', title: 'Página no encontrada | Pro Reforma', description: 'La página que buscas no existe.', h1: 'Esta página no existe', noindex: true, body: `<p class="lede">Puede que la dirección haya cambiado con la nueva web.</p><ul>${SERVICES.map((s) => `<li><a href="${svcUrl(s.slug)}">${esc(s.nav)}</a></li>`).join('')}<li><a href="/proyectos/">Proyectos</a></li></ul><p><a class="btn btn--accent" href="/contacto/#presupuesto">Pedir presupuesto</a></p>` });
+  return simplePage({ path: '/404.html', title: 'Página no encontrada | Pro Reforma', description: 'La página que buscas no existe.', h1: 'Esta página no existe', noindex: true, body: `<p class="lede">Puede que la dirección haya cambiado con la nueva web.</p><ul>${SERVICES.map((s) => `<li><a href="${svcUrl(s.slug)}">${esc(s.nav)}</a></li>`).join('')}<li><a href="/proyectos/">Proyectos</a></li></ul><p><a class="btn btn--accent" href="/contacto/#presupuesto">Solicitar presupuesto</a></p>` });
 }

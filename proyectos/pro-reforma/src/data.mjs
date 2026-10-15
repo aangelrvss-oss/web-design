@@ -22,28 +22,59 @@ export const SITE = {
   instagram: 'https://www.instagram.com/daniel_proreforma/',
   facebook: 'https://www.facebook.com/profile.php?id=61572650646708',
   mapsUrl: 'https://www.google.com/maps?cid=1539571755307103610',
+  // Horario publicado en la ficha de Google (consulta 15/10/2026).
+  hours: 'Lunes a viernes, de 9:00 a 19:00',
+  hoursShort: 'L–V · 9:00–19:00',
 };
 
-// Reseñas de Google. Modo editorial: valoración y número CON su fecha de
-// consulta, fragmentos literales de reseñas publicadas. Si el servidor tiene
-// configurada la API de Places, la web los sustituye por los datos en vivo.
+// Reseñas de Google · modo editorial (docs/RESENAS.md).
+// Todo es literal y está fechado. Nada se reescribe: los textos conservan su
+// ortografía original y, cuando Google o el widget de la empresa los muestran
+// recortados, se reproducen hasta donde se leen y se marca con «[…]».
+// `when` es la antigüedad que mostraba Google el día de la consulta.
+// `via`: 'ficha' (Google Maps) o 'widget' (widget de reseñas de Google en
+// proreforma.es). No hay puntuación individual: no se ha podido leer.
+// Si el servidor tiene la API de Places configurada, la web lo sustituye
+// por los datos en vivo (site/api/resenas.php o netlify/functions/resenas.mjs).
 export const REVIEWS = {
   rating: 5.0,
   count: 41,
   checked: '2026-10-15',
   checkedLabel: '15 de octubre de 2026',
-  quotes: [
-    { author: 'Ana Maria Coarda', theme: 'Protección y limpieza', text: 'Han protegido toda la cocina con plásticos, han trabajado limpio y con mucho cuidado, y al terminar lo han dejado todo recogido.', work: 'Trabajo en la zona de la caldera y la salida de humos' },
-    { author: 'Jorge García', theme: 'Acabados', text: 'Me han insonorizado el techo del dormitorio. Un trabajo excelente. Muy buenos acabados y al terminar te dejan la casa impecable.', work: 'Insonorización del techo de un dormitorio' },
-    { author: 'Biviana', theme: 'Acabados', text: 'Lo que más destacaríamos es su meticulosidad: Los acabados son espectaculares', work: 'Reforma de la segunda planta: habitación, baño y vestidor' },
-    { author: 'Alberto López', theme: 'Profesionalidad', text: 'Le pedimos que arreglara las ventanas de la buhardilla por las humedades y pintara, y lo ha hecho muy bien. Es muy profesional y perfeccionista.', work: 'Ventanas de buhardilla con humedades y pintura' },
-    { author: 'Alicia P.', theme: 'Trato', text: 'Un profesional como la copa de un pino, un trato excepcional y sabe perfectamente la forma de trabajar para quede lo mejor posible.', work: '' },
+  checkedShort: '15/10/2026',
+  // Frases que Google destaca en el resumen de la ficha (autor no visible).
+  highlights: [
+    'Rápidos, buenos y muy limpios trabajando, muy profesionales.',
+    'Muy buenos acabados y al terminar te dejan la casa impecable.',
+    'Además, han sido puntuales, educados y han explicado todo lo que iban haciendo.',
   ],
-  themes: [
-    ['Acabados', 'Varios clientes hablan de acabados «muy buenos» o «espectaculares». En una reforma es lo que se ve cada día después.'],
-    ['Protección y limpieza', 'Cuentan que se protege con plásticos y que la casa queda recogida al terminar. Importa cuando se vive en la vivienda durante la obra.'],
-    ['Trato y explicaciones', 'Nombran a Daniel y su trato. Saber a quién llamar y entender qué se hace evita sorpresas.'],
+  // Temas que Google detecta en las reseñas y cuántas los mencionan.
+  topics: [['confianza', 10], ['equipo', 8], ['materiales', 5], ['perfeccionista', 3]],
+  items: [
+    { author: 'Jorge García', when: 'hace 8 meses', via: 'widget', full: true,
+      text: ['Me han insonorizado el techo del dormitorio. Un trabajo excelente. Muy buenos acabados y al terminar te dejan la casa impecable. Personas de confianza muy recomendables.'] },
+    { author: 'Alberto López', when: 'hace 8 meses', via: 'widget', full: true,
+      text: ['Lo recomiendo sin duda! Le pedimos que arreglara las ventanas de la buhardilla por las humedades y pintara, y lo ha hecho muy bien. Es muy profesional y perfeccionista. Le volveremos a llamar si necesitamos hacer algo en casa. Muchas gracias, Daniel.'] },
+    { author: 'Alicia P.', when: 'hace 8 meses', via: 'widget', full: true,
+      text: ['Encantada por el trabajo realizado por Daniel. Un profesional como la copa de un pino, un trato excepcional y sabe perfectamente la forma de trabajar para quede lo mejor posible.', 'Muy formal. No tengo duda de que contare con Daniel en futuras obras'] },
+    { author: 'Ana Maria Coarda', when: 'hace 8 meses', via: 'widget', full: false,
+      text: ['Hoy han venido a casa los técnicos de PRO Reforma para hacer un trabajo en la zona de la caldera y la salida de humos y hemos quedado muy contentos con el resultado. Han protegido toda la cocina con plásticos, han trabajado limpio y con mucho cuidado, y al terminar lo han dejado todo recogido.'] },
+    { author: 'Biviana', when: 'hace 8 meses', via: 'widget', full: false,
+      text: ['Contratamos a PRO REFORMA para una reforma integral de la segunda planta (habitación, baño y vestidor) y no podemos estar más satisfechos...Desde el primer contacto con Daniel, el trato fue impecable y profesional.', 'Lo que más destacaríamos es su meticulosidad: Los acabados son espectaculares'] },
+    { author: 'Adrian', when: 'hace 6 meses', via: 'ficha', full: false,
+      text: ['Contactamos con Pro Reforma por un problema de ruido con los vecinos y para que nos realizaran un estudio acústico y una solución de insonorización en la habitación. El equipo vino a nuestra casa, analizó la situación con detalle'] },
+    { author: 'Nicki1309 S', when: 'hace 6 meses', via: 'ficha', full: false,
+      text: ['Encantados con el trabajo realizado por ProReforma y Daniel en nuestra casa. Han demostrado una gran limpieza, puntualidad y un trato excelente en todo momento. Daniel nos explicó con detalle cada parte del proceso y los materiales'] },
+    { author: 'sweetie001 sweetie001', when: 'hace 6 meses', via: 'ficha', full: false,
+      text: ['Después de varias malas experiencias con otras empresas, encontramos en internet a Proreforma y ha sido todo un acierto. Daniel y su equipo han demostrado ser grandes profesionales: trabajan con muy buenas máquinas, son muy perfeccionistas'] },
   ],
+};
+// Atajo para citas cortas dentro de otras secciones: texto literal de una
+// reseña de `items` (se comprueba al generar que exista tal cual).
+export const quoteFrom = (author, fragment) => {
+  const r = REVIEWS.items.find((x) => x.author === author);
+  if (!r || !r.text.join(' ').includes(fragment)) throw new Error(`Cita no literal: ${author}: ${fragment}`);
+  return { author, text: fragment };
 };
 
 // Fotos reales de obra publicadas por Pro Reforma (recortes de su web).
@@ -57,6 +88,10 @@ export const PHOTOS = {
   'pasillo-techo': 'Pasillo con el techo de placas y las juntas preparadas',
   'salon-led': 'Salón terminado con techo de foseado e iluminación LED',
 };
+
+// Bandas panorámicas (1798×410) y recortes 2:1 (820×410) de las mismas fotos,
+// obtenidos de la galería de proreforma.es a mayor resolución.
+export const BANDS = Object.keys(PHOTOS);
 
 export const PROJECTS = [
   {
@@ -95,7 +130,8 @@ export const PROJECTS = [
 // comercial). Los demás conservan sus URL actuales.
 export const SERVICES = [
   {
-    slug: 'reformas-integrales', main: true, nav: 'Reformas integrales', photo: 'salon-led',
+    slug: 'reformas-integrales', main: true, nav: 'Reformas integrales', photo: 'salon-led', band: 'techo-elevador', quoteLabel: 'reforma',
+    short: 'La vivienda entera o por estancias: baño, cocina, habitaciones. Albañilería, fontanería, electricidad, carpintería y pintura coordinadas por una sola empresa.',
     title: 'Reformas integrales en Rivas-Vaciamadrid | Pro Reforma',
     description: 'Reformas integrales y parciales de viviendas y locales en Rivas-Vaciamadrid: albañilería, fontanería, electricidad, carpintería y pintura coordinadas.',
     h1: 'Reformas integrales',
@@ -118,7 +154,8 @@ export const SERVICES = [
     ],
   },
   {
-    slug: 'pinturas', main: true, nav: 'Pintura', photo: 'insono-pintura',
+    slug: 'pinturas', main: true, nav: 'Pintura', photo: 'insono-pintura', band: 'pasillo-techo', quoteLabel: 'pintura',
+    short: 'Suelos y muebles protegidos, paredes reparadas e imprimadas, y dos manos con máquina. Lisa, decorativa, esmaltes y lacados.',
     title: 'Pintura de pisos y casas en Rivas-Vaciamadrid | Pro Reforma',
     description: 'Pintura de viviendas con suelos y muebles protegidos, paredes preparadas, imprimación y dos manos con máquina. Lisa, decorativa, esmaltes y lacados.',
     h1: 'Pintura de viviendas',
@@ -141,7 +178,8 @@ export const SERVICES = [
     ],
   },
   {
-    slug: 'insonorizacion', main: true, nav: 'Insonorización', photo: 'insono-placas',
+    slug: 'insonorizacion', main: true, nav: 'Insonorización', photo: 'insono-placas', band: 'insono-placas', quoteLabel: 'insonorización',
+    short: 'Ruido de vecinos, de la calle o de otra planta. Cerramos paredes o techos con placas, tratamos juntas y dejamos la estancia pintada.',
     title: 'Insonorización de paredes y techos en Rivas-Vaciamadrid | Pro Reforma',
     description: 'Insonorización de techos y paredes en viviendas: preparación, placas, juntas y pintura. Fotos reales de obra y opiniones de clientes en Google.',
     h1: 'Insonorización de paredes y techos',
@@ -162,7 +200,7 @@ export const SERVICES = [
     ],
   },
   {
-    slug: 'albanileria', nav: 'Albañilería', photo: 'insono-preparacion',
+    slug: 'albanileria', nav: 'Albañilería', photo: 'insono-preparacion', band: 'insono-preparacion',
     title: 'Albañilería en Rivas-Vaciamadrid | Pro Reforma',
     description: 'Albañilería en reformas: tabiques, redistribución de espacios, suelos y alicatados, cambio de bañera por plato de ducha, aislamiento, puertas y ventanas.',
     h1: 'Albañilería',

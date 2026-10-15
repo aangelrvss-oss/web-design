@@ -61,8 +61,8 @@ function layer([, file, id]) {
   const tipo = (main.match(/name="tipo" value="(\w+)" checked/) || [])[1];
   main = main.replace(/<section id="presupuesto"[\s\S]*?<\/form>[\s\S]*?<\/section>/, `<section class="pv-cta ground-navy"><div class="sc-wrap">
       <p class="display display--md">¿Hablamos de tu obra?</p>
-      <div class="pv-cta__row"><a class="btn btn--accent" href="#presupuesto"${tipo ? ` data-set-type="${tipo}"` : ''}>Pedir presupuesto</a>
-      <a class="btn btn--line-light" href="tel:+34691312106">Llamar al 691 312 106</a></div></div></section>`);
+      <div class="pv-cta__row"><a class="btn btn--accent" href="#presupuesto"${tipo ? ` data-set-type="${tipo}"` : ''}>Solicitar presupuesto</a>
+      <a class="btn btn--ghost" href="tel:+34691312106">Llamar al 691 312 106</a></div></div></section>`);
   main = main
     .replace(/ data-sc-[\w-]+(="[^"]*")?/g, '')
     .replace(/ data-mobile-flow/g, '')
@@ -70,13 +70,14 @@ function layer([, file, id]) {
     .replace(/ (id|for|aria-labelledby|aria-describedby|aria-controls)="([^"]+)"/g, (_, k, v) => ` ${k}="${v.split(' ').map((x) => `${id}-${x}`).join(' ')}"`)
     .replace(/href="#([\w-]+)"/g, (all, x) => (x === 'presupuesto' || x === 'inicio' ? all : `href="#${id}-${x}"`));
   return `<div class="pv-page" id="${id}" role="region" aria-label="${title}">
-  <div class="pv-bar"><a href="#inicio">← Portada</a><span>Vista previa · ${title}</span><a href="#presupuesto"${tipo ? ` data-set-type="${tipo}"` : ''}>Pedir presupuesto</a></div>
+  <div class="pv-bar"><a href="#inicio">← Portada</a><span>Vista previa · ${title}</span><a href="#presupuesto"${tipo ? ` data-set-type="${tipo}"` : ''}>Solicitar presupuesto</a></div>
   ${main}
 </div>`;
 }
 
 const css = read('assets/css/site.css').replace(/url\("\.\.\/fonts\/([^"]+)"\)/g, (_, f) => `url("${dataUri('assets/fonts/' + f)}")`);
 const pvCss = `
+.pv-page .page-band { animation: none; }
 .pv-page { display: none; position: fixed; inset: 0; z-index: 90; overflow: auto; background: var(--sc-canvas); }
 .pv-page:target { display: block; }
 .pv-bar { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; align-items: center; justify-content: space-between; padding: .6rem var(--sc-gutter); background: #0E2A44; color: #fff; font-weight: 600; }
@@ -87,7 +88,6 @@ const pvCss = `
 .pv-cta__row { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 1.4rem; }
 .pv-cta .btn--line-light { border: 1.5px solid #fff; color: #fff; }
 .qf__demo { margin: 0 0 1rem; padding: .7rem .9rem; border-left: 3px solid var(--sc-accent); background: #FBF3E8; font-size: .9rem; color: #16191E; }`;
-const pvJs = `document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('[data-set-type]');if(!a)return;var r=document.querySelector('#presupuesto input[name="tipo"][value="'+a.getAttribute('data-set-type')+'"]');if(r)r.checked=true;});`;
 
 let html = read('index.html')
   .replace(/<link rel="preload"[^>]*>\n?/g, '')
@@ -97,7 +97,7 @@ let html = read('index.html')
   .replace(/<link rel="stylesheet" href="\/assets\/css\/site\.css[^"]*">/, () => `<style>${css}${pvCss}</style>`)
   .replace(/<script src="\/assets\/js\/boot\.js[^"]*"><\/script>/, () => `<script>${read('assets/js/boot.js')}</script>`)
   .replace(/<script src="\/assets\/vendor\/scrollcraft\/scrollcraft\.js[^"]*" defer><\/script>/, () => `<script>${read('assets/vendor/scrollcraft/scrollcraft.js')}</script>`)
-  .replace(/<script src="\/assets\/js\/site\.js[^"]*" defer><\/script>/, () => `<script>${read('assets/js/site.js').replace('if (!window.fetch) return;', 'return; /* vista previa: sin servidor de reseñas */')}</script><script>${pvJs}</script>`)
+  .replace(/<script src="\/assets\/js\/site\.js[^"]*" defer><\/script>/, () => `<script>${read('assets/js/site.js').replace('if (!window.fetch) return;', 'return; /* vista previa: sin servidor de reseñas */')}</script>`)
   .replace('<main id="contenido">', '<main id="contenido"><span id="inicio"></span>')
   .replace(/(<form class="qf"[^>]*?) novalidate data-quote/, '$1 novalidate data-demo data-quote')
   .replace(/(<form class="qf"[^>]*data-origin="home">)/, `$1\n      <p class="qf__demo">Vista previa: el formulario comprueba los datos, pero <strong>no envía nada</strong>. En la web publicada la solicitud llegará a daniel@proreforma.es.</p>`)
