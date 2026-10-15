@@ -39,7 +39,7 @@ export function Declare({ pub, priv, onMenu }: { pub: PublicView; priv: PrivateV
     );
 
   const statusPins = (
-    <div className="row wrap" aria-label="Quién ha sellado su coartada">
+    <div className="row wrap" role="group" aria-label="Quién ha sellado su declaración">
       {round.participants.map((id) => {
         const p = pub.players.find((x) => x.id === id);
         if (!p) return null;
@@ -51,23 +51,23 @@ export function Declare({ pub, priv, onMenu }: { pub: PublicView; priv: PrivateV
 
   return (
     <main className="screen">
-      <TopBar title="Declaración" step="Abre tu expediente, elige un sitio por hora y sella." endsAt={pub.phaseEndsAt} onMenu={onMenu} />
+      <TopBar title="Declaración" phase="declare" step="Lee tu expediente, elige un sitio para cada hora y sella." endsAt={pub.phaseEndsAt} onMenu={onMenu} />
       <CaseHeader pub={pub} />
       <PrivateFile pub={pub} priv={priv} />
 
       {!locked ? (
-        <section className="paper tabbed" data-tab="Tu coartada" aria-label="Tu coartada">
+        <section className="paper tabbed" data-tab="Tu declaración" aria-label="Tu declaración">
           <p className="small">
-            ¿Dónde dirás que estabas? Nadie lo verá hasta que todo el mundo selle la suya.
+            Elige dónde dirás que estabas a cada hora: esas son tus coartadas. Nadie las verá hasta que todo el mundo selle su declaración.
             {isCulprit
-              ? ' A la hora del crimen estabas en la escena: ahí tendrás que inventarte algo.'
-              : ' Lo normal es decir la verdad: está marcada con «Aquí estabas».'}
+              ? ' A la hora del incidente estabas en el lugar del incidente: ahí tienes que inventarte una coartada.'
+              : ' Lo habitual es decir la verdad; tu ubicación real aparece marcada con «Aquí estabas».'}
           </p>
           {slots.map((label, slot) => (
             <div key={label} className="hour-block" role="radiogroup" aria-label={`Dónde estabas ${atHour(label)}`}>
               <div className="spread">
                 <span className="hour">{label}</span>
-                {slot === round.scene.slot && <span className="tag red">Hora del crimen</span>}
+                {slot === round.scene.slot && <span className="tag red">Hora del incidente</span>}
               </div>
               <div className="choices">
                 {zones.map((z) => {
@@ -84,7 +84,7 @@ export function Declare({ pub, priv, onMenu }: { pub: PublicView; priv: PrivateV
                     >
                       {z.name}
                       {isTruth && <span className="truth-mark">{isScene ? 'Aquí lo hiciste' : 'Aquí estabas'}</span>}
-                      {!isTruth && isScene && <span className="truth-mark">Escena del crimen</span>}
+                      {!isTruth && isScene && <span className="truth-mark">Lugar del incidente</span>}
                     </button>
                   );
                 })}
@@ -93,11 +93,11 @@ export function Declare({ pub, priv, onMenu }: { pub: PublicView; priv: PrivateV
           ))}
         </section>
       ) : (
-        <section className="paper tabbed" data-tab="Tu coartada" aria-label="Coartada sellada">
+        <section className="paper tabbed" data-tab="Tu declaración" aria-label="Declaración sellada">
           <div className="spread">
             <p style={{ fontWeight: 650 }}>Sellada. Ya no se puede cambiar.</p>
             <Stamp tone="ink" animate>
-              Sellado
+              Sellada
             </Stamp>
           </div>
           <div className="night-table doc-text" style={{ marginTop: 8 }}>
@@ -112,14 +112,26 @@ export function Declare({ pub, priv, onMenu }: { pub: PublicView; priv: PrivateV
       )}
 
       <section className="stack" aria-label="Estado">
-        <div className="label on-ink">{pending === 0 ? 'Todas selladas' : `Faltan ${plural(pending, 'coartada', 'coartadas')}`}</div>
+        <div className="label on-ink">{pending === 0 ? 'Todas las declaraciones, selladas' : `Faltan ${plural(pending, 'declaración', 'declaraciones')} por sellar`}</div>
         {statusPins}
+        <p className="small muted">
+          Si se acaba el tiempo sin sellar: si ya habías elegido las tres horas, se sella tal cual; si no, la app pone una coartada automática y
+          la marca como «automática».
+        </p>
       </section>
 
-      <ActionBar hint={locked ? 'Cuando todo el mundo selle, se destapan todas a la vez.' : !complete ? 'Elige un sitio para cada hora.' : undefined}>
+      <ActionBar
+        hint={
+          locked
+            ? 'Cuando todo el mundo selle, las coartadas se revelan a la vez.'
+            : !complete
+              ? 'Elige un sitio para cada una de las tres horas.'
+              : 'Al sellar, ya no podrás cambiarla.'
+        }
+      >
         {!locked ? (
           <button className="btn btn-primary" disabled={!complete || busy} onClick={lock}>
-            Sellar coartada
+            Sellar declaración
           </button>
         ) : (
           <button className="btn btn-ghost" disabled>

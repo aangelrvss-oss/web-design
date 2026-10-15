@@ -8,8 +8,10 @@ import {
   addPlayer,
   createRoom,
   declare,
+  endDefense,
   forceAdvance,
   nextRound,
+  point,
   startRound,
   testify,
   tick,
@@ -28,6 +30,7 @@ import { ActionBar, Icon, Pin, Segmented, Sheet, Switch, toast, TopBar } from '.
 import { setPrefs, usePrefs } from '../lib/prefs';
 import { Declare } from './Declare';
 import { Investigate } from './Investigate';
+import { Defense } from './Defense';
 import { Vote } from './Vote';
 import { Final, Result } from './Result';
 import { RulesContent } from './Rules';
@@ -96,6 +99,17 @@ export function LocalGame({ onExit }: { onExit: () => void }) {
         case 'game:advance':
           res = forceAdvance(r, host, now);
           break;
+        case 'game:point': {
+          // Single phone: the group picks aloud, so one pointer is enough. It is recorded
+          // under any participant other than the person picked (nobody can point at self).
+          const target = p.target as string;
+          const by = r.round?.participants.find((id) => id !== target) ?? host;
+          res = point(r, by, target, now);
+          break;
+        }
+        case 'game:endDefense':
+          res = endDefense(r, host, now);
+          break;
         case 'game:next':
           res = nextRound(r, host, now, deps);
           break;
@@ -113,11 +127,11 @@ export function LocalGame({ onExit }: { onExit: () => void }) {
     };
   });
 
-  // Investigation is the only timed step here.
+  // Investigation and the last defense are the only timed steps here.
   useEffect(() => {
     const h = setInterval(() => {
       const r = roomRef.current;
-      if (r && r.phase === 'investigate' && tick(r, Date.now())) sync(null);
+      if (r && (r.phase === 'investigate' || r.phase === 'defense') && tick(r, Date.now())) sync(null);
     }, 500);
     return () => clearInterval(h);
   });
@@ -149,7 +163,7 @@ export function LocalGame({ onExit }: { onExit: () => void }) {
 
   const start = () => {
     const list = names.map((x) => x.trim()).filter(Boolean);
-    if (new Set(list.map((x) => x.toLowerCase())).size !== list.length) return toast('Hay nombres repetidos.', true);
+    if (new Set(list.map((x) => x.toLowerCase())).size !== list.length) return toast('Hay nombres repetidos: cada persona necesita un nombre distinto.', true);
     if (list.length < MIN_PLAYERS) return toast(`Hacen falta al menos ${MIN_PLAYERS} nombres.`, true);
     const created = createRoom('MOVIL', list[0], Date.now(), deps);
     if (!created.ok) return;
@@ -194,10 +208,15 @@ export function LocalGame({ onExit }: { onExit: () => void }) {
           )}
         </section>
         <div className="field">
-          <span className="label on-ink">Tiempo de investigación</span>
+          <span className="label on-ink">Ritmo (tiempo de investigación y de defensa)</span>
           <Segmented label="Ritmo" value={pace} onChange={setPace} options={(['relajado', 'normal', 'rapido'] as const).map((v) => ({ value: v, label: PACE_TEXT[v] }))} />
         </div>
-        <Switch label="Encargos secretos" hint="Una misión extra de +1 punto para cada cual." checked={encargos} onChange={setEncargos} />
+        <Switch
+          label="Objetivos secretos"
+          hint="Cada persona recibe una misión extra de +1 punto; alguna obliga a mentir. No cambian quién gana la ronda."
+          checked={encargos}
+          onChange={setEncargos}
+        />
         <button className="link-btn" onClick={() => setRules((v) => !v)}>
           {rules ? 'Ocultar reglas' : 'Cómo se juega'}
         </button>
@@ -211,7 +230,7 @@ export function LocalGame({ onExit }: { onExit: () => void }) {
             Volver
           </button>
           <button className="btn btn-primary" onClick={start}>
-            Empezar
+            Empezar partida
           </button>
         </ActionBar>
       </main>
@@ -249,7 +268,7 @@ export function LocalGame({ onExit }: { onExit: () => void }) {
           <Handoff
             name={p.name}
             color={p.color}
-            what={room.phase === 'declare' ? 'declarar su coartada' : 'votar en secreto'}
+            what={room.phase === 'declare' ? 'declarar' : 'votar'}
             remaining={pendingSecret.length}
             onReady={() => {
               actorPhase.current = room.phase;
@@ -295,8 +314,8 @@ export function LocalGame({ onExit }: { onExit: () => void }) {
       return (
         <main className="screen" style={{ justifyContent: 'center' }}>
           <section className="paper center stack" style={{ alignItems: 'center', padding: 'var(--s-6) var(--s-4)' }}>
-            <h2>{toBoard ? 'Todas las coartadas, selladas' : 'Todos los votos, dentro'}</h2>
-            <p>{toBoard ? 'Poned el móvil en el centro de la mesa y destapadlas a la vez.' : 'Poned el móvil donde lo veáis todos.'}</p>
+            <h2>{toBoard ? 'Todas las declaraciones, selladas' : 'Todos los votos, dentro'}</h2>
+            <p>{toBoard ? 'Poned el móvil en el centro de la mesa y revelad las coartadas a la vez.' : 'Poned el móvil donde lo veáis todos.'}</p>
           </section>
           <ActionBar>
             <button
@@ -307,7 +326,7 @@ export function LocalGame({ onExit }: { onExit: () => void }) {
                 sync(null);
               }}
             >
-              {toBoard ? 'Destapar coartadas' : 'Ver el veredicto'}
+              {toBoard ? 'Revelar coartadas' : 'Ver el veredicto'}
             </button>
           </ActionBar>
         </main>
@@ -317,6 +336,8 @@ export function LocalGame({ onExit }: { onExit: () => void }) {
     switch (room.phase) {
       case 'investigate':
         return <LocalInvestigate pub={pub} onMenu={openMenu} room={room} speakerRef={speakerRef} />;
+      case 'defense':
+        return <Defense pub={pub} priv={null} onMenu={openMenu} shared />;
       case 'result':
         return <Result key={round?.number} pub={pub} priv={null} onMenu={openMenu} shared />;
       case 'final':
@@ -366,11 +387,16 @@ export function LocalGame({ onExit }: { onExit: () => void }) {
 function Handoff({ name, color, what, remaining, onReady, onMenu }: { name: string; color: number; what: string; remaining: number; onReady: () => void; onMenu: () => void }) {
   return (
     <main className="screen" style={{ justifyContent: 'center' }}>
-      <TopBar title="Pasa el móvil" step={`Faltan ${remaining}`} onMenu={onMenu} />
+      <TopBar title="Pasa el móvil" step={remaining === 1 ? 'Falta 1 persona' : `Faltan ${remaining} personas`} onMenu={onMenu} />
       <section className="paper center stack" style={{ alignItems: 'center', padding: 'var(--s-6) var(--s-4)' }}>
         <Pin player={{ name, color }} size="xl" />
         <h2>Para {name}</h2>
-        <p>Le toca {what}. Que nadie más mire la pantalla.</p>
+        <p>
+          {what === 'declarar'
+            ? `Le toca a ${name}: leer su expediente en privado y sellar su declaración.`
+            : `Le toca a ${name}: votar en secreto.`}{' '}
+          Que nadie más mire la pantalla.
+        </p>
       </section>
       <ActionBar>
         <button className="btn btn-primary" onClick={onReady}>

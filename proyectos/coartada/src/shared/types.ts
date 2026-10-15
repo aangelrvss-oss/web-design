@@ -3,7 +3,7 @@
 
 export type PlayerId = string;
 export type Role = 'inocente' | 'culpable' | 'complice';
-export type Phase = 'lobby' | 'declare' | 'investigate' | 'vote' | 'runoff' | 'result' | 'final';
+export type Phase = 'lobby' | 'declare' | 'investigate' | 'defense' | 'vote' | 'runoff' | 'result' | 'final';
 export type Pace = 'relajado' | 'normal' | 'rapido';
 
 export const MIN_PLAYERS = 4;
@@ -23,12 +23,54 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = { pace: 'normal', rounds: 5, encargos: false };
 
-/** Seconds per timed step. */
-export const PACE_TIMINGS: Record<Pace, { declare: number; investigate1: number; investigate2: number; vote: number; runoff: number }> = {
-  relajado: { declare: 180, investigate1: 150, investigate2: 180, vote: 60, runoff: 40 },
-  normal: { declare: 120, investigate1: 120, investigate2: 150, vote: 45, runoff: 30 },
-  rapido: { declare: 75, investigate1: 75, investigate2: 105, vote: 30, runoff: 25 },
+/** Seconds per timed step for 6–7 players (the reference group size). */
+export const PACE_TIMINGS: Record<Pace, StepTimings> = {
+  relajado: { declare: 180, investigate1: 150, investigate2: 180, defense: 20, vote: 60, runoff: 40 },
+  normal: { declare: 120, investigate1: 120, investigate2: 150, defense: 15, vote: 45, runoff: 30 },
+  rapido: { declare: 75, investigate1: 75, investigate2: 105, defense: 12, vote: 30, runoff: 25 },
 };
+
+export interface StepTimings {
+  declare: number;
+  investigate1: number;
+  investigate2: number;
+  defense: number;
+  vote: number;
+  runoff: number;
+}
+
+export type GroupSize = 'pequeno' | 'mediano' | 'grande';
+
+export function groupSize(players: number): GroupSize {
+  return players <= 5 ? 'pequeno' : players <= 7 ? 'mediano' : 'grande';
+}
+
+/**
+ * Adjustments by group size, applied on top of the pace. Small groups talk less and
+ * finish sooner; large groups get more discussion and a little more time to read the
+ * longer vote list. Declaring and defending don't depend on group size.
+ */
+export const SIZE_ADJUST: Record<GroupSize, { investigateFactor: number; voteExtra: number }> = {
+  pequeno: { investigateFactor: 0.85, voteExtra: 0 },
+  mediano: { investigateFactor: 1, voteExtra: 0 },
+  grande: { investigateFactor: 1.2, voteExtra: 10 },
+};
+
+const round5 = (s: number) => Math.round(s / 5) * 5;
+
+/** The single source of truth for every timer in a round. */
+export function timingsFor(pace: Pace, players: number): StepTimings {
+  const base = PACE_TIMINGS[pace];
+  const adj = SIZE_ADJUST[groupSize(players)];
+  return {
+    declare: base.declare,
+    investigate1: round5(base.investigate1 * adj.investigateFactor),
+    investigate2: round5(base.investigate2 * adj.investigateFactor),
+    defense: base.defense,
+    vote: base.vote + adj.voteExtra,
+    runoff: base.runoff,
+  };
+}
 
 /** "At slot s you were in zone z with player `with`." Always true. */
 export interface Memory {
@@ -135,8 +177,23 @@ export interface RoundState {
   ready: PlayerId[];
   votes: Record<PlayerId, PlayerId>;
   runoff: { candidates: PlayerId[]; votes: Record<PlayerId, PlayerId> } | null;
+  /** Secret "who should defend themself" picks made during the investigation. */
+  pointers: Record<PlayerId, PlayerId>;
+  /** Set when the investigation ends: who defends and how they were chosen. */
+  defense: DefenseInfo | null;
   outcome: Outcome | null;
   startedAt: number;
+}
+
+export interface DefenseInfo {
+  /** Most-pointed person; null when nobody pointed at anyone. */
+  defender: PlayerId | null;
+  /** How many people pointed at the defender. */
+  pointerCount: number;
+  /** How many people shared the top count (2+ means a seeded draw decided). */
+  tiedCount: number;
+  /** senalado/sorteo: the defense happens. nadie_senalado/desconectado: straight to the vote. */
+  reason: 'senalado' | 'sorteo' | 'nadie_senalado' | 'desconectado';
 }
 
 export interface PlayerRec {

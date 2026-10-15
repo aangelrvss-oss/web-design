@@ -14,13 +14,17 @@ import {
   addPlayer,
   createRoom,
   declare,
+  point,
   setReady,
   startRound,
   testify,
+  tick,
   vote,
   type EngineDeps,
 } from '../src/shared/engine/game';
 import { testimonyMatches } from '../src/shared/engine/encargos';
+import { validateSetup } from '../src/shared/content/validate';
+import { timingsFor } from '../src/shared/types';
 import type { PlayerId, RoomState } from '../src/shared/types';
 
 type CulpritStrategy = 'minimo' | 'esquiva' | 'total';
@@ -33,7 +37,7 @@ const deps: EngineDeps = {
   makeSeed: () => 'unused',
 };
 
-function playRound(n: number, seed: string, strategy: CulpritStrategy, noise: number): { caught: boolean; logicCandidates: number } {
+function playRound(n: number, seed: string, strategy: CulpritStrategy, noise: number) {
   idc = 0;
   const rng = createRng(`sim|${seed}`);
   const now = 1_000_000;
@@ -82,9 +86,6 @@ function playRound(n: number, seed: string, strategy: CulpritStrategy, noise: nu
       testify(room, p, culprit, T, now);
     }
   }
-  for (const p of ids) setReady(room, p, true, now);
-  for (const p of ids) setReady(room, p, true, now);
-  if ((room.phase as string) !== 'vote') throw new Error(`expected vote, got ${room.phase}`);
 
   // ── Deduction: every voter scores each hypothesis "X is the culprit" by how many lies
   // it needs. Innocent declarations are assumed honest unless the hypothesis requires a
@@ -132,17 +133,31 @@ function playRound(n: number, seed: string, strategy: CulpritStrategy, noise: nu
   let logicCandidates = 0;
   // Discussion makes the table share one tie-break ("we all find Marta shifty"), not 6 coin flips.
   const sharedNoise: Record<PlayerId, number> = Object.fromEntries(ids.map((p) => [p, rng.next() * noise]));
+  const pick: Record<PlayerId, PlayerId> = {};
   for (const voter of ids) {
     const evil = voter === culprit || voter === accomplice;
     const options = ids.filter((p) => p !== voter && !(evil && (p === culprit || p === accomplice)));
-    const scored = options.map((p) => ({ p, c: cost(p, voter) + sharedNoise[p] }));
+    // INDEPENDENT=1: every bot breaks ties on its own (no table consensus) → more ties.
+    const scored = options.map((p) => ({ p, c: cost(p, voter) + (process.env.INDEPENDENT ? rng.next() * 2 : sharedNoise[p]) }));
     scored.sort((a, b) => a.c - b.c);
     if (voter === ids.find((q) => setup.roles[q] === 'inocente')) {
       const best = Math.min(...options.map((p) => cost(p, voter)));
       logicCandidates = options.filter((p) => cost(p, voter) === best).length;
     }
-    vote(room, voter, scored[0].p, now);
+    pick[voter] = scored[0].p;
   }
+
+  // ── Last defense: everyone points at their current top suspect.
+  for (const voter of ids) point(room, voter, pick[voter], now);
+  for (const p of ids) setReady(room, p, true, now);
+  for (const p of ids) setReady(room, p, true, now);
+  const phaseAfterInvestigation = room.phase as string;
+  if (phaseAfterInvestigation !== 'defense' && phaseAfterInvestigation !== 'vote') throw new Error(`stuck in ${room.phase}`);
+  const defense = round.defense!;
+  // Bots don't change their minds after a defense (humans may): it ends by timer.
+  if (phaseAfterInvestigation === 'defense') tick(room, room.phaseEndsAt!);
+  if ((room.phase as string) !== 'vote') throw new Error(`expected vote, got ${room.phase}`);
+  for (const voter of ids) vote(room, voter, pick[voter], now);
   if ((room.phase as string) === 'runoff') {
     const cands = round.runoff!.candidates;
     for (const voter of ids) {
@@ -153,31 +168,73 @@ function playRound(n: number, seed: string, strategy: CulpritStrategy, noise: nu
     }
   }
   if ((room.phase as string) !== 'result') throw new Error(`expected result, got ${room.phase}`);
-  return { caught: round.outcome!.culpritCaught, logicCandidates };
+  const both = (zones: string[]) => setup.traces.every((t) => zones[t.slot] === t.zone);
+  return {
+    caught: round.outcome!.culpritCaught,
+    logicCandidates,
+    runoff: !!round.runoff,
+    nobodyAccused: round.outcome!.accused === null,
+    hasAccomplice: !!accomplice,
+    defenseHeld: defense.reason === 'senalado' || defense.reason === 'sorteo',
+    defenseTie: defense.reason === 'sorteo',
+    defenderIsCulprit: defense.defender === culprit,
+    compatibleTruth: ids.filter((p) => both(setup.truth[p])).length,
+    compatibleDeclared: ids.filter((p) => both(round.declarations[p]!.zones)).length,
+    invalid: validateSetup(setup, ids).length > 0,
+  };
 }
 
 function main() {
   const rounds = Number(process.argv[2] ?? 300);
   const strategies: CulpritStrategy[] = ['minimo', 'esquiva', 'total'];
-  console.log(`COARTADA balance simulation — ${rounds} rounds per cell, scripted bots (not humans)\n`);
-  console.log('players | culprit strategy | group catches culprit | avg tied top suspects');
-  const summary: Record<string, number[]> = {};
-  for (let n = 4; n <= 10; n++) {
+  const sizes = [4, 5, 6, 7, 8, 10];
+  const pct = (a: number, b: number) => `${((100 * a) / b).toFixed(1)}%`.padStart(6);
+  console.log(`COARTADA v1.1 — simulación con bots: ${rounds} rondas por celda (${rounds * sizes.length * strategies.length} en total)`);
+  console.log(process.env.INDEPENDENT ? 'Modo: cada bot decide por su cuenta (sin consenso de mesa).' : 'Modo: la mesa comparte criterio de desempate (consenso tras hablar).');
+  console.log('Bots, no personas: deducen con una fórmula fija, no leen caras ni cambian de idea tras la defensa.\n');
+  console.log('jug. | estrategia | grupo gana | culpable escapa | cómplice escapa | desempate | nadie acusado | defensa | sorteo | defiende culpable | compatibles (verdad / declarado) | inválidas');
+  const totals: Record<string, { caught: number; n: number }> = {};
+  let stuck = 0;
+  for (const n of sizes) {
     for (const strategy of strategies) {
-      let caught = 0;
-      let cands = 0;
+      const acc = { caught: 0, runoff: 0, nobody: 0, acc: 0, defense: 0, tie: 0, defCulprit: 0, compT: 0, compD: 0, invalid: 0 };
       for (let i = 0; i < rounds; i++) {
-        const r = playRound(n, `${n}-${strategy}-${i}`, strategy, 0.5);
-        if (r.caught) caught++;
-        cands += r.logicCandidates;
+        let r;
+        try {
+          r = playRound(n, `${n}-${strategy}-${i}`, strategy, 0.5);
+        } catch (err) {
+          stuck++;
+          console.error(`  ronda bloqueada o inválida (${n}, ${strategy}, ${i}): ${(err as Error).message}`);
+          continue;
+        }
+        if (r.caught) acc.caught++;
+        if (r.runoff) acc.runoff++;
+        if (r.nobodyAccused) acc.nobody++;
+        if (r.hasAccomplice && !r.caught) acc.acc++;
+        if (r.defenseHeld) acc.defense++;
+        if (r.defenseTie) acc.tie++;
+        if (r.defenderIsCulprit) acc.defCulprit++;
+        acc.compT += r.compatibleTruth;
+        acc.compD += r.compatibleDeclared;
+        if (r.invalid) acc.invalid++;
       }
-      const pct = (100 * caught) / rounds;
-      (summary[strategy] ??= []).push(pct);
-      console.log(`${String(n).padStart(7)} | ${strategy.padEnd(16)} | ${pct.toFixed(1).padStart(20)}% | ${(cands / rounds).toFixed(2)}`);
+      (totals[strategy] ??= { caught: 0, n: 0 }).caught += acc.caught;
+      totals[strategy].n += rounds;
+      const accEsc = n >= 6 ? pct(acc.acc, rounds) : '   n/a';
+      console.log(
+        `${String(n).padStart(4)} | ${strategy.padEnd(10)} | ${pct(acc.caught, rounds).padStart(10)} | ${pct(rounds - acc.caught, rounds).padStart(15)} | ${accEsc.padStart(15)} | ${pct(acc.runoff, rounds).padStart(9)} | ${pct(acc.nobody, rounds).padStart(13)} | ${pct(acc.defense, rounds).padStart(7)} | ${pct(acc.tie, rounds).padStart(6)} | ${pct(acc.defCulprit, rounds).padStart(17)} | ${(acc.compT / rounds).toFixed(2).padStart(14)} / ${(acc.compD / rounds).toFixed(2).padStart(4)}     | ${String(acc.invalid).padStart(9)}`,
+      );
     }
   }
-  console.log('\nMean catch rate by strategy:');
-  for (const [k, v] of Object.entries(summary)) console.log(`  ${k}: ${(v.reduce((a, b) => a + b, 0) / v.length).toFixed(1)}%`);
+  console.log('\nMedia del grupo por estrategia del culpable:');
+  for (const [k, v] of Object.entries(totals)) console.log(`  ${k}: el grupo gana ${((100 * v.caught) / v.n).toFixed(1)}%`);
+  console.log(`\nRondas bloqueadas o con estado inválido: ${stuck}`);
+  console.log('\nDuración máxima por ronda con los temporizadores (sin veredicto ni desempate), ritmo normal:');
+  for (const n of sizes) {
+    const t = timingsFor('normal', n);
+    const secs = t.declare + t.investigate1 + t.investigate2 + t.defense + t.vote;
+    console.log(`  ${n} jugadores: ${(secs / 60).toFixed(1)} min (declaración ${t.declare}s, investigación ${t.investigate1}+${t.investigate2}s, defensa ${t.defense}s, votación ${t.vote}s)`);
+  }
 }
 
 main();

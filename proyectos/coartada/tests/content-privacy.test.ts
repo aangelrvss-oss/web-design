@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SCENARIOS } from '../src/shared/content/scenarios';
-import { validateCatalogue, validateSetup } from '../src/shared/content/validate';
+import { parseClock, validateCatalogue, validateScenarioShape, validateSetup } from '../src/shared/content/validate';
 import { generateRound } from '../src/shared/engine/generate';
 import { declare, setReady, vote } from '../src/shared/engine/game';
 import { privateView, publicView } from '../src/shared/engine/views';
@@ -13,6 +13,27 @@ describe('content', () => {
 
   it('every scenario passes shape + generation validation for 4–10 players', () => {
     expect(validateCatalogue(SCENARIOS, 6)).toEqual([]);
+  });
+
+  it('rejects invalid or out-of-order hours, accepts one midnight crossing', () => {
+    expect(parseClock('23:30')).toBe(23 * 60 + 30);
+    expect(parseClock('7:00')).toBeNull();
+    expect(parseClock('24:00')).toBeNull();
+    const base = SCENARIOS[0];
+    const bad = (slots: [string, string, string]) => validateScenarioShape({ ...base, slots });
+    expect(bad(['22:00', '21:00', '23:00']).some((e) => e.includes('chronological'))).toBe(true);
+    expect(bad(['22:00', 'medianoche', '01:00']).some((e) => e.includes('HH:MM'))).toBe(true);
+    expect(bad(['23:00', '00:00', '01:00'])).toEqual([]);
+    expect(bad(['22:00', '02:00', '23:00']).length).toBeGreaterThan(0);
+  });
+
+  it('every scenario: scene places exist, evidence texts are distinct, no zone is referenced that does not exist', () => {
+    for (const sc of SCENARIOS) {
+      const ids = new Set(sc.zones.map((z) => z.id));
+      for (const z of sc.sceneZones) expect(ids.has(z)).toBe(true);
+      for (const z of Object.keys(sc.sceneNotes ?? {})) expect(ids.has(z)).toBe(true);
+      expect(new Set(sc.zones.map((z) => z.trace)).size).toBe(sc.zones.length);
+    }
   });
 
   it('generation is reproducible from the seed', () => {

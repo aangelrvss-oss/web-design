@@ -10,7 +10,7 @@ import {
   MAX_TESTIMONIES,
   MIN_PLAYERS,
   NAME_MAX,
-  PACE_TIMINGS,
+  timingsFor,
   SCORE_POINTS,
   SLOT_COUNT,
   type Outcome,
@@ -23,7 +23,7 @@ import {
   type Settings,
 } from '../types';
 import { generateRound } from './generate';
-import { evaluateEncargo, testimonyMatches } from './encargos';
+import { evaluateEncargo, testimonyStatus } from './encargos';
 
 export type ActionError =
   | 'not_host'
@@ -207,7 +207,13 @@ export function updateSettings(room: RoomState, by: PlayerId, patch: Partial<Set
 // ───────────────────────────── round flow ─────────────────────────────
 
 export function roundActive(room: RoomState): boolean {
-  return room.phase === 'declare' || room.phase === 'investigate' || room.phase === 'vote' || room.phase === 'runoff';
+  return (
+    room.phase === 'declare' ||
+    room.phase === 'investigate' ||
+    room.phase === 'defense' ||
+    room.phase === 'vote' ||
+    room.phase === 'runoff'
+  );
 }
 
 export function eligiblePlayers(room: RoomState): PlayerRec[] {
@@ -239,11 +245,13 @@ export function startRound(room: RoomState, by: PlayerId, now: number, deps: Eng
     ready: [],
     votes: {},
     runoff: null,
+    pointers: {},
+    defense: null,
     outcome: null,
     startedAt: now,
   };
   room.recentScenarios = [scenario.id, ...room.recentScenarios].slice(0, SCENARIO_COOLDOWN);
-  setPhase(room, 'declare', now, PACE_TIMINGS[room.settings.pace].declare);
+  setPhase(room, 'declare', now, timingsFor(room.settings.pace, ids.length).declare);
   return ok();
 }
 
@@ -317,6 +325,35 @@ export function setReady(room: RoomState, id: PlayerId, ready: boolean, now: num
   if (ready) round.ready.push(id);
   touch(room, now);
   autoAdvance(room, now);
+  return ok();
+}
+
+/**
+ * Secretly point at the person who should get the last defense (or clear with null).
+ * Allowed during the whole investigation and changeable until it ends. Only the result
+ * (who defends, and with how many pointers) is ever made public before the verdict.
+ */
+export function point(room: RoomState, id: PlayerId, target: PlayerId | null, now: number): Result {
+  if (room.phase !== 'investigate') return fail('wrong_phase');
+  const r = requireRound(room, id);
+  if (!r.ok) return r;
+  const { round } = r;
+  if (target === null) {
+    delete round.pointers[id];
+  } else {
+    if (target === id || !round.participants.includes(target)) return fail('invalid');
+    round.pointers[id] = target;
+  }
+  touch(room, now);
+  return ok();
+}
+
+/** The defender (or the host) ends the last defense early. */
+export function endDefense(room: RoomState, id: PlayerId, now: number): Result {
+  if (room.phase !== 'defense') return fail('wrong_phase');
+  const defender = room.round?.defense?.defender;
+  if (id !== defender && id !== room.hostId) return fail('not_host');
+  timeout(room, now);
   return ok();
 }
 
@@ -406,6 +443,10 @@ function autoAdvance(room: RoomState, now: number): void {
     case 'investigate':
       if (active.every((id) => round.ready.includes(id))) timeout(room, now);
       break;
+    case 'defense':
+      // Nobody to listen to: a defender who drops out ends the defense.
+      if (!round.defense?.defender || !active.includes(round.defense.defender)) timeout(room, now);
+      break;
     case 'vote':
       if (active.every((id) => round.votes[id])) timeout(room, now);
       break;
@@ -417,7 +458,7 @@ function autoAdvance(room: RoomState, now: number): void {
 
 function timeout(room: RoomState, now: number): void {
   const round = room.round!;
-  const t = PACE_TIMINGS[room.settings.pace];
+  const t = timingsFor(room.settings.pace, round.participants.length);
   switch (room.phase) {
     case 'declare': {
       for (const id of round.participants) {
@@ -437,8 +478,11 @@ function timeout(room: RoomState, now: number): void {
         setPhase(room, 'investigate', now, t.investigate2);
       } else {
         round.ready = [];
-        setPhase(room, 'vote', now, t.vote);
+        beginDefense(room, now);
       }
+      break;
+    case 'defense':
+      setPhase(room, 'vote', now, t.vote);
       break;
     case 'vote': {
       const tally = countVotes(round.votes, round.participants);
@@ -461,6 +505,39 @@ function timeout(room: RoomState, now: number): void {
     default:
       break;
   }
+}
+
+/**
+ * Pick who gets the last defense: the participant with the most secret pointers.
+ * A tie is broken by a draw seeded with the round seed (reproducible, reveals nothing).
+ * No pointers, or a chosen person who is offline, means straight to the vote.
+ */
+function beginDefense(room: RoomState, now: number): void {
+  const round = room.round!;
+  const t = timingsFor(room.settings.pace, round.participants.length);
+  const counts: Record<PlayerId, number> = {};
+  for (const [by, target] of Object.entries(round.pointers)) {
+    if (!round.participants.includes(by) || !round.participants.includes(target)) continue;
+    counts[target] = (counts[target] ?? 0) + 1;
+  }
+  const max = Math.max(0, ...Object.values(counts));
+  if (max === 0) {
+    round.defense = { defender: null, pointerCount: 0, tiedCount: 0, reason: 'nadie_senalado' };
+    setPhase(room, 'vote', now, t.vote);
+    return;
+  }
+  const top = round.participants.filter((id) => counts[id] === max);
+  const defender = top.length === 1 ? top[0] : createRng(`defensa|${round.setup.seed}`).pick(top.slice().sort());
+  const p = findPlayer(room, defender);
+  const present = !!p && p.connected && !p.left;
+  round.defense = {
+    defender,
+    pointerCount: max,
+    tiedCount: top.length,
+    reason: !present ? 'desconectado' : top.length > 1 ? 'sorteo' : 'senalado',
+  };
+  if (present) setPhase(room, 'defense', now, t.defense);
+  else setPhase(room, 'vote', now, t.vote);
 }
 
 /** Alibi used when a player never submitted one: the truth, except the culprit avoids the scene. */
@@ -504,7 +581,7 @@ export function computeOutcome(round: RoundState, accused: PlayerId | null): Out
   const exposing = round.testimonies
     .filter(
       (t) =>
-        !testimonyMatches(round, t) &&
+        testimonyStatus(round, t) === 'contradice' &&
         setup.truth[t.by][t.slot] === t.zone &&
         setup.truth[t.subject][t.slot] === t.zone,
     )

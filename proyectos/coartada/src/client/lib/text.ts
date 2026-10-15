@@ -4,7 +4,7 @@ import type { PublicView } from '../../shared/engine/views';
 import type { Phase, Role, ScoreReason } from '../../shared/types';
 
 export const ERRORS: Record<ErrorCode, string> = {
-  invalid: 'Eso no se puede hacer así.',
+  invalid: 'Esa acción no es válida ahora mismo.',
   rate_limited: 'Demasiado rápido. Espera un segundo.',
   no_room: 'No existe ninguna sala con ese código.',
   bad_token: 'No se pudo recuperar tu sitio en la sala.',
@@ -12,13 +12,13 @@ export const ERRORS: Record<ErrorCode, string> = {
   too_many_rooms: 'Has creado demasiadas salas seguidas. Prueba en unos minutos.',
   server_busy: 'El servidor no responde. Comprueba la conexión.',
   not_host: 'Solo quien dirige la sala puede hacer eso.',
-  wrong_phase: 'Ese momento ya pasó.',
-  not_participant: 'Estás mirando esta ronda; entras en la siguiente.',
+  wrong_phase: 'Esa acción ya no está disponible en esta fase.',
+  not_participant: 'Estás viendo esta ronda sin jugar; jugarás en la siguiente.',
   already_done: 'Eso ya está hecho.',
   not_enough_players: 'Hacen falta al menos 4 personas conectadas.',
   too_many_players: 'Máximo 10 personas por ronda.',
   room_full: 'La sala está llena (10 personas).',
-  limit_reached: 'Ya has usado tus 3 testimonios.',
+  limit_reached: 'Ya has publicado tus 3 testimonios de esta ronda.',
   unknown_player: 'Esa persona ya no está en la sala.',
 };
 
@@ -33,15 +33,16 @@ export const ROLE_NAME: Record<Role, string> = {
 };
 
 export const ROLE_GOAL: Record<Role, string> = {
-  inocente: 'Tú no fuiste. Ayuda al grupo a acusar a quien sí.',
-  culpable: 'Fuiste tú. Que acusen a cualquier otra persona.',
-  complice: 'No lo hiciste, pero cubres a quien sí. Que no le acusen.',
+  inocente: 'No lo hiciste. Ganas si el grupo acusa a la persona culpable.',
+  culpable: 'Lo hiciste tú. Ganas si el grupo acusa a otra persona o a nadie.',
+  complice: 'No lo hiciste, pero sabes quién fue. Ganas si no acusan a esa persona.',
 };
 
 export const PHASE_NAME: Record<Phase, string> = {
   lobby: 'Sala de espera',
   declare: 'Declaración',
   investigate: 'Investigación',
+  defense: 'Última defensa',
   vote: 'Votación',
   runoff: 'Desempate',
   result: 'Veredicto',
@@ -49,13 +50,22 @@ export const PHASE_NAME: Record<Phase, string> = {
 };
 
 export const SCORE_TEXT: Record<ScoreReason, string> = {
-  grupo_gana: 'El grupo pilló al culpable',
-  culpable_escapa: 'Te saliste con la tuya',
-  complice_escapa: 'Tu culpable escapó',
-  voto_certero: 'Votaste al culpable',
-  cazador: 'Tu testimonio destapó una mentira',
-  encargo: 'Cumpliste tu encargo',
+  grupo_gana: 'El grupo acusó a la persona culpable',
+  culpable_escapa: 'Se libró de la acusación',
+  complice_escapa: 'La persona a la que cubría se libró',
+  voto_certero: 'Votó a la persona culpable en la primera votación',
+  cazador: 'Destapó una mentira con un testimonio verdadero',
+  encargo: 'Cumplió su objetivo secreto',
 };
+
+/** Steps shown in the phase indicator. */
+export const PHASE_STEPS: { phases: Phase[]; label: string }[] = [
+  { phases: ['declare'], label: 'Declaración' },
+  { phases: ['investigate'], label: 'Investigación' },
+  { phases: ['defense'], label: 'Última defensa' },
+  { phases: ['vote', 'runoff'], label: 'Votación' },
+  { phases: ['result', 'final'], label: 'Veredicto' },
+];
 
 export const PACE_TEXT = { relajado: 'Relajado', normal: 'Normal', rapido: 'Rápido' } as const;
 

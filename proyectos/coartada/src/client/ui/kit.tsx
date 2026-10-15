@@ -5,6 +5,8 @@ import { usePrefs, setPrefs } from '../lib/prefs';
 import { sfx, unlockAudio } from '../lib/sound';
 import { store } from '../net/store';
 import type { PublicPlayer } from '../../shared/engine/views';
+import type { Phase } from '../../shared/types';
+import { PHASE_STEPS } from '../lib/text';
 
 // ───────────── icons (24px, 2px stroke) ─────────────
 const paths: Record<string, ReactNode> = {
@@ -18,6 +20,9 @@ const paths: Record<string, ReactNode> = {
   eyeOff: <path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4M6.6 6.6C3.6 8.4 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2" />,
   check: <path d="M5 12.5l4.5 4.5L19 7.5" />,
   cross: <path d="M6 6l12 12M18 6 6 18" />,
+  minus: <path d="M5 12h14" />,
+  mic: <path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3" />,
+  target: <path d="M12 3v3M12 18v3M3 12h3M18 12h3M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" />,
   folder: <path d="M3 6h7l2 2h9v11H3z" />,
   pen: <path d="M4 20l4-1 11-11-3-3L5 16zM14 6l3 3" />,
   vote: <path d="M4 12l5 5L20 6" />,
@@ -141,7 +146,23 @@ export function useCountdown(endsAt: number | null): { left: number; total: numb
 }
 
 // ───────────── top bar ─────────────
-export function TopBar({ title, step, endsAt, onMenu, code }: { title: string; step?: string; endsAt?: number | null; onMenu?: () => void; code?: string }) {
+export function TopBar({
+  title,
+  step,
+  endsAt,
+  onMenu,
+  code,
+  phase,
+}: {
+  title: string;
+  step?: string;
+  endsAt?: number | null;
+  onMenu?: () => void;
+  code?: string;
+  /** Shows the "step N of 5" indicator for in-round screens. */
+  phase?: Phase;
+}) {
+  const stepIdx = phase ? PHASE_STEPS.findIndex((s) => s.phases.includes(phase)) : -1;
   const prefs = usePrefs();
   const { left, total } = useCountdown(endsAt ?? null);
   const secs = Math.ceil(left / 1000);
@@ -161,7 +182,7 @@ export function TopBar({ title, step, endsAt, onMenu, code }: { title: string; s
           {step && <div className="phase-step">{step}</div>}
         </div>
         {endsAt ? (
-          <span className={`timer-num ${warn ? 'warn' : ''}`} role="timer" aria-live="off" aria-label={`Quedan ${secs} segundos`}>
+          <span className={`timer-num ${warn ? 'warn' : ''}`} role="timer" aria-live="off" aria-label={`Tiempo restante de esta fase: ${secs} segundos`}>
             {Math.floor(secs / 60)}:{String(secs % 60).padStart(2, '0')}
           </span>
         ) : code ? (
@@ -189,8 +210,15 @@ export function TopBar({ title, step, endsAt, onMenu, code }: { title: string; s
           </button>
         )}
       </div>
+      {stepIdx >= 0 && (
+        <div className="phase-steps" role="img" aria-label={`Fase ${stepIdx + 1} de ${PHASE_STEPS.length}: ${PHASE_STEPS[stepIdx].label}`}>
+          {PHASE_STEPS.map((s, i) => (
+            <span key={s.label} className={i < stepIdx ? 'done' : i === stepIdx ? 'now' : ''} />
+          ))}
+        </div>
+      )}
       {endsAt ? (
-        <div className={`fuse ${warn ? 'warn' : ''}`}>
+        <div className={`fuse ${warn ? 'warn' : ''}`} role="presentation">
           <i style={{ width: `${Math.min(100, (left / total) * 100)}%` }} />
         </div>
       ) : null}

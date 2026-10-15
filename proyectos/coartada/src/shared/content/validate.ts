@@ -6,6 +6,27 @@ import { MEMORIES_PER_PLAYER, MAX_PLAYERS, MIN_PLAYERS, SLOT_COUNT, type RoundSe
 import type { ScenarioDef } from './types';
 
 const ID_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/** "23:30" → minutes since midnight, or null if it is not a valid clock time. */
+export function parseClock(label: string): number | null {
+  const m = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(label);
+  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+}
+
+/** Strictly increasing within one night: at most one wrap past midnight, total span < 12 h. */
+function chronological(times: number[]): boolean {
+  let wraps = 0;
+  let span = 0;
+  for (let i = 1; i < times.length; i++) {
+    let d = times[i] - times[i - 1];
+    if (d <= 0) {
+      wraps++;
+      d += 24 * 60;
+    }
+    span += d;
+  }
+  return wraps <= 1 && span < 12 * 60;
+}
 const ZONE_RE = /^[a-z0-9]+$/;
 
 export function validateScenarioShape(s: ScenarioDef): string[] {
@@ -21,6 +42,9 @@ export function validateScenarioShape(s: ScenarioDef): string[] {
   else {
     if (new Set(s.slots).size !== SLOT_COUNT) e.push(`${where} slot labels must be unique`);
     if (s.slots.some((l) => !l || l.length > 12)) e.push(`${where} slot labels must be 1–12 chars`);
+    const times = s.slots.map(parseClock);
+    if (times.some((t) => t === null)) e.push(`${where} slot labels must be HH:MM times`);
+    else if (!chronological(times as number[])) e.push(`${where} slots must be in chronological order (crossing midnight once is fine)`);
   }
   if (!Array.isArray(s.zones) || s.zones.length !== 5) e.push(`${where} needs exactly 5 zones`);
   const ids = new Set<string>();

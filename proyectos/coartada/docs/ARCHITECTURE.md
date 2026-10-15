@@ -19,29 +19,30 @@ No hosted backend, database, accounts, analytics or third-party runtime services
 ```
 proyectos/coartada/
   src/shared/              ← used by server AND client (single-phone mode)
-    types.ts               constants, state types, timings, scoring table
+    types.ts               constants, state types, timingsFor(pace, players), scoring table
     rng.ts                 seeded PRNG (xmur3 + sfc32)
     protocol.ts            Zod schemas for client messages, ack/error codes
     engine/generate.ts     seeded round generator (true nights, memories, evidence, decoys)
     engine/game.ts         authoritative state machine: actions, timers, votes, scoring
-    engine/encargos.ts     side missions: dealing, objective evaluation, text
+    engine/encargos.ts     secret objectives: dealing, evaluation, text; testimonyStatus()
     engine/views.ts        THE privacy boundary: publicView() / privateView()
     content/types.ts       scenario schema
     content/scenarios/     one file per case (25)
-    content/validate.ts    shape checks + generated-round invariants
+    content/validate.ts    shape checks (incl. HH:MM chronological hours) + generated-round invariants
+    content/example.ts     the guide's example round (regenerated and checked by a test)
   src/server/
     app.ts                 HTTP static server, Socket.IO handlers, validation, rate limiting
     rooms.ts               RoomManager: rooms, sockets↔players, timers, broadcast, cleanup
     main.ts                env config + start
   src/client/
     net/store.ts           socket client, session, reconnection, snapshot store
-    screens/               Home, Lobby, Declare, Investigate, Vote, Result/Final, Local, Rules
+    screens/               Home, Lobby, Declare, Investigate, Defense, Vote, Result/Final, Local, Rules, Guide
     ui/kit.tsx, ui/game.tsx  design-system components; board, private file, evidence
     lib/                   copy (Spanish), summaries, sound, prefs, colors
     styles/app.css         tokens + components
   tests/                   vitest suites
-  e2e/                     Playwright: multi-device match, single-phone match
-  scripts/                 dev, build-server, validate-content, simulate
+  e2e/                     Playwright: multi-device match, single-phone match, axe-core accessibility audit
+  scripts/                 dev, build-server, build-demo, validate-content, simulate, text-inventory
 ```
 
 ## State machine
@@ -49,12 +50,18 @@ proyectos/coartada/
 ```
 lobby ──start──▶ declare ──all sealed | timer──▶ investigate(1) ──all ready | timer──▶ investigate(2)
    ▲                                                                                     │
-   │                                                                          all ready | timer
+   │                                                              all ready | timer │ beginDefense()
    │                                                                                     ▼
- final ◀──last round── result ◀── runoff ◀──tie── vote ──clear winner | no votes | timer──▶ result
-   │                     │ ▲                                                              │
-   └──new match──▶ lobby  └─┴──────────────────── next round ─────────────────────────────┘
+   │                          nobody pointed | defender absent ◀──────────────────── defense
+   │                                        │                     defender/host ends | timer │
+   │                                        ▼                                                ▼
+ final ◀──last round── result ◀── runoff ◀──tie── vote ◀──────────────────────────────────────┘
+   │                     │ ▲                 └──clear winner | no votes | timer──▶ result
+   └──new match──▶ lobby  └─┴──────────────── next round ──────────────────────────────────
 ```
+
+- `beginDefense()` counts `round.pointers` from participants only. Most pointers → defender; a tie is broken with `createRng('defensa|' + seed)` over the sorted tied ids (deterministic, announced as "sorteo"); zero pointers or an absent defender skip straight to the vote. The result is stored in `round.defense` with its reason (`senalado`, `sorteo`, `nadie_senalado`, `desconectado`).
+- Timers come from `timingsFor(pace, players)` only: pace base × group-size factor (4–5 ×0.85, 6–7 ×1, 8–10 ×1.2 and +10 s of vote), investigation rounded to 5 s.
 
 - Every action is a pure function on `RoomState` that validates phase, membership, host rights, duplicates and payload, and returns `{ok}` or `{ok:false, error}`. Nothing throws on bad input.
 - The clock is injected (`now`). The server owns real time: after each change `RoomManager` schedules a single `setTimeout` for `phaseEndsAt` and calls `tick()`. Deadlines are absolute timestamps; clients only render them (with a clock-offset estimate from `serverNow`).
@@ -72,7 +79,9 @@ lobby ──start──▶ declare ──all sealed | timer──▶ investigate
 | Who has sealed / voted / is ready | ✓ | |
 | Declared alibis | only after the declaration phase | own sealed alibi + own draft |
 | Evidence | only revealed ones | |
-| Testimonies + match/contradict flag | ✓ | own remaining count |
+| Testimonies + status (coincide / contradice / sin contraste) | ✓ | own remaining count |
+| Secret pointers for the last defense | count only during investigation; who → whom at the verdict | own pointer |
+| Defender and reason | ✓ once the defense starts | |
 | Role, partner | at the verdict | ✓ |
 | True night, memories, encargo | at the verdict | ✓ |
 | Votes (who → whom), seed | at the verdict | own vote |
@@ -107,7 +116,11 @@ The server sends each socket `{pub, priv}` where `priv` is computed for the play
 |---|---|
 | `tests/engine.test.ts` | player counts, host rights, names, host grace/transfer, every phase transition, timers and auto-alibis, early advance with disconnected players, testimonies (limits, duplicates, readiness reset), votes (self/unknown/double), ties, runoffs, no-vote, disconnection during voting, all scoring paths, cazador, encargos, match end, scenario rotation, leaving mid-round |
 | `tests/content-privacy.test.ts` | catalogue size, validation of every case × every player count, seed reproducibility, role scaling, fair seat distribution, public view never leaks secrets in any phase, private view only describes its owner |
+| `tests/rules-v11.test.ts` | v1.1: `timingsFor` for every pace and size; defense selection, ties by seeded draw, nobody pointed, changed/cleared pointers, defender offline or leaving, early end (defender/host only), every pace; testimony statuses incl. automatic alibis; scoring edge cases; full rounds with 4, 5, 6, 7, 8 and 10 players |
+| `tests/audit-cases.test.ts` | the 16 rule situations of the v1.1 audit (catch/escape with and without accomplice, abstentions, double tie, automatic alibis, coincide ≠ truth, objectives on/off, new round reset, final standings, leaving in any phase) plus no double vote around the defense |
+| `tests/guide-example.test.ts` | regenerates the guide's example round from its seed and checks every fact the guide states |
 | `tests/server.test.ts` | real Socket.IO server + independent clients: full 5-player match with rematch and a leak audit of every payload; token reconnection (bad token, another player's id); malformed/oversized/unauthorized messages; rate limiting; host disconnect handover; disconnect during vote; late joiners as spectators; kick; leave; room cleanup; fresh room after a finished one; HTTP health/method checks |
-| `e2e/match.mjs` | 5–6 real Chromium sessions (4–5 at 390×844 touch, 1 desktop 1280×860): join by code and by link, reload, full round through the UI, WebSocket-frame privacy audit, rematch, closing a tab and rejoining mid-round, offline/online recovery, no horizontal overflow at 320 px, screenshots |
-| `e2e/local.mjs` | single-phone mode: 4 players, hand-offs, testimony, votes, verdict, next round |
-| `scripts/simulate.ts` | thousands of seeded rounds through the engine with scripted bots (balance indicator, not human data) |
+| `e2e/match.mjs` | 4–10 real Chromium sessions (all but one at 390×844 touch, 1 desktop 1280×860): join by code and by link, reload, full round through the UI including secret pointing and the last defense, WebSocket-frame privacy audit (pointers never leave the server before the verdict), rematch, closing a tab and rejoining mid-round, offline/online recovery, no horizontal overflow at 320 px, axe-core audit of 7 screens, screenshots |
+| `e2e/local.mjs` | single-phone mode: 4 players, hand-offs, testimony, pointing and defense, votes, verdict, next round; with `DEMO=1` against the standalone file, also the guide (axe-core audit, no overflow) |
+| `scripts/simulate.ts` | 7,200 seeded rounds per mode through the engine with scripted bots, incl. pointing and defense; `INDEPENDENT=1` makes each bot decide alone (balance indicator, not human data) |
+| `scripts/text-inventory.ts` | `npm run texts`: inventory of every visible string → `docs/TEXT_INVENTORY.md`, fails on forbidden terms and typographic errors |

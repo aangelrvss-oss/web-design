@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MAX_TESTIMONIES } from '../../shared/types';
+import { MAX_TESTIMONIES, timingsFor } from '../../shared/types';
 import type { PrivateView, PublicView } from '../../shared/engine/views';
 import { atHour, errorText, playerName, zoneName } from '../lib/text';
 import { sfx } from '../lib/sound';
@@ -19,12 +19,15 @@ export function Investigate({ pub, priv, onMenu, local }: { pub: PublicView; pri
   const [selected, setSelected] = useState<string | null>(null);
   const [testifyOpen, setTestifyOpen] = useState(false);
   const [fileOpen, setFileOpen] = useState(false);
+  const [suspectOpen, setSuspectOpen] = useState(false);
   const { busy, run } = useAction();
   const me = priv?.playerId ?? null;
   const inRound = !!priv?.inRound;
   const ready = !!me && round.ready.includes(me);
   const active = round.participants.filter((id) => pub.players.find((p) => p.id === id)?.connected);
   const readyCount = round.ready.filter((id) => active.includes(id)).length;
+  const secondStep = round.traces.length >= 2;
+  const defenseSecs = timingsFor(pub.settings.pace, round.participants.length).defense;
 
   // Remember which traces were already seen so only new ones animate.
   const seenTraces = useRef(round.traces.length);
@@ -47,7 +50,8 @@ export function Investigate({ pub, priv, onMenu, local }: { pub: PublicView; pri
     <main className="screen">
       <TopBar
         title="Investigación"
-        step={round.traces.length < 2 ? 'Prueba 1 de 2' : 'Prueba 2 de 2. Luego, votación.'}
+        phase="investigate"
+        step={secondStep ? 'Prueba 2 de 2. Después: última defensa y votación.' : 'Prueba 1 de 2. Testificad y comparad coartadas.'}
         endsAt={pub.phaseEndsAt}
         onMenu={onMenu}
       />
@@ -62,10 +66,38 @@ export function Investigate({ pub, priv, onMenu, local }: { pub: PublicView; pri
       </div>
       <Board pub={pub} selected={selected} onSelect={setSelected} flip={flip} />
       {selected && <SelectedSummary pub={pub} id={selected} />}
-      <TestimonyList pub={pub} />
+      {inRound && priv && (
+        <section className="paper tabbed" data-tab="Última defensa" aria-label="Tu sospechoso para la última defensa">
+          <div className="suspect-card">
+            {priv.pointer ? (
+              (() => {
+                const p = pub.players.find((x) => x.id === priv.pointer);
+                return p ? <Pin player={p} size="lg" /> : null;
+              })()
+            ) : (
+              <span className="pin lg" style={{ ['--c' as string]: 'var(--rule)', color: 'var(--pencil)' }} aria-hidden>
+                ?
+              </span>
+            )}
+            <div className="grow">
+              <div style={{ fontWeight: 700 }}>
+                {priv.pointer ? `Señalas a ${playerName(pub, priv.pointer)}` : 'Aún no señalas a nadie'}
+              </div>
+              <div className="small muted">
+                En secreto. Al terminar la investigación, la persona más señalada tendrá {defenseSecs} s para defenderse. {round.pointedCount} de{' '}
+                {round.participants.length} ya han señalado.
+              </div>
+            </div>
+          </div>
+          <button className="btn btn-ghost btn-sm btn-block" style={{ marginTop: 10 }} onClick={() => setSuspectOpen(true)}>
+            {priv.pointer ? 'Cambiar a quién señalo' : 'Señalar a alguien'}
+          </button>
+        </section>
+      )}
+      <TestimonyList pub={pub} focus={selected} />
 
       {inRound && (
-        <ActionBar hint={`${readyCount} de ${active.length} listos para ${round.traces.length < 2 ? 'la prueba 2' : 'votar'}`}>
+        <ActionBar hint={`${readyCount} de ${active.length} piden ${secondStep ? 'terminar la investigación' : 'la prueba 2'}`}>
           <button className="btn btn-paper" onClick={() => setFileOpen(true)} aria-label="Ver mi expediente" style={{ flex: 'none', padding: '0 14px' }}>
             <span style={{ width: 22 }}>
               <Icon name="folder" />
@@ -78,26 +110,26 @@ export function Investigate({ pub, priv, onMenu, local }: { pub: PublicView; pri
             </span>
           </button>
           <button className={`btn ${ready ? 'btn-ghost' : 'btn-primary'}`} onClick={toggleReady} disabled={busy} aria-pressed={ready}>
-            {ready ? 'Esperad' : 'Estoy listo'}
+            {ready ? 'Retirar petición' : secondStep ? 'Pedir terminar' : 'Pedir prueba 2'}
           </button>
         </ActionBar>
       )}
 
       {local && (
         <>
-          <ActionBar hint="Hablad en voz alta. Cuando queráis, pasad a lo siguiente.">
+          <ActionBar hint="Hablad en voz alta. Pasad a lo siguiente cuando el grupo quiera.">
             <button className="btn btn-paper" onClick={() => setTestifyOpen(true)}>
               Testificar
             </button>
-            <button className="btn btn-primary" disabled={busy} onClick={() => void run(() => store.send('game:advance'), undefined, errorText)}>
-              {round.traces.length < 2 ? 'Siguiente prueba' : 'A votar'}
+            <button
+              className="btn btn-primary"
+              disabled={busy}
+              onClick={() => (secondStep ? setSuspectOpen(true) : void run(() => store.send('game:advance'), undefined, errorText))}
+            >
+              {secondStep ? 'Terminar investigación' : 'Sacar la prueba 2'}
             </button>
           </ActionBar>
-          <Sheet
-            open={testifyOpen && !local.speakerPriv}
-            onClose={() => setTestifyOpen(false)}
-            label="¿Quién testifica?"
-          >
+          <Sheet open={testifyOpen && !local.speakerPriv} onClose={() => setTestifyOpen(false)} label="¿Quién testifica?">
             <h2>¿Quién testifica?</h2>
             <div className="row wrap" style={{ marginTop: 12 }}>
               {local.speakers.map((id) => {
@@ -122,6 +154,28 @@ export function Investigate({ pub, priv, onMenu, local }: { pub: PublicView; pri
               priv={local.speakerPriv}
             />
           )}
+          <SuspectSheet
+            open={suspectOpen}
+            onClose={() => setSuspectOpen(false)}
+            pub={pub}
+            candidates={round.participants}
+            current={null}
+            shared
+            seconds={defenseSecs}
+            onPick={(target) =>
+              void run(
+                async () => {
+                  if (target) {
+                    const a = await store.send('game:point', { target });
+                    if (!a.ok) return a;
+                  }
+                  return store.send('game:advance');
+                },
+                () => setSuspectOpen(false),
+                errorText,
+              )
+            }
+          />
         </>
       )}
 
@@ -131,9 +185,76 @@ export function Investigate({ pub, priv, onMenu, local }: { pub: PublicView; pri
             <PrivateFile pub={pub} priv={priv} startOpen />
           </Sheet>
           <TestifySheet open={testifyOpen} onClose={() => setTestifyOpen(false)} pub={pub} priv={priv} />
+          <SuspectSheet
+            open={suspectOpen}
+            onClose={() => setSuspectOpen(false)}
+            pub={pub}
+            candidates={round.participants.filter((id) => id !== priv.playerId)}
+            current={priv.pointer}
+            seconds={defenseSecs}
+            onPick={(target) =>
+              void run(
+                () => store.send('game:point', { target }),
+                () => {
+                  setSuspectOpen(false);
+                  toast(target ? `Señalas a ${playerName(pub, target)}.` : 'Ya no señalas a nadie.');
+                },
+                errorText,
+              )
+            }
+          />
         </>
       )}
     </main>
+  );
+}
+
+/** Pick who should get the last defense. Online: your secret pick. Single phone: the group decides aloud. */
+function SuspectSheet({
+  open,
+  onClose,
+  pub,
+  candidates,
+  current,
+  onPick,
+  shared,
+  seconds,
+}: {
+  open: boolean;
+  onClose: () => void;
+  pub: PublicView;
+  candidates: string[];
+  current: string | null;
+  onPick: (target: string | null) => void;
+  shared?: boolean;
+  seconds: number;
+}) {
+  return (
+    <Sheet open={open} onClose={onClose} label="Señalar para la última defensa">
+      <div className="stack">
+        <h2>{shared ? '¿A quién señaláis?' : '¿A quién señalas?'}</h2>
+        <p className="small">
+          {shared
+            ? `Decidid en voz alta a quién queréis oír antes de votar. Tendrá ${seconds} s para defenderse; después, votación secreta.`
+            : `Tu elección es secreta y puedes cambiarla hasta que termine la investigación. La persona más señalada tendrá ${seconds} s para defenderse. Si hay empate, la app sortea entre los empatados; si nadie señala, se vota directamente.`}
+        </p>
+        <div className="row wrap">
+          {candidates.map((id) => {
+            const p = pub.players.find((x) => x.id === id);
+            if (!p) return null;
+            return (
+              <button key={id} type="button" className="chip-player" aria-pressed={current === id} onClick={() => onPick(id)}>
+                <Pin player={p} />
+                {p.name}
+              </button>
+            );
+          })}
+        </div>
+        <button type="button" className="btn btn-ghost btn-block" onClick={() => onPick(null)}>
+          {shared ? 'A nadie: votar ya' : 'No señalar a nadie'}
+        </button>
+      </div>
+    </Sheet>
   );
 }
 
@@ -143,8 +264,8 @@ function SelectedSummary({ pub, id }: { pub: PublicView; id: string }) {
   const p = pub.players.find((x) => x.id === id);
   if (!decl || !p) return null;
   const about = round.testimonies.filter((t) => t.subject === id);
-  const ok = about.filter((t) => t.matches).length;
-  const bad = about.length - ok;
+  const ok = about.filter((t) => t.status === 'coincide').length;
+  const bad = about.filter((t) => t.status === 'contradice').length;
   const traceHits = round.traces.filter((t) => decl.zones[t.slot] === t.zone).length;
   return (
     <section className="paper" aria-live="polite">
@@ -158,9 +279,11 @@ function SelectedSummary({ pub, id }: { pub: PublicView; id: string }) {
         </div>
       </div>
       <div className="row wrap" style={{ marginTop: 8 }}>
-        <span className="tag blue">{ok} le respaldan</span>
-        <span className="tag red">{bad} le contradicen</span>
-        <span className="tag">Coincide con {traceHits} de {round.traces.length} pruebas</span>
+        <span className="tag blue">{ok === 1 ? '1 testimonio coincide' : `${ok} testimonios coinciden`}</span>
+        <span className="tag red">{bad === 1 ? '1 testimonio contradice' : `${bad} testimonios contradicen`}</span>
+        <span className="tag">
+          Encaja con {traceHits} de {round.traces.length} {round.traces.length === 1 ? 'prueba' : 'pruebas'}
+        </span>
         {decl.auto && <span className="tag">Coartada automática</span>}
       </div>
     </section>
@@ -199,8 +322,8 @@ function TestifySheet({ open, onClose, pub, priv }: { open: boolean; onClose: ()
       <div className="stack">
         <h2>Testificar</h2>
         <p className="small">
-          Un testimonio dice «estuve con esta persona a esta hora», en el sitio que tú declaraste. Puede ser verdad o no. Te quedan{' '}
-          {priv.testimoniesLeft} de {MAX_TESTIMONIES}.
+          Un testimonio dice «estuve con esta persona a esta hora». El sitio sale de tu propia coartada para esa hora. Puede ser verdad o
+          mentira: la app solo lo compara con la coartada de la otra persona. Te quedan {priv.testimoniesLeft} de {MAX_TESTIMONIES}.
         </p>
         {priv.memories && priv.memories.length > 0 && (
           <div>

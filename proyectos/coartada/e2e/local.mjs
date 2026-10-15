@@ -1,7 +1,9 @@
 // End-to-end for the single-phone (pass-and-play) mode: one browser, no server game state.
 //   node e2e/local.mjs [baseUrl] [outDir]
 import { chromium } from 'playwright-core';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { auditA11y } from './a11y.mjs';
+const a11yReport = [];
 
 const BASE = process.argv[2] ?? 'http://127.0.0.1:4100';
 const OUT = process.argv[3] ?? 'qa-out';
@@ -20,9 +22,10 @@ if (process.env.DEMO) {
   await page.getByRole('button', { name: /Guía rápida/ }).click();
   await page.getByRole('heading', { name: 'Una ronda, paso a paso' }).waitFor();
   await page.screenshot({ path: `${OUT}/31-demo-guide.png`, fullPage: true });
+  await auditA11y(page, 'guía', errors, a11yReport);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   if (overflow > 0) errors.push(`guide overflows by ${overflow}px`);
-  await page.getByRole('button', { name: 'Jugar ahora' }).click();
+  await page.getByRole('button', { name: 'Jugar en este móvil' }).click();
 } else {
   await page.getByRole('button', { name: 'Jugar con un solo móvil' }).click();
 }
@@ -47,8 +50,8 @@ for (let k = 0; k < names.length; k++) {
     else await block.locator('.choice', { hasText: 'Aquí estabas' }).click();
   }
   if (k === 0) await page.screenshot({ path: `${OUT}/21-local-declare.png`, fullPage: true });
-  await page.getByRole('button', { name: 'Sellar coartada' }).click();
-  await page.getByRole('button', { name: k === names.length - 1 ? 'Destapar coartadas' : 'Ocultar y pasar' }).click();
+  await page.getByRole('button', { name: 'Sellar declaración' }).click();
+  await page.getByRole('button', { name: k === names.length - 1 ? 'Revelar coartadas' : 'Ocultar y pasar' }).click();
 }
 if (!culprit) errors.push('no culprit seen');
 await page.getByText('Investigación').first().waitFor();
@@ -63,8 +66,16 @@ await sheet.getByRole('button', { name: 'Publicar testimonio' }).click();
 await page.locator('.testimony').first().waitFor();
 await page.screenshot({ path: `${OUT}/22-local-investigate.png`, fullPage: true });
 
-await page.getByRole('button', { name: 'Siguiente prueba' }).click();
-await page.getByRole('button', { name: 'A votar' }).click();
+await page.getByRole('button', { name: 'Sacar la prueba 2' }).click();
+await page.getByText('Prueba 2 de 2', { exact: false }).first().waitFor();
+await page.getByRole('button', { name: 'Terminar investigación' }).click();
+await page.getByRole('dialog', { name: 'Señalar para la última defensa' }).getByRole('button', { name: culprit, exact: true }).click();
+await page.getByText('Última defensa').first().waitFor();
+const defender = (await page.locator('.defense-name').innerText()).trim();
+if (defender !== culprit) errors.push(`local defense: expected ${culprit}, got ${defender}`);
+await page.screenshot({ path: `${OUT}/22b-local-defense.png`, fullPage: true });
+await auditA11y(page, 'local: defensa', errors, a11yReport);
+await page.getByRole('button', { name: 'Pasar a la votación' }).click();
 for (let k = 0; k < names.length; k++) {
   const who = (await page.getByRole('heading', { level: 2 }).innerText()).replace('Para ', '').trim();
   await page.getByRole('button', { name: `Soy ${who}` }).click();
@@ -82,6 +93,7 @@ await page.getByRole('button', { name: 'Siguiente ronda' }).click();
 await page.getByText('Pasa el móvil').first().waitFor();
 
 await browser.close();
+writeFileSync(`${OUT}/a11y-local.json`, JSON.stringify(a11yReport, null, 2));
 if (errors.length) {
   console.error('✗ Local E2E problems:\n  ' + errors.join('\n  '));
   process.exit(1);

@@ -21,7 +21,8 @@
     "validate": "tsx scripts/validate-content.ts",
     "simulate": "tsx scripts/simulate.ts",
     "e2e": "node e2e/match.mjs",
-    "build:demo": "node scripts/build-demo.mjs"
+    "build:demo": "node scripts/build-demo.mjs",
+    "texts": "tsx scripts/text-inventory.ts"
   },
   "dependencies": {
     "@fontsource-variable/archivo": "^5.2.8",
@@ -40,6 +41,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^5.0.4",
+    "axe-core": "^4.10.3",
     "esbuild": "^0.25.11",
     "playwright-core": "^1.56.1",
     "tsx": "^4.20.6",

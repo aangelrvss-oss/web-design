@@ -42,8 +42,8 @@ export function Home({ onLocal }: { onLocal: () => void }) {
         </div>
         <section className="paper hero-file tabbed" data-tab="Expediente 001">
           <p className="doc-text">
-            Anoche pasó algo absurdo y uno de vosotros fue. Cada uno declara dónde estuvo, las pruebas van saliendo y al final votáis
-            en secreto quién miente.
+            Ha ocurrido algo absurdo y una persona del grupo es la culpable. Cada cual declara en secreto dónde estuvo, aparecen pruebas
+            que nunca mienten y al final votáis en secreto a quién acusar.
           </p>
         </section>
         {snap.notice && (
@@ -69,7 +69,10 @@ export function Home({ onLocal }: { onLocal: () => void }) {
               Jugar con un solo móvil
             </button>
           </div>
-          <p className="muted small">De 4 a 10 personas, cada una con su móvil y en la misma habitación (o en videollamada). Rondas de unos 8 minutos. Sin registros.</p>
+          <p className="muted small">
+            De 4 a 10 personas, cada una con su móvil, en la misma habitación o por videollamada. Con el ritmo normal, una ronda dura como
+            máximo entre 7 y 9 minutos, según el número de personas. No hace falta registrarse.
+          </p>
         </div>
       ) : (
         <form className="stack" onSubmit={submit} noValidate>

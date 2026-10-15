@@ -29,13 +29,13 @@ export function Vote({ pub, priv, onMenu }: { pub: PublicView; priv: PrivateView
 
   return (
     <main className="screen">
-      <TopBar title={runoff ? 'Desempate' : 'Votación'} step="Tu voto es secreto hasta el veredicto." endsAt={pub.phaseEndsAt} onMenu={onMenu} />
+      <TopBar title={runoff ? 'Desempate' : 'Votación'} phase={pub.phase} step="Tu voto es secreto hasta el veredicto." endsAt={pub.phaseEndsAt} onMenu={onMenu} />
       <section className="stack">
         <h2>{runoff ? `Empate entre ${listJoin(runoff.candidates.map((id) => playerName(pub, id)))}` : '¿Quién lo hizo?'}</h2>
         <p className="muted">
           {runoff
-            ? 'Votad otra vez, solo entre ellos. Si vuelve a haber empate, nadie es acusado y el culpable se libra.'
-            : 'Si la persona más votada es la culpable, gana el grupo. Votos fuera de plazo no cuentan.'}
+            ? 'Votad otra vez, solo entre las personas empatadas. Si vuelve a haber empate, nadie es acusado y la persona culpable se libra.'
+            : 'Si la persona más votada es la culpable, gana el grupo de inocentes. Quien no vote a tiempo no cuenta.'}
         </p>
       </section>
 
@@ -55,7 +55,7 @@ export function Vote({ pub, priv, onMenu }: { pub: PublicView; priv: PrivateView
             const p = pub.players.find((x) => x.id === id);
             if (!p) return null;
             const decl = round.declarations?.[id];
-            const contra = round.testimonies.filter((t) => t.subject === id && !t.matches).length;
+            const contra = round.testimonies.filter((t) => t.subject === id && t.status === 'contradice').length;
             return (
               <button
                 key={id}
@@ -92,7 +92,7 @@ export function Vote({ pub, priv, onMenu }: { pub: PublicView; priv: PrivateView
           })}
         </section>
       ) : (
-        <p className="muted">Estás mirando esta ronda. Entras en la siguiente.</p>
+        <p className="muted">Estás viendo esta ronda sin jugar; jugarás en la siguiente.</p>
       )}
 
       <button className="btn btn-ghost btn-block" onClick={() => setShowBoard((v) => !v)} aria-expanded={showBoard}>
@@ -104,7 +104,7 @@ export function Vote({ pub, priv, onMenu }: { pub: PublicView; priv: PrivateView
         <div className="label on-ink">
           {voted.length} de {active.length} han votado
         </div>
-        <div className="row wrap">
+        <div className="row wrap" role="group" aria-label="Quién ha votado">
           {round.participants.map((id) => {
             const p = pub.players.find((x) => x.id === id);
             if (!p) return null;

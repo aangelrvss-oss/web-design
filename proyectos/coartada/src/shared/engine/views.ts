@@ -4,8 +4,8 @@
 // until the round is resolved.
 
 import type { ScenarioDef } from '../content/types';
-import { MAX_TESTIMONIES, type Encargo, type Memory, type Outcome, type Phase, type PlayerId, type Role, type RoomState, type Settings, type Trace } from '../types';
-import { testimonyMatches } from './encargos';
+import { MAX_TESTIMONIES, type DefenseInfo, type Encargo, type Memory, type Outcome, type Phase, type PlayerId, type Role, type RoomState, type Settings, type Trace } from '../types';
+import { testimonyStatus, type TestimonyStatus } from './encargos';
 
 export interface PublicPlayer {
   id: PlayerId;
@@ -23,7 +23,8 @@ export interface PublicTestimony {
   subject: PlayerId;
   slot: number;
   zone: string;
-  matches: boolean;
+  /** Comparison with the subject's sealed alibi only (see testimonyStatus). */
+  status: TestimonyStatus;
 }
 
 export interface PublicReveal {
@@ -33,6 +34,8 @@ export interface PublicReveal {
   encargos: Record<PlayerId, Encargo> | null;
   votes: Record<PlayerId, PlayerId>;
   runoffVotes: Record<PlayerId, PlayerId> | null;
+  /** Who pointed at whom for the last defense. */
+  pointers: Record<PlayerId, PlayerId>;
   traces: Trace[];
   seed: string;
   outcome: Outcome;
@@ -61,6 +64,10 @@ export interface PublicRound {
   ready: PlayerId[];
   voted: PlayerId[];
   runoff: { candidates: PlayerId[]; voted: PlayerId[] } | null;
+  /** How many participants currently point at someone (not at whom). */
+  pointedCount: number;
+  /** Who defends and why; public from the end of the investigation. */
+  defense: DefenseInfo | null;
   reveal: PublicReveal | null;
 }
 
@@ -89,6 +96,8 @@ export interface PrivateView {
   declared: string[] | null;
   vote: PlayerId | null;
   runoffVote: PlayerId | null;
+  /** Your own secret pick for the last defense. */
+  pointer: PlayerId | null;
   testimoniesLeft: number;
 }
 
@@ -98,7 +107,7 @@ export function publicView(room: RoomState, scenarios: ScenarioDef[]): PublicVie
   if (round) {
     const scenario = scenarios.find((s) => s.id === round.setup.scenarioId)!;
     const after = (phases: Phase[]) => phases.includes(room.phase);
-    const declared = after(['investigate', 'vote', 'runoff', 'result', 'final']);
+    const declared = after(['investigate', 'defense', 'vote', 'runoff', 'result', 'final']);
     const resolved = after(['result', 'final']) && !!round.outcome;
     pubRound = {
       number: round.number,
@@ -127,11 +136,13 @@ export function publicView(room: RoomState, scenarios: ScenarioDef[]): PublicVie
         subject: t.subject,
         slot: t.slot,
         zone: t.zone,
-        matches: testimonyMatches(round, t),
+        status: testimonyStatus(round, t),
       })),
       ready: room.phase === 'investigate' ? round.ready.slice() : [],
       voted: Object.keys(round.votes),
       runoff: round.runoff ? { candidates: round.runoff.candidates.slice(), voted: Object.keys(round.runoff.votes) } : null,
+      pointedCount: Object.keys(round.pointers).filter((id) => round.participants.includes(id)).length,
+      defense: round.defense ? { ...round.defense } : null,
       reveal: resolved
         ? {
             roles: { ...round.setup.roles },
@@ -140,6 +151,7 @@ export function publicView(room: RoomState, scenarios: ScenarioDef[]): PublicVie
             encargos: round.setup.encargos ? structuredClone(round.setup.encargos) : null,
             votes: { ...round.votes },
             runoffVotes: round.runoff ? { ...round.runoff.votes } : null,
+            pointers: { ...round.pointers },
             traces: round.setup.traces.map((t) => ({ ...t })),
             seed: round.setup.seed,
             outcome: structuredClone(round.outcome!),
@@ -190,6 +202,7 @@ export function privateView(room: RoomState, playerId: PlayerId): PrivateView {
       declared: null,
       vote: null,
       runoffVote: null,
+      pointer: null,
       testimoniesLeft: 0,
     };
   }
@@ -215,6 +228,7 @@ export function privateView(room: RoomState, playerId: PlayerId): PrivateView {
     declared: round.declarations[playerId]?.zones.slice() ?? null,
     vote: round.votes[playerId] ?? null,
     runoffVote: round.runoff?.votes[playerId] ?? null,
+    pointer: round.pointers[playerId] ?? null,
     testimoniesLeft: MAX_TESTIMONIES - round.testimonies.filter((t) => t.by === playerId).length,
   };
 }

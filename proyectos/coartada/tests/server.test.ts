@@ -176,6 +176,39 @@ describe('multiplayer server', () => {
     close(cs);
   });
 
+  it('última defensa over the network: secret pointers, defender ends it, then the vote', async () => {
+    const cs = await room(5);
+    const [host] = cs;
+    await host.call('game:start');
+    await Promise.all(cs.map((c) => c.next((s) => s.pub.phase === 'declare' && !!s.priv?.truth)));
+    for (const c of cs) await c.call('game:declare', { zones: c.last().priv!.truth, lock: true });
+    await host.next((s) => s.pub.phase === 'investigate');
+    const target = cs[3];
+    expect(await target.call('game:point', { target: target.id })).toEqual({ ok: false, error: 'invalid' });
+    for (const c of cs) if (c !== target) expect(await c.call('game:point', { target: target.id })).toEqual({ ok: true });
+    await target.call('game:point', { target: cs[1].id });
+    const mid = await cs[2].next((s) => s.pub.round!.pointedCount === 5);
+    expect(mid.priv!.pointer).toBe(target.id);
+    // Nobody receives anyone else's pointer before the verdict.
+    for (const c of cs) {
+      for (const raw of c.raw) {
+        const msg = JSON.parse(raw);
+        expect(raw.includes('"pointers"')).toBe(false);
+        if (msg.priv && msg.priv.playerId !== target.id) expect(msg.priv.pointer === null || msg.priv.pointer === target.id).toBe(true);
+      }
+    }
+    for (const c of cs) await c.call('game:ready', { ready: true });
+    await host.next((s) => s.pub.round!.traces.length === 2);
+    for (const c of cs) await c.call('game:ready', { ready: true });
+    const d = await host.next((s) => s.pub.phase === 'defense');
+    expect(d.pub.round!.defense).toEqual({ defender: target.id, pointerCount: 4, tiedCount: 1, reason: 'senalado' });
+    expect(await cs[1].call('game:endDefense')).toEqual({ ok: false, error: 'not_host' });
+    expect(await cs[1].call('game:testify', { subject: cs[2].id, slot: 0 })).toEqual({ ok: false, error: 'wrong_phase' });
+    expect(await target.call('game:endDefense')).toEqual({ ok: true });
+    await host.next((s) => s.pub.phase === 'vote');
+    close(cs);
+  });
+
   it('reconnects a player with their token and restores only their own card', async () => {
     const cs = await room(4);
     await cs[0].call('game:start');

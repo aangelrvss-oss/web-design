@@ -1,8 +1,8 @@
 # Coartada
 
-Juego de deducción social para jugar con amigos, cada uno con su móvil. Anoche pasó algo absurdo y uno de vosotros fue: declaráis en secreto dónde estuvisteis a tres horas, las coartadas se destapan a la vez en un tablero común, testificáis («estuve con Marta a las 23:00») y el tablero dice si cuadra. Luego salen dos pruebas que nunca mienten y votáis en secreto.
+Juego de deducción social para jugar con amigos, cada uno con su móvil. Ha ocurrido algo absurdo y una persona del grupo es la culpable: declaráis en secreto dónde estuvisteis a tres horas, las coartadas se revelan a la vez en un tablero común, dais testimonios («estuve con Marta a las 23:00») y el tablero dice si coinciden o contradicen. Salen dos pruebas que nunca mienten, la persona más señalada tiene 15 segundos de última defensa y votáis en secreto.
 
-- 4–10 personas (mejor 5–8), rondas de 6–9 minutos, 25 casos.
+- 4–10 personas (mejor 5–8), rondas de 7–9 minutos como máximo en ritmo normal (menos si todo el mundo termina antes), 25 casos.
 - Sin cuentas, sin anuncios, sin IA durante la partida y sin datos personales.
 - Modo principal: un móvil por persona (sala con código, enlace o QR). Alternativa: un solo móvil que se va pasando.
 
@@ -30,12 +30,16 @@ npm start            # producción: sirve juego + WebSocket en $PORT (3000 por d
 npm test             # motor, privacidad, contenido e integración multicliente (vitest)
 npm run typecheck
 npm run validate     # comprueba los 25 casos para 4–10 jugadores
-npm run simulate     # simulación de equilibrio con bots (no son personas)
+npm run simulate     # simulación de equilibrio con bots (no son personas) → docs/balance-sim.txt
+INDEPENDENT=1 npm run simulate   # variante: cada bot decide por su cuenta
+npm run texts        # inventario de textos + comprobación de terminología → docs/TEXT_INVENTORY.md
 
 # E2E con navegadores reales (necesita un servidor arrancado, p. ej. en :4100)
 PORT=4100 npm start &
-node e2e/match.mjs http://127.0.0.1:4100 5 qa-out   # 5 sesiones independientes
+node e2e/match.mjs http://127.0.0.1:4100 6 qa-out   # 4–10 sesiones independientes (+ auditoría axe)
 node e2e/local.mjs http://127.0.0.1:4100 qa-out     # modo un solo móvil
+DEMO=1 node e2e/local.mjs "file://$PWD/dist/coartada-un-movil.html" qa-out   # demo de un archivo + guía
+# Si Playwright no encuentra Chromium: CHROMIUM_PATH=/ruta/a/chromium
 ```
 
 `dist/server.mjs` es autocontenido: para producción basta con copiar la carpeta `dist/` y ejecutar `node dist/server.mjs`.
@@ -46,7 +50,7 @@ node e2e/local.mjs http://127.0.0.1:4100 qa-out     # modo un solo móvil
 2. Averigua la IP local del portátil (p. ej. `192.168.1.40`; en macOS `ipconfig getifaddr en0`, en Linux `hostname -I`, en Windows `ipconfig`).
 3. En tu móvil abre `http://192.168.1.40:3000`, pulsa **Crear sala** y escribe tu nombre.
 4. Tus amigos escanean el **QR** de la sala con la cámara (o abren el enlace que compartes, o entran en la misma dirección y escriben el código de 4 letras).
-5. Con 4 o más personas en la sala, pulsa **Empezar ronda**.
+5. Con 4 o más personas en la sala, pulsa **Empezar partida**.
 
 Para jugar a distancia (videollamada) hace falta una URL pública: ver «Desplegar».
 

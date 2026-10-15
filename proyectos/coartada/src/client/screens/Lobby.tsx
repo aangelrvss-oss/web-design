@@ -1,10 +1,17 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
-import { MAX_PLAYERS, MIN_PLAYERS } from '../../shared/types';
+import { MAX_PLAYERS, MIN_PLAYERS, timingsFor, type Pace } from '../../shared/types';
 import type { PublicView } from '../../shared/engine/views';
 import { errorText, PACE_TEXT, plural } from '../lib/text';
 import { store } from '../net/store';
 import { ActionBar, Icon, Pin, Segmented, Switch, toast, TopBar, useAction } from '../ui/kit';
+
+/** Maximum round length with full timers (verdict and runoff excluded), rounded. */
+function roundMinutes(pace: Pace, players: number): string {
+  const t = timingsFor(pace, players);
+  const secs = t.declare + t.investigate1 + t.investigate2 + t.defense + t.vote;
+  return String(Math.round(secs / 60));
+}
 
 export function inviteUrl(code: string): string {
   return `${location.origin}/?sala=${code}`;
@@ -84,7 +91,7 @@ export function Lobby({ pub, me, onMenu }: { pub: PublicView; me: string; onMenu
                 {p.id === me && <span className="muted"> (tú)</span>}
               </span>
               {p.isHost && <span className="tag">Dirige</span>}
-              {!p.connected && <span className="tag">Desconectado</span>}
+              {!p.connected && <span className="tag">Sin conexión</span>}
               {pub.roundsPlayed > 0 && <span className="tag">{p.score} pts</span>}
               {isHost && !p.connected && p.id !== me && (
                 <button className="btn btn-ghost btn-sm" onClick={() => void run(() => store.send('room:kick', { playerId: p.id }), undefined, errorText)}>
@@ -109,6 +116,10 @@ export function Lobby({ pub, me, onMenu }: { pub: PublicView; me: string; onMenu
             options={(['relajado', 'normal', 'rapido'] as const).map((v) => ({ value: v, label: PACE_TEXT[v] }))}
           />
         </div>
+        <p className="small muted">
+          Con {Math.max(online.length, MIN_PLAYERS)} personas, una ronda dura como máximo {roundMinutes(pub.settings.pace, Math.max(online.length, MIN_PLAYERS))}{' '}
+          minutos (termina antes si todo el mundo acaba).
+        </p>
         <div className="field">
           <span className="label on-ink">Rondas por partida</span>
           <Segmented
@@ -125,8 +136,8 @@ export function Lobby({ pub, me, onMenu }: { pub: PublicView; me: string; onMenu
           />
         </div>
         <Switch
-          label="Encargos secretos"
-          hint="Cada cual recibe una misión extra de +1 punto. Mejor a partir de la segunda ronda."
+          label="Objetivos secretos"
+          hint="Cada persona recibe una misión extra de +1 punto; alguna obliga a mentir. No cambian quién gana la ronda. Recomendados a partir de la segunda ronda."
           checked={pub.settings.encargos}
           disabled={!isHost || busy}
           onChange={(encargos) => setSettings({ encargos })}
@@ -138,13 +149,13 @@ export function Lobby({ pub, me, onMenu }: { pub: PublicView; me: string; onMenu
           isHost
             ? missing > 0
               ? `Faltan ${plural(missing, 'persona', 'personas')} para empezar.`
-              : `${online.length} personas listas. Juntaos y empezad.`
-            : `Esperando a que ${host?.name ?? 'quien dirige'} empiece la ronda.`
+              : `Hay ${online.length} personas conectadas. Ya podéis empezar.`
+            : `Esperando a que ${host?.name ?? 'quien dirige'} empiece la partida.`
         }
       >
         {isHost ? (
           <button className="btn btn-primary" disabled={busy || missing > 0} onClick={() => void run(() => store.send('game:start'), undefined, errorText)}>
-            Empezar ronda
+            Empezar partida
           </button>
         ) : (
           <button className="btn btn-ghost" onClick={share}>
@@ -157,5 +168,5 @@ export function Lobby({ pub, me, onMenu }: { pub: PublicView; me: string; onMenu
 }
 
 function PHASE_TITLE(pub: PublicView): string {
-  return pub.roundsPlayed > 0 ? 'Sala de espera' : 'Reunid a la gente';
+  return pub.roundsPlayed > 0 ? 'Sala de espera' : 'Sala de espera';
 }

@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import type { PrivateView, PublicTestimony, PublicView } from '../../shared/engine/views';
 import { describeEncargo } from '../../shared/engine/encargos';
-import { atHour, playerName, ROLE_GOAL, ROLE_NAME, zoneName } from '../lib/text';
+import { atHour, listJoin, playerName, ROLE_GOAL, ROLE_NAME, zoneName } from '../lib/text';
 import { Icon, Pin, Stamp } from './kit';
 
 // Hand-drawn ballpoint ring used to circle evidence on the board.
@@ -38,7 +38,7 @@ export function Board({
   const { scenario, scene, traces, testimonies } = round;
   const conflicts = new Set<string>();
   for (const t of testimonies) {
-    if (!t.matches) {
+    if (t.status === 'contradice') {
       conflicts.add(`${t.subject}|${t.slot}`);
       conflicts.add(`${t.by}|${t.slot}`);
     }
@@ -72,7 +72,7 @@ export function Board({
                   key={slotLabel}
                   role="cell"
                   className={`cell ${isScene ? 'scene' : ''}`}
-                  aria-label={`${z.name} ${atHour(slotLabel)}: ${here.length ? here.map((p) => p.name).join(', ') : 'nadie'}${isScene ? ' (escena del crimen)' : ''}${traceIdx >= 0 ? ` (prueba ${traceIdx + 1})` : ''}`}
+                  aria-label={`${z.name} ${atHour(slotLabel)}: ${here.length ? here.map((p) => p.name).join(', ') : 'nadie'}${isScene ? ' (lugar del incidente)' : ''}${traceIdx >= 0 ? ` (prueba ${traceIdx + 1})` : ''}`}
                 >
                   {isScene && <span className="scene-tag">Escena</span>}
                   {traceIdx >= 0 && (
@@ -116,81 +116,137 @@ export function Board({
         ))}
       </div>
       <div className="board-legend">
-        <span>Rayado rojo: escena del crimen</span>
+        <span>Rayado rojo: lugar y hora del incidente</span>
         <span>Círculo azul: prueba</span>
-        <span>Aro rojo: alguien le contradice</span>
+        <span>Aro rojo: un testimonio contradice esa coartada</span>
       </div>
     </section>
   );
 }
 
 export function TraceCard({ pub, index, fresh }: { pub: PublicView; index: number; fresh?: boolean }) {
-  const t = pub.round!.traces[index];
+  const round = pub.round!;
+  const t = round.traces[index];
+  const hour = atHour(round.scenario.slots[t.slot]);
+  const place = zoneName(pub, t.zone);
+  // A fact about public claims, not about the truth: who SAYS they were there.
+  const fits = round.participants.filter((id) => round.declarations?.[id]?.zones[t.slot] === t.zone).map((id) => playerName(pub, id));
   return (
     <article className={`paper trace-card ${fresh ? 'new-evidence' : ''}`} aria-label={`Prueba ${index + 1}`}>
       <div className="spread">
-        <div className="label">Prueba {index + 1}. Las pruebas nunca mienten.</div>
-        {fresh && <Stamp tone="blue" animate>Nueva</Stamp>}
+        <div className="label">Prueba {index + 1} de 2</div>
+        {fresh && (
+          <Stamp tone="blue" animate>
+            Nueva
+          </Stamp>
+        )}
       </div>
       <p className="doc-text">{t.text}</p>
       <p className="conclusion">
-        El culpable estuvo en {zoneName(pub, t.zone)} {atHour(pub.round!.scenario.slots[t.slot])}.
+        Hecho comprobado: la persona culpable estuvo en {place} {hour}.
+      </p>
+      <p className="small" style={{ marginTop: 6 }}>
+        {fits.length > 0 ? (
+          <>
+            Coartadas que encajan con esta prueba: <b>{listJoin(fits)}</b>.
+          </>
+        ) : (
+          <>Nadie ha declarado que estuviera allí a esa hora.</>
+        )}{' '}
+        Ojo: la persona culpable puede haber mentido justo en esa hora para no aparecer aquí.
       </p>
     </article>
   );
 }
 
+const STATUS_ICON = { coincide: 'check', contradice: 'cross', sin_contraste: 'minus' } as const;
+
 export function TestimonyItem({ pub, t }: { pub: PublicView; t: PublicTestimony }) {
   const by = pub.players.find((p) => p.id === t.by);
+  const subject = playerName(pub, t.subject);
   const subjectZone = pub.round!.declarations?.[t.subject]?.zones[t.slot];
   const slot = pub.round!.scenario.slots[t.slot];
+  const tone = t.status === 'coincide' ? 'ok' : t.status === 'contradice' ? 'bad' : 'neutral';
   return (
-    <li className="testimony">
+    <li className={`testimony status-${t.status}`}>
       {by ? <Pin player={by} /> : <span className="pin" />}
       <div>
         <div className="small" style={{ fontWeight: 700 }}>
           {playerName(pub, t.by)}
         </div>
         <q>
-          Estuve con {playerName(pub, t.subject)} en {zoneName(pub, t.zone)} {atHour(slot)}.
+          Estuve con {subject} en {zoneName(pub, t.zone)} {atHour(slot)}.
         </q>
-        {t.matches ? (
-          <div className="verdict-line ok">
-            <span style={{ display: 'inline-block', width: 16, verticalAlign: -3 }}>
-              <Icon name="check" />
-            </span>{' '}
-            Cuadra con lo que declaró {playerName(pub, t.subject)}
-          </div>
-        ) : (
-          <div className="verdict-line bad">
-            <span style={{ display: 'inline-block', width: 16, verticalAlign: -3 }}>
-              <Icon name="cross" />
-            </span>{' '}
-            No cuadra: {playerName(pub, t.subject)} dijo {zoneName(pub, subjectZone)}
-          </div>
-        )}
+        <div className={`verdict-line ${tone}`}>
+          <span className="verdict-icon" aria-hidden>
+            <Icon name={STATUS_ICON[t.status]} />
+          </span>
+          <span>
+            {t.status === 'coincide' && <>Coincide con la coartada de {subject}.</>}
+            {t.status === 'contradice' && (
+              <>
+                Contradice la coartada de {subject}, que dijo {zoneName(pub, subjectZone)}. Al menos uno de los dos miente.
+              </>
+            )}
+            {t.status === 'sin_contraste' && <>Sin contraste: {subject} no selló su declaración y su coartada es automática.</>}
+          </span>
+        </div>
       </div>
     </li>
   );
 }
 
-export function TestimonyList({ pub }: { pub: PublicView }) {
+type Filter = 'todos' | 'contradice' | 'coincide' | 'persona';
+
+export function TestimonyList({ pub, focus }: { pub: PublicView; focus?: string | null }) {
   const list = pub.round!.testimonies;
+  const [filter, setFilter] = useState<Filter>('todos');
+  const count = (st: string) => list.filter((t) => t.status === st).length;
+  const active: Filter = filter === 'persona' && !focus ? 'todos' : filter;
+  const shown = list
+    .filter((t) => (active === 'todos' ? true : active === 'persona' ? t.subject === focus || t.by === focus : t.status === active))
+    .slice()
+    .reverse();
   return (
     <section className="paper tabbed" data-tab={`Testimonios (${list.length})`} aria-label="Testimonios">
       {list.length === 0 ? (
         <p className="muted small">
-          Nadie ha testificado todavía. Un testimonio es «estuve con X a tal hora»: el tablero dirá si cuadra con lo que X declaró.
+          Nadie ha testificado todavía. Un testimonio dice «estuve con X a tal hora» y la app lo compara con la coartada que X declaró para
+          esa hora.
         </p>
       ) : (
-        <ul className="list-plain">
-          {list
-            .slice()
-            .reverse()
-            .map((t) => (
-              <TestimonyItem key={t.id} pub={pub} t={t} />
-            ))}
-        </ul>
+        <>
+          <p className="small muted" style={{ marginBottom: 8 }}>
+            La app solo compara declaraciones: «coincide» significa que las dos versiones encajan, no que sean verdad.
+          </p>
+          {list.length >= 4 && (
+            <div className="filter-row" role="group" aria-label="Filtrar testimonios">
+              <button type="button" className="chip-player" aria-pressed={active === 'todos'} onClick={() => setFilter('todos')}>
+                Todos ({list.length})
+              </button>
+              <button type="button" className="chip-player" aria-pressed={active === 'contradice'} onClick={() => setFilter('contradice')}>
+                Contradicen ({count('contradice')})
+              </button>
+              <button type="button" className="chip-player" aria-pressed={active === 'coincide'} onClick={() => setFilter('coincide')}>
+                Coinciden ({count('coincide')})
+              </button>
+              {focus && (
+                <button type="button" className="chip-player" aria-pressed={active === 'persona'} onClick={() => setFilter('persona')}>
+                  Con {playerName(pub, focus)}
+                </button>
+              )}
+            </div>
+          )}
+          {shown.length === 0 ? (
+            <p className="muted small">Ningún testimonio con este filtro.</p>
+          ) : (
+            <ul className="list-plain">
+              {shown.map((t) => (
+                <TestimonyItem key={t.id} pub={pub} t={t} />
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </section>
   );
@@ -214,7 +270,7 @@ export function PrivateFile({ pub, priv, startOpen = false }: { pub: PublicView;
           <span style={{ width: 22 }}>
             <Icon name="eye" />
           </span>
-          Toca para abrir. Tápalo de miradas ajenas.
+          Toca para abrir. Que nadie más vea la pantalla.
         </span>
       </button>
     );
@@ -242,8 +298,8 @@ export function PrivateFile({ pub, priv, startOpen = false }: { pub: PublicView;
       {priv.partner && (
         <p className="small" style={{ marginTop: 6 }}>
           {priv.partner.role === 'complice'
-            ? `Tu cómplice es ${name(priv.partner.id)}. Te cubrirá si puede.`
-            : `Cubres a ${name(priv.partner.id)}: es quien lo hizo.`}
+            ? `Tu cómplice es ${name(priv.partner.id)}. Sabe que fuiste tú y gana si no te acusan.`
+            : `${name(priv.partner.id)} es quien lo hizo. Ganas si no le acusan.`}
         </p>
       )}
       <hr className="rule" />
@@ -254,18 +310,18 @@ export function PrivateFile({ pub, priv, startOpen = false }: { pub: PublicView;
             <span className="hour">{slots[s]}</span>
             <span>
               {zone(z)}
-              {role === 'culpable' && s === round.scene.slot && <strong style={{ color: 'var(--stamp-ink)' }}> · aquí lo hiciste</strong>}
+              {role === 'culpable' && s === round.scene.slot && <strong style={{ color: 'var(--stamp-ink)' }}> (aquí lo hiciste)</strong>}
             </span>
           </div>
         ))}
       </div>
       <hr className="rule" />
-      <div className="label">Lo que recuerdas (es cierto, pero no lo recuerdas todo)</div>
+      <div className="label">Tus recuerdos (son ciertos, pero no recuerdas a todo el mundo)</div>
       <ul className="list-plain doc-text">
         {priv.memories!.map((m) => (
           <li key={`${m.with}-${m.slot}`} className="mem-item">
             <span>
-              {slots[m.slot]} — estuviste con <b>{name(m.with)}</b> en {zone(m.zone)}.
+              {slots[m.slot]}: estuviste con <b>{name(m.with)}</b> en {zone(m.zone)}.
             </span>
           </li>
         ))}
@@ -273,7 +329,7 @@ export function PrivateFile({ pub, priv, startOpen = false }: { pub: PublicView;
       {priv.encargo && (
         <>
           <hr className="rule" />
-          <div className="label">Encargo secreto (+1 punto)</div>
+          <div className="label">Objetivo secreto (opcional, +1 punto)</div>
           <p className="doc-text">{describeEncargo(priv.encargo, name, zone)}</p>
         </>
       )}
@@ -287,13 +343,14 @@ export function CaseHeader({ pub, compact }: { pub: PublicView; compact?: boolea
     <section className="stack" aria-label="El caso">
       <div>
         <div className="label on-ink">
-          Caso {r.number}: {r.scenario.venue}
+          Ronda {r.number}
+          {pub.settings.rounds > 0 ? ` de ${pub.settings.rounds}` : ''}: {r.scenario.venue}
         </div>
         <h1 style={{ fontSize: compact ? 'var(--t-2xl)' : undefined }}>{r.scenario.title}</h1>
       </div>
       {!compact && <p className="doc-text" style={{ color: 'var(--on-ink)' }}>{r.scenario.incident}</p>}
       <p className="scene-line">
-        <span>Ocurrió en</span>
+        <span>El incidente ocurrió en</span>
         <b style={{ color: '#ff8a7e' }}>{zoneName(pub, r.scene.zone)}</b>
         <span>{atHour(r.scenario.slots[r.scene.slot])}.</span>
         {!compact && r.scenario.sceneNote && <span className="muted small" style={{ fontWeight: 400 }}>{r.scenario.sceneNote}</span>}

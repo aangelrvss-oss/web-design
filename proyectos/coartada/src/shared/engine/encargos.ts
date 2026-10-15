@@ -36,10 +36,26 @@ export function assignEncargos(rng: Rng, setup: RoundSetup): Record<PlayerId, En
   return out;
 }
 
-/** Testimony status against the subject's declared alibi. */
-export function testimonyMatches(round: RoundState, t: { subject: PlayerId; slot: number; zone: string }): boolean {
+/**
+ * What the app can say about a testimony, comparing it ONLY with the subject's sealed
+ * alibi (never with the truth, which stays hidden until the verdict):
+ *  - coincide: the subject declared the same place at that hour (both versions fit;
+ *    that does not prove either is true),
+ *  - contradice: the subject declared another place (at least one of the two lies),
+ *  - sin_contraste: the subject's alibi was filled in automatically because they never
+ *    sealed one, so there is no claim of theirs to compare with.
+ */
+export type TestimonyStatus = 'coincide' | 'contradice' | 'sin_contraste';
+
+export function testimonyStatus(round: RoundState, t: { subject: PlayerId; slot: number; zone: string }): TestimonyStatus {
   const decl = round.declarations[t.subject];
-  return !!decl && decl.zones[t.slot] === t.zone;
+  if (!decl || decl.auto) return 'sin_contraste';
+  return decl.zones[t.slot] === t.zone ? 'coincide' : 'contradice';
+}
+
+/** Shorthand used by older code and the simulator. */
+export function testimonyMatches(round: RoundState, t: { subject: PlayerId; slot: number; zone: string }): boolean {
+  return testimonyStatus(round, t) === 'coincide';
 }
 
 export function evaluateEncargo(round: RoundState, player: PlayerId, e: Encargo): boolean {
@@ -54,9 +70,9 @@ export function evaluateEncargo(round: RoundState, player: PlayerId, e: Encargo)
     case 'same_vote':
       return !!votes[player] && !!e.target && votes[e.target] === votes[player];
     case 'corroborated':
-      return round.testimonies.some((t) => t.subject === player && t.by !== player && testimonyMatches(round, t));
+      return round.testimonies.some((t) => t.subject === player && t.by !== player && testimonyStatus(round, t) === 'coincide');
     case 'contradict':
-      return round.testimonies.some((t) => t.by === player && t.subject === e.target && !testimonyMatches(round, t));
+      return round.testimonies.some((t) => t.by === player && t.subject === e.target && testimonyStatus(round, t) === 'contradice');
     case 'claim_zone':
       return !!round.declarations[player]?.zones.includes(e.zone!);
   }
@@ -66,16 +82,16 @@ export function evaluateEncargo(round: RoundState, player: PlayerId, e: Encargo)
 export function describeEncargo(e: Encargo, name: (id: PlayerId) => string, zoneName: (id: string) => string): string {
   switch (e.kind) {
     case 'votes_on':
-      return `Que ${name(e.target!)} reciba al menos 2 votos (el tuyo no cuenta).`;
+      return `Que ${name(e.target!)} reciba al menos 2 votos en la primera votación (el tuyo no cuenta).`;
     case 'no_votes':
-      return 'Que nadie te vote.';
+      return 'Que nadie te vote en la primera votación.';
     case 'same_vote':
-      return `Vota a la misma persona que ${name(e.target!)}.`;
+      return `Vota a la misma persona que ${name(e.target!)} en la primera votación.`;
     case 'corroborated':
-      return 'Que otra persona publique un testimonio que cuadre con tu coartada.';
+      return 'Que otra persona publique un testimonio que coincida con alguna de tus coartadas.';
     case 'contradict':
       return `Publica un testimonio que contradiga la coartada de ${name(e.target!)}.`;
     case 'claim_zone':
-      return `Que tu coartada diga que estuviste en ${zoneName(e.zone!)} (aunque no pisaras por allí).`;
+      return `Que tu declaración diga que estuviste en ${zoneName(e.zone!)} al menos a una hora (aunque no estuvieras allí).`;
   }
 }

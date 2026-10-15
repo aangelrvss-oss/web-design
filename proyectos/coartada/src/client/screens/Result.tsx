@@ -3,7 +3,7 @@ import type { PrivateView, PublicView } from '../../shared/engine/views';
 import { describeEncargo } from '../../shared/engine/encargos';
 import { SCORE_POINTS } from '../../shared/types';
 import { caseSummary } from '../lib/summary';
-import { errorText, playerName, ROLE_NAME, SCORE_TEXT, zoneName } from '../lib/text';
+import { atHour, errorText, playerName, ROLE_NAME, SCORE_TEXT, zoneName } from '../lib/text';
 import { usePrefs } from '../lib/prefs';
 import { sfx } from '../lib/sound';
 import { store } from '../net/store';
@@ -46,10 +46,10 @@ export function Result({ pub, priv, onMenu, shared }: { pub: PublicView; priv: P
 
   return (
     <main className="screen" onClick={() => step < 2 && setStep(2)}>
-      <TopBar title="Veredicto" step={`Caso ${r.number}: ${r.scenario.title}`} onMenu={onMenu} code={pub.code} />
+      <TopBar title="Veredicto" phase="result" step={`Ronda ${r.number}: ${r.scenario.title}`} onMenu={onMenu} code={pub.code} />
 
       <section className="paper stack" aria-label={o.runoffTally ? 'Votos del desempate' : 'Votos'}>
-        <div className="label">{o.runoffTally ? 'Desempate' : 'Votos'}</div>
+        <div className="label">{o.runoffTally ? 'Votos del desempate (hubo empate en la primera votación)' : 'Votos'}</div>
         {sortedTally.map(([id, n]) => {
           const p = pub.players.find((x) => x.id === id);
           if (!p) return null;
@@ -86,7 +86,13 @@ export function Result({ pub, priv, onMenu, shared }: { pub: PublicView; priv: P
             </>
           ) : (
             <>
-              <h2>Nadie acusado</h2>
+              <h2>Nadie fue acusado</h2>
+              <p className="small">
+                {Object.values(o.tally).every((n) => n === 0)
+                  ? 'Nadie votó a tiempo.'
+                  : 'El desempate volvió a terminar en empate.'}{' '}
+                Sin acusación, la persona culpable se libra.
+              </p>
               <Stamp tone="ink" big animate>
                 Sin veredicto
               </Stamp>
@@ -94,7 +100,7 @@ export function Result({ pub, priv, onMenu, shared }: { pub: PublicView; priv: P
           )}
           {!o.culpritCaught && (
             <p style={{ marginTop: 'var(--s-3)' }}>
-              El culpable era <b>{name(culprit)}</b>
+              La persona culpable era <b>{name(culprit)}</b>
               {accomplice ? (
                 <>
                   , con <b>{name(accomplice)}</b> de cómplice
@@ -181,7 +187,7 @@ export function Result({ pub, priv, onMenu, shared }: { pub: PublicView; priv: P
           </section>
 
           <section className="paper tabbed" data-tab="Coartadas contra la verdad" aria-label="Lo que dijo cada uno y dónde estuvo">
-            <div style={{ overflowX: 'auto' }}>
+            <div style={{ overflowX: 'auto' }} tabIndex={0} role="region" aria-label="Tabla de coartadas y ubicaciones reales">
               <table className="truth-table">
                 <thead>
                   <tr>
@@ -223,18 +229,38 @@ export function Result({ pub, priv, onMenu, shared }: { pub: PublicView; priv: P
               </table>
             </div>
             <p className="small muted" style={{ marginTop: 6 }}>
-              Tachado: lo que dijo. Debajo: dónde estuvo de verdad. Semilla del caso: {rv.seed}
+              Tachado: lo que declaró. Debajo: dónde estuvo de verdad. Semilla de la ronda: {rv.seed}
             </p>
           </section>
+
+          {r.testimonies.length > 0 && (
+            <section className="paper tabbed" data-tab="Testimonios: ¿eran ciertos?" aria-label="Qué testimonios eran ciertos">
+              <ul className="list-plain">
+                {r.testimonies.map((t) => {
+                  const real = rv.truth[t.by]?.[t.slot] === t.zone && rv.truth[t.subject]?.[t.slot] === t.zone;
+                  return (
+                    <li key={t.id} className="score-line" style={{ padding: '6px 0', borderBottom: '1px dashed var(--rule)' }}>
+                      <span>
+                        <b>{name(t.by)}</b>: «Estuve con {name(t.subject)} en {zoneName(pub, t.zone)} {atHour(r.scenario.slots[t.slot])}».
+                      </span>
+                      <span className={`tag ${real ? 'blue' : 'red'}`} style={{ alignSelf: 'flex-start' }}>
+                        {real ? 'Cierto' : 'Falso'}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
         </>
       )}
 
-      <ActionBar hint={step < 2 ? 'Toca para verlo todo.' : !isHost ? `Esperando a ${name(pub.hostId)} para seguir.` : undefined}>
+      <ActionBar hint={step < 2 ? 'Toca la pantalla para verlo todo.' : !isHost ? `Esperando a que ${name(pub.hostId)} continúe.` : undefined}>
         {isHost && step >= 2 ? (
           <>
             {!shared && (
               <button className="btn btn-ghost" style={{ flex: 'none' }} disabled={busy} onClick={() => void run(() => store.send('game:lobby'), undefined, errorText)}>
-                Sala
+                Ir a la sala
               </button>
             )}
             <button className="btn btn-primary" disabled={busy} onClick={() => void run(() => store.send('game:next'), undefined, errorText)}>
@@ -262,7 +288,7 @@ export function Final({ pub, me, onMenu }: { pub: PublicView; me: string; onMenu
   }, []);
   return (
     <main className="screen">
-      <TopBar title="Clasificación final" step={`${pub.roundsPlayed} rondas`} onMenu={onMenu} code={pub.code} />
+      <TopBar title="Clasificación final" step={pub.roundsPlayed === 1 ? '1 ronda jugada' : `${pub.roundsPlayed} rondas jugadas`} onMenu={onMenu} code={pub.code} />
       <section className="podium" aria-label="Podio">
         {podium.map((p, i) =>
           p ? (
@@ -296,12 +322,12 @@ export function Final({ pub, me, onMenu }: { pub: PublicView; me: string; onMenu
         <ol className="list-plain">
           {pub.history.map((h) => (
             <li key={h.number} className="small">
-              <b>{h.scenarioTitle}.</b> Culpable: {playerName(pub, h.culprit)}. {h.caught ? 'Pillado.' : 'Escapó.'}
+              <b>{h.scenarioTitle}.</b> Culpable: {playerName(pub, h.culprit)}. {h.caught ? 'El grupo acertó.' : 'Se libró.'}
             </li>
           ))}
         </ol>
       </section>
-      <ActionBar hint={isHost ? undefined : `Esperando a ${playerName(pub, pub.hostId)}.`}>
+      <ActionBar hint={isHost ? 'Nueva partida pone todos los puntos a cero.' : `Esperando a que ${playerName(pub, pub.hostId)} empiece una nueva partida.`}>
         {isHost && (
           <button className="btn btn-primary" disabled={busy} onClick={() => void run(() => store.send('game:lobby'), undefined, errorText)}>
             Nueva partida

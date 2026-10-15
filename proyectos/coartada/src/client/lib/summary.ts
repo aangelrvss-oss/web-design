@@ -33,14 +33,18 @@ export function caseSummary(pub: PublicView): { story: string[]; mentions: Menti
   }
   const correct = Object.entries(rv.votes).filter(([v, t]) => t === culprit && v !== accomplice).map(([v]) => name(v));
   if (o.culpritCaught) {
-    story.push(correct.length ? `${listJoin(correct)} no se lo tragaron.` : 'Al final el grupo lo vio claro.');
+    story.push(
+      correct.length === 0
+        ? 'Al final, el grupo lo vio claro.'
+        : `${listJoin(correct)} no se lo ${correct.length === 1 ? 'tragó' : 'tragaron'}.`,
+    );
   } else if (o.accused) {
     story.push(`El grupo acusó a ${name(o.accused)}, que ${roles[o.accused] === 'complice' ? 'era cómplice, no culpable' : 'era inocente'}.`);
   } else {
     story.push('El grupo no se puso de acuerdo y nadie fue acusado.');
   }
   if (accomplice) {
-    const vouched = r.testimonies.some((t) => t.by === accomplice && t.subject === culprit && t.matches);
+    const vouched = r.testimonies.some((t) => t.by === accomplice && t.subject === culprit && t.status === 'coincide');
     story.push(
       vouched
         ? `${name(accomplice)}, su cómplice, le cubrió con un testimonio.`

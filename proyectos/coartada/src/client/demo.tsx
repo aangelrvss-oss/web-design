@@ -47,8 +47,8 @@ function DemoApp() {
         </span>
         <section className="paper hero-file tabbed" data-tab="Expediente 001">
           <p className="doc-text">
-            Anoche pasó algo absurdo y uno de vosotros fue. Cada uno declara dónde estuvo, las pruebas van saliendo y al final votáis en
-            secreto quién miente.
+            Ha ocurrido algo absurdo y una persona del grupo es la culpable. Cada cual declara en secreto dónde estuvo, aparecen pruebas que
+            nunca mienten y al final votáis en secreto a quién acusar.
           </p>
         </section>
       </div>
@@ -57,11 +57,11 @@ function DemoApp() {
           Jugar en este móvil
         </button>
         <button className="btn btn-paper btn-block" onClick={() => setView('guia')}>
-          Guía rápida (2 minutos)
+          Guía rápida (3 minutos)
         </button>
         <p className="muted small">
-          De 4 a 10 personas con un solo móvil que os vais pasando. La versión con un móvil por persona necesita el servidor del
-          proyecto; la guía explica cómo arrancarlo.
+          Esta página es la versión de un solo móvil: de 4 a 10 personas, os lo vais pasando para las partes secretas. La versión con un
+          móvil por persona necesita el servidor del proyecto; la guía explica cómo ponerlo en marcha.
         </p>
       </div>
     </main>
@@ -80,7 +80,7 @@ class Boundary extends Component<{ children: ReactNode }, { error: Error | null 
       <main className="screen no-bar" style={{ justifyContent: 'center' }}>
         <section className="paper stack">
           <h2>Algo ha fallado</h2>
-          <p>La página se ha topado con un error. Vuelve al inicio para seguir; si se repite, dime este mensaje:</p>
+          <p>La página ha encontrado un error. Vuelve al inicio para seguir. Si se repite, comunica este mensaje:</p>
           <p className="doc-text" style={{ overflowWrap: 'anywhere' }}>{String(this.state.error.message || this.state.error)}</p>
           <button className="btn btn-primary btn-block" onClick={() => this.setState({ error: null })}>
             Volver al inicio

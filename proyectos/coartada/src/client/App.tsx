@@ -8,6 +8,7 @@ import { Lobby } from './screens/Lobby';
 import { Declare } from './screens/Declare';
 import { Investigate } from './screens/Investigate';
 import { Vote } from './screens/Vote';
+import { Defense } from './screens/Defense';
 import { Final, Result } from './screens/Result';
 import { RulesContent } from './screens/Rules';
 import { LocalGame } from './screens/Local';
@@ -61,6 +62,9 @@ export function App() {
       case 'investigate':
         body = <Investigate pub={pub} priv={priv} onMenu={openMenu} />;
         break;
+      case 'defense':
+        body = <Defense pub={pub} priv={priv} onMenu={openMenu} />;
+        break;
       case 'vote':
       case 'runoff':
         body = <Vote key={pub.phase} pub={pub} priv={priv} onMenu={openMenu} />;
@@ -87,9 +91,9 @@ export function App() {
 function Watching({ pub, onMenu }: { pub: NonNullable<ReturnType<typeof useStore>['pub']>; onMenu: () => void }) {
   return (
     <main className="screen no-bar">
-      <TopBar title={PHASE_NAME[pub.phase]} step="Estás mirando esta ronda. Entras en la siguiente." endsAt={pub.phaseEndsAt} onMenu={onMenu} />
+      <TopBar title={PHASE_NAME[pub.phase]} step="Estás viendo esta ronda; jugarás en la siguiente." endsAt={pub.phaseEndsAt} onMenu={onMenu} />
       <CaseHeader pub={pub} />
-      <p className="muted">El resto está declarando su coartada. Cuando se destapen, verás el tablero.</p>
+      <p className="muted">El resto está sellando su declaración. Cuando se revelen las coartadas, verás el tablero.</p>
     </main>
   );
 }
@@ -114,7 +118,7 @@ function GameMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { busy, run } = useAction();
   const pub = snap.pub!;
   const isHost = pub.hostId === snap.me;
-  const roundLive = ['declare', 'investigate', 'vote', 'runoff'].includes(pub.phase);
+  const roundLive = ['declare', 'investigate', 'defense', 'vote', 'runoff'].includes(pub.phase);
 
   useEffect(() => {
     if (!open) {
@@ -148,7 +152,7 @@ function GameMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
             <div className="stack" style={{ gap: 6 }}>
               {!confirmSkip ? (
                 <button className="btn btn-ghost btn-block" onClick={() => setConfirmSkip(true)}>
-                  Saltar al siguiente paso
+                  Terminar esta fase
                 </button>
               ) : (
                 <button
@@ -158,17 +162,19 @@ function GameMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
                     void run(
                       () => store.send('game:advance'),
                       () => {
-                        toast('Paso saltado.');
+                        toast('Fase terminada.');
                         onClose();
                       },
                       errorText,
                     )
                   }
                 >
-                  Sí, cortar el tiempo ya
+                  Sí, terminar esta fase ya
                 </button>
               )}
-              <p className="small muted">Como si se acabara el tiempo: quien no haya declarado recibe una coartada automática.</p>
+              <p className="small muted">
+                Equivale a que se acabe el tiempo de la fase actual. En la declaración, quien no haya sellado recibe una coartada automática.
+              </p>
             </div>
           )}
           {!confirmLeave ? (

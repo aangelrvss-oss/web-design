@@ -11,10 +11,12 @@ import {
   addPlayer,
   createRoom,
   declare,
+  endDefense,
   forceAdvance,
   kick,
   leave,
   nextRound,
+  point,
   setReady,
   startRound,
   testify,
@@ -201,6 +203,8 @@ export async function createGameServer(config: ServerConfig): Promise<GameServer
         inRoom((code, me) => manager.act(code, (room, now) => testify(room, me, p.subject, p.slot, now))),
       'game:ready': (p: { ready: boolean }) => inRoom((code, me) => manager.act(code, (room, now) => setReady(room, me, p.ready, now))),
       'game:vote': (p: { target: string }) => inRoom((code, me) => manager.act(code, (room, now) => vote(room, me, p.target, now))),
+      'game:point': (p: { target: string | null }) => inRoom((code, me) => manager.act(code, (room, now) => point(room, me, p.target, now))),
+      'game:endDefense': () => inRoom((code, me) => manager.act(code, (room, now) => endDefense(room, me, now))),
       'game:advance': () => inRoom((code, me) => manager.act(code, (room, now) => forceAdvance(room, me, now))),
       'game:next': () =>
         inRoom((code, me) => {

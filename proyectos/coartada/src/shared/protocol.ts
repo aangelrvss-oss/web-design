@@ -34,6 +34,8 @@ export const ClientMessages = {
   'game:testify': z.object({ subject: id, slot: z.number().int().min(0).max(SLOT_COUNT - 1) }).strict(),
   'game:ready': z.object({ ready: z.boolean() }).strict(),
   'game:vote': z.object({ target: id }).strict(),
+  'game:point': z.object({ target: id.nullable() }).strict(),
+  'game:endDefense': z.object({}).strict(),
   'game:advance': z.object({}).strict(),
   'game:next': z.object({}).strict(),
   'game:lobby': z.object({}).strict(),

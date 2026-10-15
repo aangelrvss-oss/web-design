@@ -118,9 +118,12 @@ export class Store {
   }
 
   private onState(msg: StateMessage): void {
-    // Keep the smallest offset estimate drift-free enough for a countdown.
+    // serverNow was stamped before the message travelled, so each sample underestimates the
+    // real offset by that message's latency. Keep the largest sample (the least delayed one);
+    // lower samples only nudge it, so a changed device clock is still followed slowly.
     const offset = msg.serverNow - Date.now();
-    const clockOffset = this.snap.pub ? Math.round(this.snap.clockOffset * 0.7 + offset * 0.3) : offset;
+    const prev = this.snap.clockOffset;
+    const clockOffset = !this.snap.pub || offset > prev ? offset : Math.round(prev * 0.9 + offset * 0.1);
     this.set({ pub: msg.pub, priv: msg.priv, clockOffset, me: msg.priv?.playerId ?? this.snap.me });
   }
 

@@ -639,7 +639,15 @@ hr.rule {
 }
 
 .pin.dim {
-  opacity: 0.22;
+  /* "not yet" / "not selected": hollow ring, text still readable */
+  background: transparent;
+  color: var(--pin-dim-fg, var(--on-ink-dim));
+  box-shadow: inset 0 0 0 2px var(--c);
+  filter: saturate(0.6);
+}
+
+.paper .pin.dim {
+  --pin-dim-fg: var(--graphite);
 }
 
 .pin.hit {
@@ -851,7 +859,8 @@ hr.rule {
 }
 
 .choice[aria-pressed='true'],
-.choice[aria-checked='true'] {
+.choice[aria-checked='true'],
+.choice[data-selected='true'] {
   border-color: var(--graphite);
   background: var(--graphite);
   color: var(--paper);
@@ -1238,14 +1247,16 @@ hr.rule {
   color: var(--paper);
   position: relative;
   display: inline-block;
+  margin-bottom: 0.18em;
 }
 
 .wordmark .bar {
+  /* a red rule under the name, like a file underlined in ink; never over the letters */
   position: absolute;
-  left: -2%;
-  right: 34%;
-  top: 46%;
-  height: 0.2em;
+  left: 0;
+  right: 30%;
+  top: 100%;
+  height: 0.09em;
   background: var(--stamp);
   transform-origin: left;
   animation: strike 700ms 300ms var(--ease) both;
@@ -1521,4 +1532,108 @@ hr.rule {
 
 .guide-faq[open] summary {
   margin-bottom: 8px;
+}
+
+/* ───────────── v1.1: testimony states, filters, defense ───────────── */
+
+.verdict-line {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.verdict-icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+}
+
+.verdict-line.neutral {
+  color: var(--pencil);
+}
+
+.testimony.status-contradice {
+  background: linear-gradient(90deg, rgba(194, 54, 44, 0.08), transparent 70%);
+}
+
+.testimony.status-sin_contraste q {
+  color: var(--pencil);
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.phase-steps {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.phase-steps span {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--ink-3);
+}
+
+.phase-steps span.done {
+  background: var(--on-ink-dim);
+}
+
+.phase-steps span.now {
+  background: var(--kraft);
+}
+
+.defense-name {
+  font-family: var(--font-display);
+  font-stretch: 75%;
+  font-weight: 900;
+  font-size: clamp(2.2rem, 11vw, 3.4rem);
+  line-height: 1;
+  text-align: center;
+}
+
+.defense-clock {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  font-size: 4.2rem;
+  line-height: 1;
+  color: var(--stamp);
+}
+
+.suspect-card {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.guide-glossary {
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(96px, auto) 1fr;
+  gap: 8px var(--s-3);
+}
+
+.guide-glossary dt {
+  font-weight: 800;
+}
+
+.guide-glossary dd {
+  margin: 0;
+}
+
+@media (max-width: 380px) {
+  .guide-glossary {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+  .guide-glossary dd {
+    margin-bottom: 8px;
+  }
 }
