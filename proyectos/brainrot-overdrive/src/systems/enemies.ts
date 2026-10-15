@@ -281,7 +281,7 @@ export class EnemySystem {
     }
     if (e.state === 2) {
       const dashSp = (e.elite ? 640 : 560) * this.speedMult;
-      if (Math.random() < 0.6) this.ctx.fx.trailAt(e.x, e.y, 0xc8ff3d);
+      if (Math.random() < 0.25) this.ctx.fx.trailAt(e.x, e.y, 0xc8ff3d);
       if (e.stateT >= (e.elite ? 0.42 : 0.32)) {
         e.state = 3;
         e.stateT = 0;

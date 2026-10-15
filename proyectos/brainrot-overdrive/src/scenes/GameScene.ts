@@ -386,6 +386,11 @@ export class GameScene extends Phaser.Scene implements GameCtx {
     }
     this.lowHpCd -= dt;
     this.announceCd -= dt;
+    // soundtrack builds with the run: layers join at 1:15, everything during bosses
+    if (p.alive && !this.victory) {
+      const want = this.boss ? 3 : this.runTime > 75 ? 2 : 1;
+      if (audio.music.intensity !== want) audio.music.setIntensity(want);
+    }
 
     if (this.tutorial) {
       const t = this.tutorial;
@@ -506,6 +511,16 @@ export class GameScene extends Phaser.Scene implements GameCtx {
       },
       caption: (t) => ui.caption(t),
     });
+    // the feed makes room: distant regular enemies scroll away so the fight is about the boss
+    const p = this.player;
+    for (const e of this.enemies.active) {
+      if (!e.active || e.boss || e.elite) continue;
+      if ((e.x - p.x) ** 2 + (e.y - p.y) ** 2 > 260 * 260) {
+        this.fx.glow(e.x, e.y, e.def.color, 1);
+        this.enemies.despawn(e);
+      }
+    }
+    this.shots.clearEnemyShots();
     ui.bossIntro(B.name, B.subtitle);
     ui.caption('');
     this.sfx('bossRoar');

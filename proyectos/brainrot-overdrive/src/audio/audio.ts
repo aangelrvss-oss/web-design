@@ -223,8 +223,10 @@ export class Music {
     if (this.playing) this.startLoop();
   }
 
+  /** Start the soundtrack once; later calls never reset the current intensity. */
   start(intensity: number) {
-    this.intensity = intensity;
+    if (this.playing) return;
+    this.setIntensity(intensity);
     this.playing = true;
     if (this.ctx) this.startLoop();
   }

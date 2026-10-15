@@ -62,7 +62,7 @@ export const BALANCE = {
     hardCap: 190,
     hardCapLow: 120, // used on the low visual-intensity tier
     minSpawnDist: 30, // extra margin beyond the visible half-diagonal
-    hpScale: { perMin: 0.15, quad: 0.04 },
+    hpScale: { perMin: 0.15, quad: 0.05 },
     dmgScale: { perMin: 0.1 },
     bossTrickle: 0.35, // spawn-rate multiplier while a boss is alive
   },
