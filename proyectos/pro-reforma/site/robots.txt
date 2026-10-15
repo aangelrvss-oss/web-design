@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /contacto.php
+Disallow: /api/
+Disallow: /gracias/
+Disallow: /envio-no-completado/
+
+Sitemap: https://www.proreforma.es/sitemap.xml

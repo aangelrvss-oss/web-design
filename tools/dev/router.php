@@ -3,9 +3,9 @@
 // Ej.: SITE_ROOT=proyectos/living-clean/site php -S 127.0.0.1:4600 tools/dev/router.php
 $root = realpath(getenv('SITE_ROOT') ?: __DIR__ . '/../../proyectos/mr-instalaciones/site');
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-if (!getenv('MRI_NO_CSP')) header("Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'self'; base-uri 'self'; object-src 'none'");
+if (!getenv('MRI_NO_CSP')) header("Content-Security-Policy: default-src 'self'; img-src 'self' data: https://lh3.googleusercontent.com; style-src 'self'; script-src 'self'; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'self'; base-uri 'self'; object-src 'none'");
 header('X-Content-Type-Options: nosniff');
-if ($path === '/contacto.php') { require $root . '/contacto.php'; return true; }
+if (preg_match('#^/[\w/-]+\.php$#', $path) && is_file($root . $path) && strpos(realpath($root . $path), $root) === 0) { require $root . $path; return true; }
 $file = $root . $path;
 if (is_dir($file)) { $file = rtrim($file, '/') . '/index.html'; if (substr($path, -1) !== '/') { header('Location: ' . $path . '/', true, 301); return true; } }
 if (is_file($file)) {

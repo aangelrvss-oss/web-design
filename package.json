@@ -10,6 +10,11 @@
     "build:living": "node proyectos/living-clean/src/build.mjs",
     "serve:living": "SITE_ROOT=proyectos/living-clean/site php -S 127.0.0.1:4600 tools/dev/router.php",
     "qa:living": "node proyectos/living-clean/qa/functional.mjs http://127.0.0.1:4600 qa/out/living",
-    "demo:living": "cd proyectos/living-clean && node tools/demo/build-netlify.mjs"
+    "demo:living": "cd proyectos/living-clean && node tools/demo/build-netlify.mjs",
+    "build:proreforma": "node proyectos/pro-reforma/src/build.mjs",
+    "serve:proreforma": "SITE_ROOT=proyectos/pro-reforma/site php -S 127.0.0.1:4700 tools/dev/router.php",
+    "qa:proreforma": "node proyectos/pro-reforma/qa/functional.mjs http://127.0.0.1:4700 qa/out/pro-reforma",
+    "qa:proreforma:anim": "node proyectos/pro-reforma/qa/animation.mjs http://127.0.0.1:4700/",
+    "preview:proreforma": "node proyectos/pro-reforma/tools/preview/bundle.mjs"
   }
 }
