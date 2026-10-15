@@ -10,8 +10,9 @@ export function Declare({ pub, priv, onMenu }: { pub: PublicView; priv: PrivateV
   const round = pub.round!;
   const { slots, zones } = round.scenario;
   const isCulprit = priv.role === 'culpable';
-  const initial = (): (string | null)[] =>
-    priv.draft ?? priv.truth!.map((z, s) => (isCulprit && s === round.scene.slot ? null : z));
+  // No pre-filled answers: everybody taps three times, so nobody can tell the culprit
+  // by who seals last. The "Aquí estabas" marks make it quick for honest players.
+  const initial = (): (string | null)[] => priv.draft ?? [null, null, null];
   const [choice, setChoice] = useState<(string | null)[]>(initial);
   const { busy, run } = useAction();
   const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -50,7 +51,7 @@ export function Declare({ pub, priv, onMenu }: { pub: PublicView; priv: PrivateV
 
   return (
     <main className="screen">
-      <TopBar title="Declaración" step={`Ronda ${round.number}. Todo el mundo declara a la vez.`} endsAt={pub.phaseEndsAt} onMenu={onMenu} />
+      <TopBar title="Declaración" step="Abre tu expediente, elige un sitio por hora y sella." endsAt={pub.phaseEndsAt} onMenu={onMenu} />
       <CaseHeader pub={pub} />
       <PrivateFile pub={pub} priv={priv} />
 
@@ -58,7 +59,9 @@ export function Declare({ pub, priv, onMenu }: { pub: PublicView; priv: PrivateV
         <section className="paper tabbed" data-tab="Tu coartada" aria-label="Tu coartada">
           <p className="small">
             ¿Dónde dirás que estabas? Nadie lo verá hasta que todo el mundo selle la suya.
-            {isCulprit ? ' A la hora del crimen estabas en la escena: tendrás que inventarte algo.' : ' Ya viene rellena con la verdad.'}
+            {isCulprit
+              ? ' A la hora del crimen estabas en la escena: ahí tendrás que inventarte algo.'
+              : ' Lo normal es decir la verdad: está marcada con «Aquí estabas».'}
           </p>
           {slots.map((label, slot) => (
             <div key={label} className="hour-block" role="radiogroup" aria-label={`Dónde estabas ${atHour(label)}`}>

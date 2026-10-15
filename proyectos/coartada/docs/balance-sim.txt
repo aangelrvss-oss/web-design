@@ -1,0 +1,29 @@
+COARTADA balance simulation — 400 rounds per cell, scripted bots (not humans)
+
+players | culprit strategy | group catches culprit | avg tied top suspects
+      4 | minimo           |                 70.8% | 1.37
+      4 | esquiva          |                 48.5% | 1.09
+      4 | total            |                 55.8% | 1.00
+      5 | minimo           |                 63.5% | 1.56
+      5 | esquiva          |                 40.8% | 1.17
+      5 | total            |                 51.8% | 1.00
+      6 | minimo           |                 59.3% | 1.41
+      6 | esquiva          |                 46.0% | 1.18
+      6 | total            |                 39.3% | 1.22
+      7 | minimo           |                 55.3% | 1.48
+      7 | esquiva          |                 48.5% | 1.21
+      7 | total            |                 40.3% | 1.25
+      8 | minimo           |                 51.5% | 1.70
+      8 | esquiva          |                 43.0% | 1.31
+      8 | total            |                 40.3% | 1.40
+      9 | minimo           |                 49.0% | 1.73
+      9 | esquiva          |                 45.0% | 1.29
+      9 | total            |                 41.0% | 1.54
+     10 | minimo           |                 44.5% | 1.93
+     10 | esquiva          |                 42.5% | 1.45
+     10 | total            |                 41.3% | 1.65
+
+Mean catch rate by strategy:
+  minimo: 56.3%
+  esquiva: 44.9%
+  total: 44.2%

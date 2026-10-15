@@ -1,0 +1,14 @@
+# Render.com blueprint (free/starter web service). Rooms live in memory, so run ONE instance.
+services:
+  - type: web
+    name: coartada
+    runtime: node
+    rootDir: proyectos/coartada
+    buildCommand: npm ci && npm run build
+    startCommand: node dist/server.mjs
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: TRUST_PROXY
+        value: "1"

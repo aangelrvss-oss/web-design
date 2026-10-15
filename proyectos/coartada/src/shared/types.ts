@@ -25,9 +25,9 @@ export const DEFAULT_SETTINGS: Settings = { pace: 'normal', rounds: 5, encargos:
 
 /** Seconds per timed step. */
 export const PACE_TIMINGS: Record<Pace, { declare: number; investigate1: number; investigate2: number; vote: number; runoff: number }> = {
-  relajado: { declare: 120, investigate1: 150, investigate2: 180, vote: 60, runoff: 40 },
-  normal: { declare: 90, investigate1: 120, investigate2: 150, vote: 45, runoff: 30 },
-  rapido: { declare: 60, investigate1: 75, investigate2: 105, vote: 30, runoff: 25 },
+  relajado: { declare: 180, investigate1: 150, investigate2: 180, vote: 60, runoff: 40 },
+  normal: { declare: 120, investigate1: 120, investigate2: 150, vote: 45, runoff: 30 },
+  rapido: { declare: 75, investigate1: 75, investigate2: 105, vote: 30, runoff: 25 },
 };
 
 /** "At slot s you were in zone z with player `with`." Always true. */

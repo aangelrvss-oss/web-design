@@ -28,8 +28,12 @@ for (let i = 0; i < N; i++) {
   );
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(`${NAMES[i]} pageerror: ${e.message}`));
-  page.on('console', (m) => m.type() === 'error' && errors.push(`${NAMES[i]} console: ${m.text()}`));
-  players.push({ name: NAMES[i], page, ctx, desktop });
+  // Connection errors while we deliberately cut the network are expected.
+  page.on('console', (m) => m.type() === 'error' && !/ERR_INTERNET_DISCONNECTED/.test(m.text()) && errors.push(`${NAMES[i]} console: ${m.text()}`));
+  const frames = [];
+  // Record every WebSocket frame this browser receives (what DevTools would show).
+  page.on('websocket', (ws) => ws.on('framereceived', (f) => frames.push(String(f.payload))));
+  players.push({ name: NAMES[i], page, ctx, desktop, frames });
 }
 const [host] = players;
 const shot = async (p, name, full = true) => p.page.screenshot({ path: `${OUT}/${name}-${p.desktop ? 'desktop' : 'mobile'}.png`, fullPage: full });
@@ -86,10 +90,13 @@ const culprit = players.find((p) => p.role === 'culpable');
 await shot(culprit, '04-declare-culprit');
 
 for (const p of players) {
-  if (p.role === 'culpable') {
-    // Pick any non-scene place at the crime hour (the only unset hour).
-    const group = p.page.locator('.hour-block').filter({ has: p.page.locator('.tag.red') });
-    await group.locator('.choice:not(.scene)').first().click();
+  // Tell the truth hour by hour; the culprit picks a non-scene place at the crime hour.
+  const blocks = p.page.locator('.hour-block');
+  for (let h = 0; h < 3; h++) {
+    const block = blocks.nth(h);
+    const crime = (await block.locator('.tag.red').count()) > 0;
+    if (p.role === 'culpable' && crime) await block.locator('.choice:not(.scene)').first().click();
+    else await block.locator('.choice', { hasText: 'Aquí estabas' }).click();
   }
   await p.page.getByRole('button', { name: 'Sellar coartada' }).click();
 }
@@ -110,10 +117,10 @@ await host.page.locator('.testimony').first().waitFor();
 log('testimony visible on host');
 
 // ── Ready ×2 → vote
-for (const p of players) await p.page.getByRole('button', { name: 'Siguiente prueba' }).click();
+for (const p of players) await p.page.getByRole('button', { name: 'Estoy listo' }).click();
 await host.page.getByText('Prueba 2', { exact: false }).first().waitFor();
 await shot(host, '07-second-trace');
-for (const p of players) await p.page.getByRole('button', { name: 'A votar' }).click();
+for (const p of players) await p.page.getByRole('button', { name: 'Estoy listo' }).click();
 for (const p of players) await p.page.getByRole('heading', { name: '¿Quién lo hizo?' }).waitFor();
 await shot(host, '08-vote');
 
@@ -124,6 +131,35 @@ for (const p of players) {
   await p.page.getByRole('button', { name: `Acusar a ${target}` }).click();
 }
 for (const p of players) await p.page.getByText('Veredicto').first().waitFor();
+
+// ── Network privacy audit on what each browser actually received
+const resultIdx = (frames) => frames.findIndex((f) => f.includes('"phase":"result"'));
+for (const p of players) {
+  const before = p.frames.slice(0, Math.max(0, resultIdx(p.frames)));
+  if (before.length < 5) errors.push(`${p.name}: too few frames captured (${before.length})`);
+  const blob = before.join('\n');
+  if (p.role !== 'culpable' && p.role !== 'cómplice' && blob.includes('culpable')) errors.push(`${p.name}: saw "culpable" on the wire before the verdict`);
+  for (const key of ['"truth":{', '"roles":', '"memories":{', '"votes":{', '"seed":']) {
+    // Own private card uses arrays ("truth":[...]) — other people's data would be keyed objects.
+    if (blob.includes(key)) errors.push(`${p.name}: received ${key} before the verdict`);
+  }
+  const ownIds = new Set();
+  for (const f of before) {
+    const m = f.match(/"priv":\{"playerId":"([^"]+)"/);
+    if (m) ownIds.add(m[1]);
+  }
+  if (ownIds.size !== 1) errors.push(`${p.name}: private payloads for ${ownIds.size} different players`);
+}
+// Nobody ever receives another person's session token (their own arrives once, in the join ack).
+for (const p of players) {
+  p.token = await p.page.evaluate(() => JSON.parse(localStorage.getItem('coartada:session') || '{}').token);
+  if (!p.token) errors.push(`${p.name}: no session token stored`);
+}
+for (const p of players) {
+  const all = p.frames.join('\n');
+  for (const q of players) if (q !== p && q.token && all.includes(q.token)) errors.push(`${p.name} received ${q.name}'s token`);
+}
+log('network audit:', players.map((p) => `${p.name}=${p.frames.length} frames`).join(' '));
 await host.page.getByRole('button', { name: 'Ver todo' }).click().catch(() => {});
 await host.page.locator('[data-tab="Lo que pasó de verdad"]').waitFor();
 await shot(host, '09-result');
@@ -135,7 +171,7 @@ log('verdict:', stamp);
 
 // ── Rematch
 await host.page.getByRole('button', { name: 'Siguiente ronda' }).click();
-for (const p of players) await p.page.getByText('Ronda 2', { exact: false }).first().waitFor();
+for (const p of players) await p.page.getByText(/^Caso 2:/).first().waitFor();
 log('round 2 started for everyone');
 
 // ── Disconnect + rejoin mid-round: close a guest tab, reopen with the same storage.
@@ -148,6 +184,19 @@ const page2 = await ctx2.newPage();
 await page2.goto(`${BASE}/?sala=${code}`);
 await page2.getByRole('button', { name: 'Abrir tu expediente confidencial' }).waitFor();
 log('rejoined mid-round with own file');
+
+// ── Flaky network: a phone goes offline for a few seconds, then recovers its state.
+const flaky = players[3];
+await flaky.ctx.setOffline(true);
+await flaky.page.waitForTimeout(500);
+await flaky.page.evaluate(() => window.dispatchEvent(new Event('offline')));
+await host.page.waitForTimeout(12_000); // > ping timeout: the server notices the drop
+const hostSeesOff = await host.page.evaluate(() => document.body.innerText.includes('Faltan'));
+await flaky.ctx.setOffline(false);
+await flaky.page.evaluate(() => window.dispatchEvent(new Event('online')));
+await flaky.page.getByRole('button', { name: /Abrir tu expediente|Ocultar expediente/ }).first().waitFor({ timeout: 20_000 });
+await flaky.page.waitForFunction(() => !document.querySelector('.conn-banner'), null, { timeout: 20_000 });
+log('offline → online recovery ok', hostSeesOff ? '' : '(host view unchanged)');
 
 // ── Overflow check at 320px
 const tiny = await browser.newContext({ viewport: { width: 320, height: 640 }, isMobile: true, hasTouch: true, storageState: await players[1].ctx.storageState() });

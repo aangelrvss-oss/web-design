@@ -48,6 +48,8 @@ export function LocalGame({ onExit }: { onExit: () => void }) {
   const [actor, setActor] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
   const speakerRef = useRef<string | null>(null);
+  /** Phase in which the current phone holder took the phone. */
+  const actorPhase = useRef<string | null>(null);
   const [, bump] = useState(0);
   const snap = useStore();
   const room = roomRef.current;
@@ -222,7 +224,8 @@ export function LocalGame({ onExit }: { onExit: () => void }) {
     const current = actor && round?.participants.includes(actor) ? actor : null;
     const done =
       current &&
-      ((room.phase === 'declare' && round!.declarations[current]) ||
+      (actorPhase.current !== room.phase ||
+        (room.phase === 'declare' && round!.declarations[current]) ||
         (room.phase === 'vote' && round!.votes[current]) ||
         (room.phase === 'runoff' && round!.runoff!.votes[current]));
     if (!current || !revealed) {
@@ -235,6 +238,7 @@ export function LocalGame({ onExit }: { onExit: () => void }) {
           what={room.phase === 'declare' ? 'declarar su coartada' : 'votar en secreto'}
           remaining={pendingSecret.length}
           onReady={() => {
+            actorPhase.current = room.phase;
             setActor(nextId);
             setRevealed(true);
             sync(nextId);
@@ -268,6 +272,32 @@ export function LocalGame({ onExit }: { onExit: () => void }) {
     const priv = snap.priv!;
     if (room.phase === 'declare') return <Declare pub={pub} priv={priv} onMenu={openMenu} />;
     return <Vote key={room.phase} pub={pub} priv={priv} onMenu={openMenu} />;
+  }
+
+  // The last secret action just closed the step: hide that person's screen and let
+  // the group reveal the next public moment together.
+  if (actor) {
+    const toBoard = room.phase === 'investigate';
+    return (
+      <main className="screen" style={{ justifyContent: 'center' }}>
+        <section className="paper center stack" style={{ alignItems: 'center', padding: 'var(--s-6) var(--s-4)' }}>
+          <h2>{toBoard ? 'Todas las coartadas, selladas' : 'Todos los votos, dentro'}</h2>
+          <p>{toBoard ? 'Poned el móvil en el centro de la mesa y destapadlas a la vez.' : 'Poned el móvil donde lo veáis todos.'}</p>
+        </section>
+        <ActionBar>
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              setActor(null);
+              setRevealed(false);
+              sync(null);
+            }}
+          >
+            {toBoard ? 'Destapar coartadas' : 'Ver el veredicto'}
+          </button>
+        </ActionBar>
+      </main>
+    );
   }
 
   switch (room.phase) {

@@ -47,7 +47,7 @@ export function Investigate({ pub, priv, onMenu, local }: { pub: PublicView; pri
     <main className="screen">
       <TopBar
         title="Investigación"
-        step={round.traces.length < 2 ? 'Prueba 1 de 2. La segunda sale cuando acabe el tiempo o estéis listos.' : 'Las dos pruebas están fuera. Después, a votar.'}
+        step={round.traces.length < 2 ? 'Prueba 1 de 2' : 'Prueba 2 de 2. Luego, votación.'}
         endsAt={pub.phaseEndsAt}
         onMenu={onMenu}
       />
@@ -65,17 +65,20 @@ export function Investigate({ pub, priv, onMenu, local }: { pub: PublicView; pri
       <TestimonyList pub={pub} />
 
       {inRound && (
-        <ActionBar hint={`${readyCount} de ${active.length} listos para seguir`}>
+        <ActionBar hint={`${readyCount} de ${active.length} listos para ${round.traces.length < 2 ? 'la prueba 2' : 'votar'}`}>
           <button className="btn btn-paper" onClick={() => setFileOpen(true)} aria-label="Ver mi expediente" style={{ flex: 'none', padding: '0 14px' }}>
             <span style={{ width: 22 }}>
               <Icon name="folder" />
             </span>
           </button>
-          <button className="btn btn-paper" onClick={() => setTestifyOpen(true)} disabled={priv!.testimoniesLeft === 0}>
-            Testificar ({priv!.testimoniesLeft})
+          <button className="btn btn-paper" onClick={() => setTestifyOpen(true)} disabled={priv!.testimoniesLeft === 0} aria-label={`Testificar, te quedan ${priv!.testimoniesLeft}`}>
+            Testificar
+            <span className="tag" style={{ borderColor: 'var(--kraft-2)', color: 'var(--pencil)' }}>
+              {priv!.testimoniesLeft}
+            </span>
           </button>
           <button className={`btn ${ready ? 'btn-ghost' : 'btn-primary'}`} onClick={toggleReady} disabled={busy} aria-pressed={ready}>
-            {ready ? 'Esperar' : round.traces.length < 2 ? 'Siguiente prueba' : 'A votar'}
+            {ready ? 'Esperad' : 'Estoy listo'}
           </button>
         </ActionBar>
       )}
