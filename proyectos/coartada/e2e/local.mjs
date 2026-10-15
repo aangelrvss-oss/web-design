@@ -14,7 +14,18 @@ page.on('pageerror', (e) => errors.push(e.message));
 page.on('dialog', (d) => d.accept());
 
 await page.goto(BASE);
-await page.getByRole('button', { name: 'Jugar con un solo móvil' }).click();
+// Works against the full app (server) or the standalone demo file (DEMO=1).
+if (process.env.DEMO) {
+  await page.screenshot({ path: `${OUT}/30-demo-home.png`, fullPage: true });
+  await page.getByRole('button', { name: /Guía rápida/ }).click();
+  await page.getByRole('heading', { name: 'Una ronda, paso a paso' }).waitFor();
+  await page.screenshot({ path: `${OUT}/31-demo-guide.png`, fullPage: true });
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  if (overflow > 0) errors.push(`guide overflows by ${overflow}px`);
+  await page.getByRole('button', { name: 'Jugar ahora' }).click();
+} else {
+  await page.getByRole('button', { name: 'Jugar con un solo móvil' }).click();
+}
 const names = ['Lola', 'Mario', 'Nerea', 'Óscar'];
 for (const [i, n] of names.entries()) await page.getByLabel(`Nombre ${i + 1}`).fill(n);
 await page.screenshot({ path: `${OUT}/20-local-setup.png`, fullPage: true });

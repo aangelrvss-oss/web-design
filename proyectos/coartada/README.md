@@ -8,6 +8,10 @@ Juego de deducción social para jugar con amigos, cada uno con su móvil. Anoche
 
 Documentación: [diseño](docs/GAME_DESIGN.md) · [reglas](docs/RULES.md) · [arquitectura](docs/ARCHITECTURE.md) · [investigación](docs/RESEARCH.md) · [estado](docs/CHECKPOINT.md)
 
+## Probarlo sin instalar nada
+
+`npm run build:demo` genera `dist/coartada-un-movil.html`: un único archivo con el juego en modo «un solo móvil» y una guía rápida ilustrada. Se abre directamente en el navegador (también sin internet). La versión con un móvil por persona necesita el servidor (abajo).
+
 ## Requisitos
 
 Node.js 20 o superior (probado con 22). Nada más: no hay base de datos ni claves.
@@ -20,6 +24,7 @@ npm install
 
 npm run dev          # servidor :3000 + cliente Vite :5173 (visible en la red local)
 npm run build        # cliente → dist/client, servidor → dist/server.mjs
+npm run build:demo   # demo de un solo archivo → dist/coartada-un-movil.html
 npm start            # producción: sirve juego + WebSocket en $PORT (3000 por defecto)
 
 npm test             # motor, privacidad, contenido e integración multicliente (vitest)

@@ -1449,3 +1449,76 @@ hr.rule {
     padding-top: calc(var(--safe-top) + var(--s-5));
   }
 }
+
+/* ───────────── guide ───────────── */
+
+.guide-text {
+  max-width: 62ch;
+  line-height: 1.55;
+}
+
+.guide-num {
+  font-family: var(--font-display);
+  font-stretch: 70%;
+  font-weight: 900;
+  font-size: var(--t-3xl);
+  line-height: 0.9;
+  color: var(--stamp);
+  min-width: 1ch;
+}
+
+.guide-roles {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--s-3);
+}
+
+@media (min-width: 540px) {
+  .guide-roles {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.guide-roles .stamp {
+  align-self: flex-start;
+  font-size: var(--t-lg);
+}
+
+.guide-two {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--s-4);
+}
+
+.guide-two h3 {
+  margin-bottom: 6px;
+}
+
+.guide-code {
+  margin: 0;
+  padding: var(--s-3);
+  border-radius: 6px;
+  background: var(--graphite);
+  color: var(--paper);
+  font-family: var(--font-doc);
+  font-size: 0.95rem;
+  overflow-x: auto;
+}
+
+.paper code {
+  font-family: var(--font-doc);
+  background: rgba(43, 39, 33, 0.08);
+  padding: 0 4px;
+  border-radius: 3px;
+}
+
+.guide-faq summary {
+  cursor: pointer;
+  font-weight: 700;
+  min-height: 32px;
+  list-style-position: outside;
+}
+
+.guide-faq[open] summary {
+  margin-bottom: 8px;
+}

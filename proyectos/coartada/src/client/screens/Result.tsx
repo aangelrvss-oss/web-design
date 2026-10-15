@@ -232,9 +232,11 @@ export function Result({ pub, priv, onMenu, shared }: { pub: PublicView; priv: P
       <ActionBar hint={step < 2 ? 'Toca para verlo todo.' : !isHost ? `Esperando a ${name(pub.hostId)} para seguir.` : undefined}>
         {isHost && step >= 2 ? (
           <>
-            <button className="btn btn-ghost" style={{ flex: 'none' }} disabled={busy} onClick={() => void run(() => store.send('game:lobby'), undefined, errorText)}>
-              Sala
-            </button>
+            {!shared && (
+              <button className="btn btn-ghost" style={{ flex: 'none' }} disabled={busy} onClick={() => void run(() => store.send('game:lobby'), undefined, errorText)}>
+                Sala
+              </button>
+            )}
             <button className="btn btn-primary" disabled={busy} onClick={() => void run(() => store.send('game:next'), undefined, errorText)}>
               {lastRound ? 'Ver clasificación final' : 'Siguiente ronda'}
             </button>

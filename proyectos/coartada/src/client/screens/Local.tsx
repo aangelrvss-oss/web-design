@@ -24,7 +24,8 @@ import type { Ack, ClientEvent } from '../../shared/protocol';
 import { MAX_PLAYERS, MIN_PLAYERS, type RoomState } from '../../shared/types';
 import { errorText, PACE_TEXT } from '../lib/text';
 import { store, useStore } from '../net/store';
-import { ActionBar, Icon, Pin, Segmented, Switch, toast, TopBar } from '../ui/kit';
+import { ActionBar, Icon, Pin, Segmented, Sheet, Switch, toast, TopBar } from '../ui/kit';
+import { setPrefs, usePrefs } from '../lib/prefs';
 import { Declare } from './Declare';
 import { Investigate } from './Investigate';
 import { Vote } from './Vote';
@@ -44,6 +45,9 @@ export function LocalGame({ onExit }: { onExit: () => void }) {
   const [pace, setPace] = useState<'relajado' | 'normal' | 'rapido'>('normal');
   const [encargos, setEncargos] = useState(false);
   const [rules, setRules] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuRules, setMenuRules] = useState(false);
+  const prefs = usePrefs();
   const roomRef = useRef<RoomState | null>(null);
   const [actor, setActor] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -126,6 +130,16 @@ export function LocalGame({ onExit }: { onExit: () => void }) {
     }
   }, [snap.mode, room, onExit]);
 
+  // "Nueva partida" from the final screen lands in the lobby: deal a new round to the same people.
+  useEffect(() => {
+    const r = roomRef.current;
+    if (r && r.phase === 'lobby') {
+      const res = startRound(r, r.hostId, Date.now(), deps);
+      if (!res.ok) toast(errorText(res.error), true);
+      sync(null);
+    }
+  });
+
   useEffect(
     () => () => {
       if (store.snap.mode === 'local') store.set({ mode: 'online', pub: null, priv: null, me: null });
@@ -206,53 +220,83 @@ export function LocalGame({ onExit }: { onExit: () => void }) {
 
   const pub = snap.pub;
   if (!pub || snap.mode !== 'local') return null;
-  const openMenu = () => {
-    if (confirm('¿Terminar la partida en este móvil?')) void store.leave();
-  };
+  const openMenu = () => setMenuOpen(true);
 
-  // Who still has to do a secret step in this phase?
-  const round = room.round;
-  const pendingSecret = (() => {
-    if (!round) return [];
-    if (room.phase === 'declare') return round.participants.filter((id) => !round.declarations[id]);
-    if (room.phase === 'vote') return round.participants.filter((id) => !round.votes[id]);
-    if (room.phase === 'runoff') return round.participants.filter((id) => !round.runoff!.votes[id]);
-    return [];
-  })();
+  const renderRoom = (): React.ReactNode => {
 
-  if (pendingSecret.length > 0 || (actor && (room.phase === 'declare' || room.phase === 'vote' || room.phase === 'runoff'))) {
-    const current = actor && round?.participants.includes(actor) ? actor : null;
-    const done =
-      current &&
-      (actorPhase.current !== room.phase ||
-        (room.phase === 'declare' && round!.declarations[current]) ||
-        (room.phase === 'vote' && round!.votes[current]) ||
-        (room.phase === 'runoff' && round!.runoff!.votes[current]));
-    if (!current || !revealed) {
-      const nextId = current ?? pendingSecret[0];
-      const p = room.players.find((x) => x.id === nextId)!;
-      return (
-        <Handoff
-          name={p.name}
-          color={p.color}
-          what={room.phase === 'declare' ? 'declarar su coartada' : 'votar en secreto'}
-          remaining={pendingSecret.length}
-          onReady={() => {
-            actorPhase.current = room.phase;
-            setActor(nextId);
-            setRevealed(true);
-            sync(nextId);
-          }}
-          onMenu={openMenu}
-        />
-      );
+    // Who still has to do a secret step in this phase?
+    const round = room.round;
+    const pendingSecret = (() => {
+      if (!round) return [];
+      if (room.phase === 'declare') return round.participants.filter((id) => !round.declarations[id]);
+      if (room.phase === 'vote') return round.participants.filter((id) => !round.votes[id]);
+      if (room.phase === 'runoff') return round.participants.filter((id) => !round.runoff!.votes[id]);
+      return [];
+    })();
+
+    if (pendingSecret.length > 0 || (actor && (room.phase === 'declare' || room.phase === 'vote' || room.phase === 'runoff'))) {
+      const current = actor && round?.participants.includes(actor) ? actor : null;
+      const done =
+        current &&
+        (actorPhase.current !== room.phase ||
+          (room.phase === 'declare' && round!.declarations[current]) ||
+          (room.phase === 'vote' && round!.votes[current]) ||
+          (room.phase === 'runoff' && round!.runoff!.votes[current]));
+      if (!current || !revealed) {
+        const nextId = current ?? pendingSecret[0];
+        const p = room.players.find((x) => x.id === nextId)!;
+        return (
+          <Handoff
+            name={p.name}
+            color={p.color}
+            what={room.phase === 'declare' ? 'declarar su coartada' : 'votar en secreto'}
+            remaining={pendingSecret.length}
+            onReady={() => {
+              actorPhase.current = room.phase;
+              setActor(nextId);
+              setRevealed(true);
+              sync(nextId);
+            }}
+            onMenu={openMenu}
+          />
+        );
+      }
+      if (done) {
+        return (
+          <main className="screen" style={{ justifyContent: 'center' }}>
+            <section className="paper center stack" style={{ alignItems: 'center' }}>
+              <h2>Hecho</h2>
+              <p>Pulsa para tapar la pantalla antes de pasar el móvil.</p>
+            </section>
+            <ActionBar>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  setActor(null);
+                  setRevealed(false);
+                  sync(null);
+                }}
+              >
+                Ocultar y pasar
+              </button>
+            </ActionBar>
+          </main>
+        );
+      }
+      const priv = snap.priv!;
+      if (room.phase === 'declare') return <Declare pub={pub} priv={priv} onMenu={openMenu} />;
+      return <Vote key={room.phase} pub={pub} priv={priv} onMenu={openMenu} />;
     }
-    if (done) {
+
+    // The last secret action just closed the step: hide that person's screen and let
+    // the group reveal the next public moment together.
+    if (actor) {
+      const toBoard = room.phase === 'investigate';
       return (
         <main className="screen" style={{ justifyContent: 'center' }}>
-          <section className="paper center stack" style={{ alignItems: 'center' }}>
-            <h2>Hecho</h2>
-            <p>Pulsa para tapar la pantalla antes de pasar el móvil.</p>
+          <section className="paper center stack" style={{ alignItems: 'center', padding: 'var(--s-6) var(--s-4)' }}>
+            <h2>{toBoard ? 'Todas las coartadas, selladas' : 'Todos los votos, dentro'}</h2>
+            <p>{toBoard ? 'Poned el móvil en el centro de la mesa y destapadlas a la vez.' : 'Poned el móvil donde lo veáis todos.'}</p>
           </section>
           <ActionBar>
             <button
@@ -263,60 +307,60 @@ export function LocalGame({ onExit }: { onExit: () => void }) {
                 sync(null);
               }}
             >
-              Ocultar y pasar
+              {toBoard ? 'Destapar coartadas' : 'Ver el veredicto'}
             </button>
           </ActionBar>
         </main>
       );
     }
-    const priv = snap.priv!;
-    if (room.phase === 'declare') return <Declare pub={pub} priv={priv} onMenu={openMenu} />;
-    return <Vote key={room.phase} pub={pub} priv={priv} onMenu={openMenu} />;
-  }
 
-  // The last secret action just closed the step: hide that person's screen and let
-  // the group reveal the next public moment together.
-  if (actor) {
-    const toBoard = room.phase === 'investigate';
-    return (
-      <main className="screen" style={{ justifyContent: 'center' }}>
-        <section className="paper center stack" style={{ alignItems: 'center', padding: 'var(--s-6) var(--s-4)' }}>
-          <h2>{toBoard ? 'Todas las coartadas, selladas' : 'Todos los votos, dentro'}</h2>
-          <p>{toBoard ? 'Poned el móvil en el centro de la mesa y destapadlas a la vez.' : 'Poned el móvil donde lo veáis todos.'}</p>
-        </section>
-        <ActionBar>
-          <button
-            className="btn btn-primary"
-            onClick={() => {
-              setActor(null);
-              setRevealed(false);
-              sync(null);
-            }}
-          >
-            {toBoard ? 'Destapar coartadas' : 'Ver el veredicto'}
-          </button>
-        </ActionBar>
-      </main>
-    );
-  }
-
-  switch (room.phase) {
-    case 'investigate':
-      return <LocalInvestigate pub={pub} onMenu={openMenu} room={room} speakerRef={speakerRef} />;
-    case 'result':
-      return <Result key={round?.number} pub={pub} priv={null} onMenu={openMenu} shared />;
-    case 'final':
-      return <Final pub={pub} me={room.hostId} onMenu={openMenu} />;
-    case 'lobby': {
-      // "Nueva partida" from the final screen: straight into a new round with the same people.
-      const res = startRound(room, room.hostId, Date.now(), deps);
-      if (!res.ok) toast(errorText(res.error), true);
-      queueMicrotask(() => sync(null));
-      return null;
+    switch (room.phase) {
+      case 'investigate':
+        return <LocalInvestigate pub={pub} onMenu={openMenu} room={room} speakerRef={speakerRef} />;
+      case 'result':
+        return <Result key={round?.number} pub={pub} priv={null} onMenu={openMenu} shared />;
+      case 'final':
+        return <Final pub={pub} me={room.hostId} onMenu={openMenu} />;
+      default:
+        return null;
     }
-    default:
-      return null;
-  }
+  };
+
+  return (
+    <>
+      {renderRoom()}
+      <Sheet open={menuOpen} onClose={() => setMenuOpen(false)} tone="ink" label="Menú">
+        {menuRules ? (
+          <div className="paper">
+            <RulesContent />
+            <button className="btn btn-primary btn-block" style={{ marginTop: 16 }} onClick={() => setMenuRules(false)}>
+              Volver al menú
+            </button>
+          </div>
+        ) : (
+          <div className="stack">
+            <h2>Menú</h2>
+            <button className="btn btn-ghost btn-block" onClick={() => setMenuRules(true)}>
+              Cómo se juega
+            </button>
+            <Switch label="Reducir animaciones" checked={prefs.reduceMotion} onChange={(reduceMotion) => setPrefs({ reduceMotion })} />
+            <button className="btn btn-ghost btn-block" onClick={() => setMenuOpen(false)}>
+              Seguir jugando
+            </button>
+            <button
+              className="btn btn-primary btn-block"
+              onClick={() => {
+                setMenuOpen(false);
+                void store.leave();
+              }}
+            >
+              Terminar la partida
+            </button>
+          </div>
+        )}
+      </Sheet>
+    </>
+  );
 }
 
 function Handoff({ name, color, what, remaining, onReady, onMenu }: { name: string; color: number; what: string; remaining: number; onReady: () => void; onMenu: () => void }) {
