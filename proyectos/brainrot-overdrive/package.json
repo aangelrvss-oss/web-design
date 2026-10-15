@@ -1,0 +1,26 @@
+{
+  "name": "brainrot-overdrive",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "BRAINROT OVERDRIVE — an original top-down arena-survival roguelite for the browser",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5173",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4173",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "qa": "node qa/e2e.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/space-grotesk": "^5.3.0",
+    "@fontsource-variable/unbounded": "^5.3.0",
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.64.1",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
+  }
+}
