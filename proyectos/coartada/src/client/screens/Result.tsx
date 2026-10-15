@@ -257,7 +257,9 @@ export function Final({ pub, me, onMenu }: { pub: PublicView; me: string; onMenu
   const ranked = pub.players.filter((p) => !p.left).sort((a, b) => b.score - a.score);
   const podium = [ranked[1], ranked[0], ranked[2]];
   const heights = ['70px', '104px', '52px'];
-  useEffect(() => sfx.verdict(), []);
+  useEffect(() => {
+    sfx.verdict();
+  }, []);
   return (
     <main className="screen">
       <TopBar title="Clasificación final" step={`${pub.roundsPlayed} rondas`} onMenu={onMenu} code={pub.code} />

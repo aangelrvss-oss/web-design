@@ -8,10 +8,13 @@ export default defineConfig({
   root: fileURLToPath(new URL('./src/client', import.meta.url)),
   publicDir: false,
   plugins: [react()],
+  // The demo is offline-only: keep the network client out of the bundle.
+  resolve: { alias: { 'socket.io-client': fileURLToPath(new URL('./src/client/net/no-socket.ts', import.meta.url)) } },
   build: {
     outDir: fileURLToPath(new URL('./dist/demo-build', import.meta.url)),
     emptyOutDir: true,
-    target: 'es2020',
+    // Older iPhones / in-app browsers too.
+    target: ['es2019', 'safari13', 'chrome80'],
     assetsInlineLimit: 10_000_000,
     cssCodeSplit: false,
     modulePreload: false,
