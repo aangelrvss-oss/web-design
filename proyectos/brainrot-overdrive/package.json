@@ -10,7 +10,8 @@
     "preview": "vite preview --host 127.0.0.1 --port 4173",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "qa": "node qa/e2e.mjs"
+    "qa": "node qa/e2e.mjs",
+    "preview:single": "npm run build && node tools/singlefile.mjs"
   },
   "dependencies": {
     "@fontsource-variable/space-grotesk": "^5.3.0",
