@@ -1,0 +1,47 @@
+/** Original 24×24 stroke glyphs for upgrades and weapons (rendered as inline SVG). */
+const P: Record<string, string> = {
+  bolt: '<path d="M3 12h11"/><path d="M11 7l6 5-6 5"/><circle cx="19.5" cy="12" r="1.8" fill="currentColor"/>',
+  spinner: '<circle cx="12" cy="5.5" r="3"/><circle cx="6.4" cy="15.2" r="3"/><circle cx="17.6" cy="15.2" r="3"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/>',
+  boom: '<circle cx="12" cy="12" r="2.5" fill="currentColor"/><circle cx="12" cy="12" r="6"/><path d="M12 2.5a9.5 9.5 0 0 1 9.5 9.5M2.5 12A9.5 9.5 0 0 1 12 2.5" opacity=".6"/><path d="M21.5 12A9.5 9.5 0 0 1 12 21.5M12 21.5A9.5 9.5 0 0 1 2.5 12" opacity=".6"/>',
+  wifi: '<path d="M3 9.5a13 13 0 0 1 18 0"/><path d="M6.5 13a8 8 0 0 1 11 0"/><path d="M13 15.5l-3 3.5h3l-2 3"/>',
+  reply: '<path d="M10 6L4 11l6 5"/><path d="M4 11h9a7 7 0 0 1 7 7"/>',
+  tea: '<path d="M5 9h12v5a6 6 0 0 1-12 0z"/><path d="M17 10.5h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M9 3.5c-1 1.5 1 2 0 3.5M13 3.5c-1 1.5 1 2 0 3.5"/>',
+  fist: '<path d="M7 11V7.5a1.5 1.5 0 0 1 3 0V11M10 10V6.5a1.5 1.5 0 0 1 3 0V10M13 10V7a1.5 1.5 0 0 1 3 0v3"/><path d="M16 9.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-1a6 6 0 0 1-6-6v-2.5L7 11"/>',
+  cup: '<path d="M6 8h10l-1.2 11.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8z"/><path d="M5 8h12M11 8V3h4"/>',
+  split: '<circle cx="8" cy="9" r="4"/><circle cx="16" cy="15" r="4"/><path d="M4 21l16-18" opacity=".5"/>',
+  brain: '<path d="M12 5a3 3 0 0 0-5.6 1.5A3 3 0 0 0 4 10a3 3 0 0 0 1 5 3.5 3.5 0 0 0 7 2.5V5z"/><path d="M12 5a3 3 0 0 1 5.6 1.5A3 3 0 0 1 20 10a3 3 0 0 1-1 5 3.5 3.5 0 0 1-7 2.5"/>',
+  wing: '<path d="M3 17c6 0 13-4 18-12-6 1-11 3-14 7"/><path d="M5 13h6M7 9.5h5" opacity=".6"/>',
+  shield: '<path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/>',
+  drop: '<path d="M12 3c3 4.5 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-6.5 6-11z"/><path d="M9.5 14.5a2.5 2.5 0 0 0 2.5 2.5" opacity=".6"/>',
+  clover: '<circle cx="9" cy="9" r="3.3"/><circle cx="15" cy="9" r="3.3"/><circle cx="9" cy="15" r="3.3"/><circle cx="15" cy="15" r="3.3"/><path d="M15 15l5 6"/>',
+  blade: '<path d="M4 20L18 6l2-2-1 4L6 21z"/><path d="M8 16l-3-3" opacity=".6"/>',
+  magnet: '<path d="M6 4v8a6 6 0 0 0 12 0V4"/><path d="M6 8h3M15 8h3"/><path d="M9 4v8a3 3 0 0 0 6 0V4"/>',
+  up: '<path d="M4 18l5-5 4 3 7-8"/><path d="M15 8h5v5"/>',
+  mask: '<path d="M4 7c2-2 5-2 8 0 3-2 6-2 8 0v4c0 4-3 7-8 9-5-2-8-5-8-9z"/><path d="M8 11h2M14 11h2M9.5 15.5c1.5 1 3.5 1 5 0"/>',
+  arrow: '<path d="M3 12h15"/><path d="M14 7l5 5-5 5"/><path d="M8 7v10" opacity=".55"/>',
+  dash: '<path d="M10 12h11"/><path d="M17 8l4 4-4 4"/><path d="M3 8h5M2 12h4M3 16h5" opacity=".6"/>',
+  eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3" fill="currentColor"/>',
+  glass: '<path d="M7 3h10l-1.5 9a3.5 3.5 0 0 1-7 0z"/><path d="M12 15.5V21M8.5 21h7M10 5l2 4 1-2" />',
+  scroll: '<rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M9 7h6M9 10.5h6M9 14h4"/><path d="M12 18.5v.01"/>',
+  bolt2: '<path d="M13 2.5L5 13.5h6l-1 8 8-11h-6z"/>',
+  ricochet: '<path d="M3 18l6-10 5 7 7-11"/><circle cx="9" cy="8" r="1.4" fill="currentColor"/><circle cx="14" cy="15" r="1.4" fill="currentColor"/>',
+  nuke: '<circle cx="12" cy="12" r="2.2" fill="currentColor"/><path d="M12 9.8V3.5a8.5 8.5 0 0 1 7.4 4.3l-5.5 3.1M9.9 13.1l-5.4 3.1A8.5 8.5 0 0 1 4.6 7.8l5.4 3.1M14.1 13.1l5.4 3.1a8.5 8.5 0 0 1-7.4 4.3v-6.3"/>',
+  domino: '<rect x="3" y="7" width="5" height="12" rx="1"/><rect x="9.5" y="6" width="5" height="12" rx="1" transform="rotate(14 12 12)"/><rect x="16" y="5" width="5" height="12" rx="1" transform="rotate(30 18.5 11)"/>',
+  heart: '<path d="M12 20s-7.5-4.5-7.5-10A4.3 4.3 0 0 1 12 7.5 4.3 4.3 0 0 1 19.5 10c0 5.5-7.5 10-7.5 10z"/><path d="M8.5 12.5h2l1-2 1.5 4 1-2h1.5"/>',
+  fire: '<path d="M12 21a6 6 0 0 0 6-6c0-4-3-5-3.5-9.5C11 7 9 10 9.5 12.5 8 12 7.5 10.5 7.5 9.5 6.5 11 6 12.5 6 15a6 6 0 0 0 6 6z"/>',
+  static: '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><path d="M17 4l-2 3h2.5L15 10" />',
+  ratio: '<path d="M4 5h12a3 3 0 0 1 3 3v5a3 3 0 0 1-3 3h-7l-4 4v-4H4a0 0 0 0 1 0 0z"/><path d="M9 10.5h6M12 7.5v6"/>',
+  teazap: '<path d="M5 10h12v4a6 6 0 0 1-12 0z"/><path d="M12 2l-2.5 4h3L10 9.5"/>',
+  crown: '<path d="M3 18l1.5-10 4.5 4 3-6.5 3 6.5 4.5-4 1.5 10z"/><path d="M5 21h14"/>',
+  snack: '<ellipse cx="12" cy="14" rx="8" ry="4.5"/><path d="M7 13c1.5-3 8.5-3 10 0"/><path d="M9 9.5l1-3M13 9l.5-3.5M16 10l1.5-3"/>',
+  bag: '<path d="M6 8h12l1 12H5z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/><path d="M12 11.5v5M10 13h3.5a1.5 1.5 0 0 1 0 3"/>',
+  lock: '<rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+  pause: '<path d="M8 5v14M16 5v14"/>',
+  sound: '<path d="M4 9.5h4l5-4v13l-5-4H4z"/><path d="M16.5 9a4.5 4.5 0 0 1 0 6M19 6.5a8 8 0 0 1 0 11"/>',
+  mute: '<path d="M4 9.5h4l5-4v13l-5-4H4z"/><path d="M17 9.5l5 5M22 9.5l-5 5"/>',
+};
+
+export function icon(id: string, cls = ''): string {
+  const body = P[id] ?? P.bolt;
+  return `<svg class="ico ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+}

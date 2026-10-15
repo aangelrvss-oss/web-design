@@ -7,6 +7,7 @@ Repositorio de propuestas de rediseño web para negocios locales. Cada web vive 
 | MRI · Martínez Rojas Instalaciones | `proyectos/mr-instalaciones/` | Terminada · zip de demostración para Netlify |
 | Living Clean Multiservicios | `proyectos/living-clean/` | Construida y verificada · faltan por descargar las 7 imágenes generadas (red bloqueada) |
 | Pro Reforma | `proyectos/pro-reforma/` | Construida y verificada · vista previa en un archivo · reseñas por API pendientes de credenciales |
+| BRAINROT OVERDRIVE (juego) | `proyectos/brainrot-overdrive/` | Juego de navegador original (Phaser 3 + TypeScript) · `npm run dev:brainrot` tras `npm install` en su carpeta |
 
 ## Estructura
 

@@ -17,6 +17,9 @@
     "qa:proreforma:anim": "node proyectos/pro-reforma/qa/animation.mjs http://127.0.0.1:4700/",
     "preview:proreforma": "node proyectos/pro-reforma/tools/preview/bundle.mjs",
     "qa:proreforma:backend": "node proyectos/pro-reforma/qa/backend.mjs",
-    "demo:proreforma": "node proyectos/pro-reforma/tools/demo/build-netlify.mjs"
+    "demo:proreforma": "node proyectos/pro-reforma/tools/demo/build-netlify.mjs",
+    "dev:brainrot": "npm --prefix proyectos/brainrot-overdrive run dev",
+    "build:brainrot": "npm --prefix proyectos/brainrot-overdrive run build",
+    "test:brainrot": "npm --prefix proyectos/brainrot-overdrive test"
   }
 }
