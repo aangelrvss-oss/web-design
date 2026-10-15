@@ -398,8 +398,9 @@ export class EnemySystem {
       if (!e.active) continue;
       const s = e.sprite;
       if (e.boss) {
+        // bosses are hit constantly: a soft tint instead of a white fill keeps them readable
         s.setPosition(e.x, e.y).setDepth(10 + e.y * 0.001);
-        if (e.flash > 0) s.setTintFill(0xffffff);
+        if (e.flash > 0) s.setTint(0xffc4d8);
         else s.clearTint();
         continue;
       }

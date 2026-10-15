@@ -7,6 +7,7 @@ import { MenuScene } from './scenes/MenuScene';
 import { GameScene } from './scenes/GameScene';
 import { input } from './core/input';
 import { App } from './app';
+import { audio } from './audio/audio';
 
 /** Device pixel ratio, capped: 2× is plenty for crisp art and keeps fill-rate sane. */
 const dprNow = () => Math.min(2, window.devicePixelRatio || 1);
@@ -54,7 +55,7 @@ async function boot() {
 
   game.events.once('textures-ready', () => {
     const app = new App(game);
-    (window as unknown as { __app: App }).__app = app;
+    if (new URLSearchParams(location.search).has('qa')) Object.assign(window, { __app: app, __audio: audio });
     // menu backdrop scene starts right after boot; show the DOM menu on top
     requestAnimationFrame(() => app.showMenu());
     document.getElementById('loading')?.remove();

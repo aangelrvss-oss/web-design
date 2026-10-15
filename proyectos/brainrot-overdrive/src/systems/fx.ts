@@ -69,8 +69,8 @@ export class Fx {
     });
     this.shards.setDepth(39);
     this.glows = add('glow', {
-      speed: { min: 10, max: 60 }, lifespan: { min: 250, max: 500 }, scale: { start: 0.9, end: 0 },
-      alpha: { start: 0.7, end: 0 }, maxParticles: 260,
+      speed: { min: 10, max: 50 }, lifespan: { min: 180, max: 360 }, scale: { start: 0.34, end: 0 },
+      alpha: { start: 0.5, end: 0 }, maxParticles: 160,
     }, 38);
     this.trail = add('glow', {
       speed: 0, lifespan: 220, scale: { start: 0.16, end: 0 }, alpha: { start: 0.4, end: 0 }, maxParticles: 400,
@@ -149,10 +149,11 @@ export class Fx {
   number(x: number, y: number, value: number, crit: boolean, color?: number) {
     if (!this.settings.damageNumbers) return;
     // restraint: regular numbers are capped so crits and big hits stay readable
-    if (!crit && color === undefined) {
+    if (color === undefined) {
       let live = 0;
-      for (const q of this.nums) if (q.active && q.max < 0.6) live++;
-      if (live >= (this.intensity >= 1 ? 18 : 8)) return;
+      const crits = crit;
+      for (const q of this.nums) if (q.active && (q.max > 0.6) === crits) live++;
+      if (live >= (crits ? 12 : this.intensity >= 1 ? 14 : 6)) return;
     }
     let n = this.nums.find((q) => !q.active);
     if (!n) {

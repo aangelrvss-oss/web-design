@@ -30,6 +30,8 @@ export interface OfferView {
   nextLevel: number;
   isNew: boolean;
   text: string;
+  /** For synergies: which owned upgrades enabled it. */
+  combo?: string;
 }
 
 type Btn = { label: string; cls?: string; key?: string; action: () => void; id?: string };
@@ -55,6 +57,7 @@ export class UI {
   private bossEl!: HTMLElement;
   private hintEl!: HTMLElement;
   private lastCombo = 0;
+  private introUntil = 0;
   onUiSound: (k: 'uiMove' | 'uiClick') => void = () => {};
 
   constructor() {
@@ -79,6 +82,7 @@ export class UI {
 
   show(name: string, html: string, opts: { cls?: string; back?: (() => void) | null; focus?: string } = {}): HTMLElement {
     this.hideScreens();
+    this.clearOverlays();
     const el = this.screen(name, html, opts.cls);
     this.current = name;
     this.backAction = opts.back ?? null;
@@ -186,7 +190,7 @@ export class UI {
       <div class="bottom">
         <div class="weapons" data-r="weapons"></div>
         <div class="meters">
-          <div class="meter dash"><i data-r="dash"></i><span>DASH · SPACE</span></div>
+          <div class="meter dash"><i data-r="dash"></i><span>DASH<span class="kb"> · SPACE</span></span></div>
           <div class="meter od" data-r="odBox"><i data-r="od"></i><span data-r="odText">OVERDRIVE</span></div>
         </div>
         <div class="spacer"></div>
@@ -245,7 +249,11 @@ export class UI {
     this.set('kills', `${formatNum(s.kills)} kills`);
     const comboEl = this.hudRefs.combo;
     if (s.combo >= 5) {
-      this.set('combo', `${s.combo} COMBO ×${s.comboMult.toFixed(2)}`);
+      const comboHtml = `${s.combo} COMBO <span class="mult">×${s.comboMult.toFixed(2)}</span>`;
+      if (this.lastHud.combo !== comboHtml) {
+        this.lastHud.combo = comboHtml;
+        comboEl.innerHTML = comboHtml;
+      }
       comboEl.classList.add('on');
       if (Math.floor(s.combo / 25) !== Math.floor(this.lastCombo / 25)) {
         comboEl.classList.remove('bump');
@@ -259,7 +267,7 @@ export class UI {
     const box = this.hudRefs.odBox;
     box.classList.toggle('ready', s.od >= 100 && !s.odActive);
     box.classList.toggle('active', s.odActive);
-    this.set('odText', s.odActive ? 'OVERDRIVE!!' : s.od >= 100 ? 'OVERDRIVE READY · E' : 'OVERDRIVE');
+    this.set('odText', s.odActive ? 'OVERDRIVE!!' : s.od >= 100 ? (document.documentElement.classList.contains('is-touch') ? 'OVERDRIVE READY · TAP OD' : 'OVERDRIVE READY · E') : 'OVERDRIVE');
     const wkey = s.weapons.map((w) => `${w.id}${w.level}`).join() + '|' + s.synergies.map((x) => x.name).join();
     if (this.lastHud.weapons !== wkey) {
       this.lastHud.weapons = wkey;
@@ -311,6 +319,8 @@ export class UI {
   }
 
   announce(text: string, kind: 'info' | 'warn' | 'boss' | 'hype' = 'info') {
+    // the boss title card owns the centre of the screen while it is up
+    if (performance.now() < this.introUntil && kind !== 'boss') return;
     const a = document.createElement('div');
     a.className = `a ${kind}`;
     a.textContent = text;
@@ -318,10 +328,19 @@ export class UI {
     setTimeout(() => a.remove(), 2300);
   }
 
+  /** Drop transient centre-screen text (announcer, boss card) so it never sits over a menu. */
+  clearOverlays() {
+    this.announceEl.replaceChildren();
+    this.bossEl.classList.add('hidden');
+    this.introUntil = 0;
+  }
+
   bossIntro(name: string, subtitle: string) {
+    this.announceEl.replaceChildren();
     this.bossEl.classList.remove('hidden');
-    this.bossEl.innerHTML = `<div class="card"><div class="warn">⚠ WARNING ⚠</div><h2 class="display">${esc(name)}</h2><p>${esc(subtitle)}</p><div class="stripe"></div></div>`;
-    setTimeout(() => this.bossEl.classList.add('hidden'), 3000);
+    this.introUntil = performance.now() + 2600;
+    this.bossEl.innerHTML = `<div class="bi"><div class="warn">⚠ WARNING ⚠</div><h2 class="display">${esc(name)}</h2><p>${esc(subtitle)}</p><div class="stripe"></div></div>`;
+    setTimeout(() => this.bossEl.classList.add('hidden'), 2600);
   }
 
   toast(title: string, text: string) {
@@ -365,6 +384,8 @@ export class UI {
         <span class="num">${i + 1}</span>
         <div class="top"><div class="badge">${icon(d.icon)}</div><div class="meta"><span class="rar">${RAR[d.rarity]}${d.kind === 'weapon' ? ' · Weapon' : ''}</span><h3>${esc(d.name)}</h3>${pips}</div></div>
         <div class="desc">${esc(o.text)}</div>
+        ${o.combo ? `<div class="req">Combo: ${esc(o.combo)}</div>` : ''}
+        <div class="tags">${d.tags.map((t) => `<span>${t}</span>`).join('')}</div>
         <div class="flavor">“${esc(d.flavor)}”</div>
       </button>`;
     }).join('');

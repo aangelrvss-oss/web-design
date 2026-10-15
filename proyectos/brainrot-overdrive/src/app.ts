@@ -215,7 +215,7 @@ export class App {
       <h2 class="display">Touching grass?</h2>
       <div class="build-list">${chips}</div>`, [
       { label: 'Resume', cls: 'primary', action: () => { resume(); this.touch.show(true); } },
-      { label: 'Restart run', action: () => { this.startRun(this.lastConfig?.daily ? this.lastConfig : this.freshConfig(this.lastConfig?.character ?? 'npc')); } },
+      { label: 'Restart run', cls: 'ghost', action: () => { this.startRun(this.lastConfig?.daily ? this.lastConfig : this.freshConfig(this.lastConfig?.character ?? 'npc')); } },
       { label: 'Settings', cls: 'ghost', action: () => this.showSettings(() => this.showPause()) },
       { label: 'Quit to menu', cls: 'ghost', action: () => this.showMenu() },
     ], { panelCls: 'pause-panel', back: () => { resume(); this.touch.show(true); } });

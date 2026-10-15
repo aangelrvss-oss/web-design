@@ -35,7 +35,11 @@ export class TouchControls {
     zone.addEventListener('pointerdown', (e) => {
       if (this.pointerId !== null) return;
       this.pointerId = e.pointerId;
-      zone.setPointerCapture(e.pointerId);
+      try {
+        zone.setPointerCapture(e.pointerId);
+      } catch {
+        /* capture is an enhancement; movement still works without it */
+      }
       this.ox = e.clientX;
       this.oy = e.clientY;
       this.stick.style.left = `${e.clientX}px`;

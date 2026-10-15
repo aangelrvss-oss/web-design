@@ -431,7 +431,7 @@ export class Algorithm extends Boss {
     const a = Math.atan2(p.y - e.y, p.x - e.x);
     this.iris.setPosition(e.x + Math.cos(a) * 12, e.y - 14 + bob + Math.sin(a) * 7)
       .setFrame(this.phase === 3 ? 1 : 0).setDepth(e.sprite.depth + 0.001).setVisible(!this.dying || this.deathT < 1.2);
-    if (e.flash > 0) this.iris.setTintFill(0xffffff);
+    if (e.flash > 0) this.iris.setTint(0xffd0e0);
     else this.iris.clearTint();
     for (let i = 0; i < this.orbs.length; i++) {
       const oa = time * 1.4 + (i / this.orbs.length) * TAU;

@@ -69,7 +69,7 @@ html, body {
 .screen {
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   padding: calc(16px + var(--safe-t)) calc(16px + var(--safe-r)) calc(16px + var(--safe-b)) calc(16px + var(--safe-l));
-  overflow-y: auto; touch-action: pan-y;
+  overflow-y: auto; touch-action: pan-y; z-index: 20;
 }
 .screen.dim { background: rgba(7, 4, 15, .72); backdrop-filter: blur(3px); }
 .hidden { display: none !important; }
@@ -175,11 +175,11 @@ html, body {
 .hpbar i { z-index: 1; }
 .clock { text-align: center; margin-top: 10px; }
 .clock .t { font-size: clamp(24px, 4vw, 34px); font-weight: 800; color: var(--text); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; text-shadow: 3px 3px 0 var(--ink); }
-.clock .next { font: 600 11px var(--body); color: var(--muted); letter-spacing: .08em; text-transform: uppercase; margin-top: 2px; }
+.clock .next { font: 600 11px var(--body); color: var(--muted); letter-spacing: .08em; text-transform: uppercase; margin-top: 2px; white-space: nowrap; }
 .scorebox { justify-self: end; text-align: right; margin-top: 8px; display: flex; gap: 10px; align-items: start; }
 .scorebox .s { font-size: clamp(16px, 2.6vw, 22px); font-weight: 800; color: var(--gold); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; }
 .scorebox .k { font: 600 12px var(--body); color: var(--muted); }
-.combo { font-size: 13px; font-weight: 800; color: var(--magenta); -webkit-text-stroke: 1.5px var(--ink); paint-order: stroke fill; opacity: 0; transition: opacity .2s; }
+.combo { white-space: nowrap; font-size: 13px; font-weight: 800; color: var(--magenta); -webkit-text-stroke: 1.5px var(--ink); paint-order: stroke fill; opacity: 0; transition: opacity .2s; }
 .combo.on { opacity: 1; }
 .combo.bump { animation: bump .18s; }
 @keyframes bump { 50% { transform: scale(1.25); } }
@@ -233,7 +233,7 @@ html, body {
 
 /* boss intro card */
 .bossintro { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 6; }
-.bossintro .card { text-align: center; animation: intro 3s ease forwards; }
+.bossintro .bi { text-align: center; animation: intro 2.6s ease forwards; padding: 0 16px; }
 .bossintro .warn { font: 800 14px var(--display); letter-spacing: .4em; color: var(--hot); }
 .bossintro h2 { margin: 8px 0; font-size: clamp(36px, 8vw, 86px); color: #fff; -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; text-shadow: 6px 6px 0 var(--hot), 12px 12px 0 var(--ink); }
 .bossintro p { margin: 0; font: 600 16px var(--body); color: var(--muted); font-style: italic; }
@@ -263,7 +263,7 @@ html, body {
   --c: #d8d0ee;
   position: relative; text-align: left; cursor: pointer; color: var(--text); font: inherit;
   background: linear-gradient(180deg, var(--panel-2), var(--panel)); border: 3px solid var(--ink); border-radius: 18px;
-  padding: 18px 16px 16px; min-height: 250px; display: flex; flex-direction: column; gap: 8px;
+  padding: 18px 16px 16px; min-height: 230px; display: flex; flex-direction: column; gap: 9px;
   box-shadow: 6px 6px 0 var(--ink), 6px 6px 0 3px var(--c);
   animation: deal .38s cubic-bezier(.2, .9, .3, 1.25) backwards;
   transition: transform .1s;
@@ -293,7 +293,9 @@ html, body {
 @keyframes blink { 50% { opacity: .3; } }
 .card .num { position: absolute; top: 10px; right: 12px; font: 800 11px var(--display); color: var(--muted); border: 2px solid var(--line); border-radius: 6px; padding: 1px 6px; }
 .card .tag { position: absolute; top: -12px; left: 14px; font: 800 10px var(--display); letter-spacing: .14em; background: var(--c); color: var(--ink); border: 2px solid var(--ink); padding: 3px 8px; border-radius: 6px; }
-.card .req { font-size: 11.5px; color: var(--gold); }
+.card .req { font: 700 12px var(--body); color: var(--gold); }
+.card .tags { display: flex; gap: 5px; flex-wrap: wrap; }
+.card .tags span { font: 700 9.5px var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); border: 1.5px solid var(--line); border-radius: 5px; padding: 2px 6px; }
 .levelup .actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
 /* ── pause / results ──────────────────────────────────────────────────── */
@@ -362,6 +364,7 @@ input[type=range] { width: 160px; accent-color: var(--magenta); }
 .tbtn .cdmask { position: absolute; inset: 0; background: rgba(7, 4, 15, .55); transform-origin: bottom; transform: scaleY(0); }
 .tbtn span { position: relative; }
 
+.is-touch .kb { display: none; }
 .fps { position: absolute; left: calc(12px + var(--safe-l)); bottom: calc(70px + var(--safe-b)); font: 600 11px var(--body); color: var(--muted); }
 
 /* ── responsive ───────────────────────────────────────────────────────── */
@@ -378,6 +381,10 @@ input[type=range] { width: 160px; accent-color: var(--magenta); }
   .is-touch .hud .bottom .meters .meter { width: 34vw; }
   .is-touch .weapons { position: absolute; bottom: 30px; left: 0; }
   .scorebox .k { display: none; }
+  .combo { font-size: 10.5px; }
+  .combo .mult { display: none; }
+  .corner.right { display: none; }
+  .corner.left { left: 0; right: 0; text-align: center; }
   .bossbar { top: calc(92px + var(--safe-t)); }
   .hint { bottom: calc(160px + var(--safe-b)); }
   .menu-sub { grid-template-columns: 1fr 1fr 1fr; }

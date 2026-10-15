@@ -17,7 +17,7 @@ import { rollHit, incomingDamage, type HitContext } from '../logic/combat';
 import type { DailySpec } from '../logic/daily';
 import { comboMultiplier, emptyRunStats, xpToNext, type RunStats } from '../logic/runStats';
 import type { Stats } from '../logic/stats';
-import { computeStats, levelOf, rollOffers, type Owned } from '../logic/upgrades';
+import { computeStats, isEligible, levelOf, rollOffers, type Owned } from '../logic/upgrades';
 import { WaveDirector, type DirectorEvent } from '../logic/waves';
 import { createBoss, type AnyBoss } from '../systems/bosses';
 import type { DamageOpts, GameCtx } from '../systems/ctx';
@@ -114,6 +114,9 @@ export class GameScene extends Phaser.Scene implements GameCtx {
   /** QA autopilot (only reachable through ?qa hooks). */
   private qaBot = false;
   private qaPick: ((i: number) => void) | null = null;
+  private qaGod = false;
+  /** Synergies that have appeared in an offer at least once this run. */
+  private offeredSynergies = new Set<string>();
 
   constructor() {
     super('Game');
@@ -163,6 +166,7 @@ export class GameScene extends Phaser.Scene implements GameCtx {
     this.announceCd = 0;
     this.hudT = 0;
     this.modal = false;
+    this.offeredSynergies = new Set();
     this.tutorial = hooks.seenTutorial() ? null : { moved: 0, aimed: false, dashed: false, leveled: false, t: 0 };
   }
 
@@ -749,7 +753,7 @@ export class GameScene extends Phaser.Scene implements GameCtx {
 
   hurtPlayer(raw: number, fromX: number, fromY: number, cause: string) {
     const p = this.player;
-    if (!p.alive || p.invuln > 0 || this.ended || this.victory) return;
+    if (!p.alive || p.invuln > 0 || this.ended || this.victory || this.qaGod) return;
     const dmg = incomingDamage(raw, this.stats);
     p.hp -= dmg;
     p.invuln = BALANCE.player.hurtInvuln;
@@ -834,7 +838,6 @@ export class GameScene extends Phaser.Scene implements GameCtx {
           this.pendingLevels++;
           need = xpToNext(this.level);
         }
-        this.fx.glow(x, y, value >= 5 ? PAL.magenta : PAL.cyan, 1);
         this.sfx('pickup', 1 + Math.min(0.6, (this.combo % 40) / 60));
         break;
       }
@@ -858,7 +861,11 @@ export class GameScene extends Phaser.Scene implements GameCtx {
   private offerViews(defs: UpgradeDef[]): OfferView[] {
     return defs.map((def) => {
       const lvl = levelOf(this.owned, def.id);
-      return { def, nextLevel: lvl + 1, isNew: lvl === 0, text: def.text(lvl + 1) };
+      // name the owned upgrades that unlocked a synergy, so the combo is learnable
+      const combo = def.kind === 'synergy' && def.requires
+        ? def.requires.map((g) => g.filter((r) => levelOf(this.owned, r.id) >= r.level).map((r) => UPGRADE_BY_ID[r.id].name)[0]).filter(Boolean).join(' + ')
+        : undefined;
+      return { def, nextLevel: lvl + 1, isNew: lvl === 0, text: def.text(lvl + 1), combo };
     });
   }
 
@@ -866,7 +873,7 @@ export class GameScene extends Phaser.Scene implements GameCtx {
     this.pendingLevels--;
     if (this.tutorial) this.tutorial.leveled = true;
     const first = this.level <= 2 && this.run.kills < 40;
-    const roll = () => rollOffers(this.offerRng, this.owned, { luck: this.stats.luck });
+    const roll = () => this.noteOffers(rollOffers(this.offerRng, this.owned, { luck: this.stats.luck, force: this.newSynergies() }));
     let offers = roll();
     this.sfx('levelup');
     this.fx.ring(this.player.x, this.player.y, 10, 120, PAL.cyan, 0.4);
@@ -889,9 +896,19 @@ export class GameScene extends Phaser.Scene implements GameCtx {
     show();
   }
 
+  /** Eligible synergies never offered yet: guaranteed a slot so combos are discoverable. */
+  private newSynergies(): string[] {
+    return UPGRADES.filter((u) => u.kind === 'synergy' && !this.offeredSynergies.has(u.id) && isEligible(u, this.owned)).map((u) => u.id).slice(0, 1);
+  }
+
+  private noteOffers(offers: UpgradeDef[]): UpgradeDef[] {
+    for (const o of offers) if (o.kind === 'synergy') this.offeredSynergies.add(o.id);
+    return offers;
+  }
+
   private openCrate() {
     this.pendingCrates--;
-    let offers = rollOffers(this.offerRng, this.owned, { luck: this.stats.luck + 2, minRarity: 'rare' });
+    let offers = this.noteOffers(rollOffers(this.offerRng, this.owned, { luck: this.stats.luck + 2, minRarity: 'rare', force: this.newSynergies() }));
     this.openModal();
     this.qaPick = (i) => this.pick(offers[Math.min(i, offers.length - 1)]);
     const show = () => ui.levelUp({
@@ -903,7 +920,7 @@ export class GameScene extends Phaser.Scene implements GameCtx {
       onPick: (i) => this.pick(offers[i]),
       onReroll: () => {
         this.rerolls--;
-        offers = rollOffers(this.offerRng, this.owned, { luck: this.stats.luck + 2, minRarity: 'rare' });
+        offers = this.noteOffers(rollOffers(this.offerRng, this.owned, { luck: this.stats.luck + 2, minRarity: 'rare' }));
         show();
       },
     });
@@ -972,7 +989,7 @@ export class GameScene extends Phaser.Scene implements GameCtx {
 
   applySettings(s: Settings) {
     this.settings = s;
-    this.fx.applySettings(s);
+    this.fx?.applySettings(s); // the scene may not have been created yet (menu)
   }
 
   /** Build summary for the pause screen. */
@@ -1126,15 +1143,18 @@ export class GameScene extends Phaser.Scene implements GameCtx {
       spawn: (id: keyof typeof ENEMIES, n = 1, elite = false) => this.enemies.spawnGroup(id, n, elite, 'cluster').length,
       boss: (id: BossId) => this.spawnBoss(id),
       bossHp: (frac: number) => { if (this.boss) this.boss.hp = this.boss.maxHp * frac; },
+      /** Deal real damage to the boss through the normal damage pipeline. */
+      hitBoss: (n: number) => { const part = this.boss?.parts[0]; if (part) this.damageEnemy(part, n, 'qa', { canCrit: false }); return this.boss ? this.boss.hp / this.boss.maxHp : null; },
       upgrade: (id: string) => { const d = UPGRADE_BY_ID[id]; if (d) this.applyUpgrade(d); return { ...this.owned }; },
-      god: (on: boolean) => { this.player.invuln = on ? 1e9 : 0; },
-      hurt: (n: number) => { this.player.invuln = 0; this.hurtPlayer(n, this.player.x + 1, this.player.y, 'QA'); },
+      god: (on: boolean) => { this.qaGod = on; },
+      hurt: (n: number) => { const g = this.qaGod; this.qaGod = false; this.player.invuln = 0; this.hurtPlayer(n, this.player.x + 1, this.player.y, 'QA'); this.qaGod = g; },
+      audio: () => audio.ctx?.state ?? 'none',
       od: () => { this.od = 100; },
       crate: () => { this.pendingCrates++; },
       bot: (on: boolean) => { this.qaBot = on; },
       /** Run the real simulation in fixed 1/60 s steps (no rendering) until `sec` passes or a modal opens.
        *  With `autoPick`, level-up/crate choices are taken automatically (random card, seeded). */
-      advance: (sec: number, autoPick = false) => {
+      advance: (sec: number, autoPick = false, renderEach = false) => {
         const dt = 1 / 60;
         let n = Math.round(sec * 60);
         const pickRng = new Rng(Math.floor(this.runTime * 1000) + 7);
@@ -1144,6 +1164,7 @@ export class GameScene extends Phaser.Scene implements GameCtx {
             else break;
           }
           this.step(dt * this.timeScale);
+          if (renderEach) this.render(dt);
           if (this.endTimer > 0) {
             this.endTimer -= dt;
             if (this.endTimer <= 0) this.finishRun();

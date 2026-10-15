@@ -47,8 +47,8 @@ export const BALANCE = {
     /** XP needed to go from `level` to `level + 1`. */
     base: 5,
     linear: 5,
-    curveCoef: 0.55,
-    curveExp: 2.1,
+    curveCoef: 0.85,
+    curveExp: 2.2,
     gemCap: 280,
     mergeRadius: 140,
   },
@@ -56,14 +56,14 @@ export const BALANCE = {
   spawns: {
     /** Desired on-screen population: base + perMin * minutes, bounded by the cap. */
     targetBase: 14,
-    targetPerMin: 20,
+    targetPerMin: 24,
     rateBase: 1.3, // spawn groups per second at t=0
-    ratePerMin: 0.5,
+    ratePerMin: 0.75,
     hardCap: 190,
     hardCapLow: 120, // used on the low visual-intensity tier
     minSpawnDist: 30, // extra margin beyond the visible half-diagonal
-    hpScale: { perMin: 0.13, quad: 0.022 },
-    dmgScale: { perMin: 0.07 },
+    hpScale: { perMin: 0.15, quad: 0.04 },
+    dmgScale: { perMin: 0.1 },
     bossTrickle: 0.35, // spawn-rate multiplier while a boss is alive
   },
 

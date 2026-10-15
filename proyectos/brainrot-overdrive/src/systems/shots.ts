@@ -154,7 +154,7 @@ export class ShotSystem {
           s.hit.push(e.uid);
           const l = Math.hypot(s.vx, s.vy) || 1;
           ctx.damageEnemy(e, s.dmg, 'cannon', { knock: 70, kx: s.vx / l, ky: s.vy / l });
-          ctx.fx.burst(s.x, s.y, s.gold ? PAL.gold : PAL.cyan, 3);
+          ctx.fx.burst(s.x, s.y, s.gold ? PAL.gold : PAL.cyan, 2);
           if (s.pierce > 0) { s.pierce--; continue; }
           if (s.bounces > 0) {
             const next = this.nearestEnemy(s.x, s.y, 260, s.hit);

@@ -34,6 +34,8 @@ export interface OfferOptions {
   minRarity?: Rarity;
   exclude?: string[];
   slots?: number;
+  /** Upgrades that must be included (e.g. a newly unlocked synergy). Ignored if ineligible. */
+  force?: string[];
 }
 
 /**
@@ -54,10 +56,19 @@ export function rollOffers(rng: Rng, owned: Owned, opts: OfferOptions = {}): Upg
     if (u.rarity !== 'common') w *= 1 + 0.25 * luck;
     const lvl = levelOf(owned, u.id);
     if (u.kind === 'weapon' && lvl > 0) w *= 1.6; // keep owned weapons growing
+    if (u.kind === 'synergy') w *= 5; // unlocked combos should surface: they are the point
     return w;
   });
 
   const picks: UpgradeDef[] = [];
+  for (const id of opts.force ?? []) {
+    const i = pool.findIndex((u) => u.id === id);
+    if (i >= 0 && picks.length < count) {
+      picks.push(pool[i]);
+      pool.splice(i, 1);
+      weights.splice(i, 1);
+    }
+  }
   while (picks.length < count && pool.length > 0) {
     const i = rng.weightedIndex(weights);
     if (i < 0) break;
@@ -66,6 +77,11 @@ export function rollOffers(rng: Rng, owned: Owned, opts: OfferOptions = {}): Upg
     weights.splice(i, 1);
   }
   for (const f of FALLBACKS) if (picks.length < count) picks.push(f);
+  // don't always put a forced pick in the first slot
+  if (opts.force?.length && picks.length > 1) {
+    const j = rng.int(0, picks.length - 1);
+    [picks[0], picks[j]] = [picks[j], picks[0]];
+  }
   return picks;
 }
 

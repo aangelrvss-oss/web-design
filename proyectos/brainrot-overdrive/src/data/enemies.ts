@@ -70,7 +70,7 @@ export const ENEMIES: Record<EnemyId, EnemyDef> = {
 export const ELITE = { hpMult: 9, radiusMult: 1.45, damageMult: 1.4, speedMult: 0.92, xpMult: 10, scoreMult: 12 };
 
 export const BOSSES = {
-  doomscroller: { name: 'THE DOOMSCROLLER', subtitle: 'it has not slept since 2019', hp: 3400, segments: 10, gates: [0.5] },
-  algorithm: { name: 'THE ALGORITHM', subtitle: 'it knows what you watched', hp: 7200, gates: [0.66, 0.33] },
+  doomscroller: { name: 'THE DOOMSCROLLER', subtitle: 'it has not slept since 2019', hp: 5200, segments: 10, gates: [0.5] },
+  algorithm: { name: 'THE ALGORITHM', subtitle: 'it knows what you watched', hp: 13500, gates: [0.66, 0.33] },
 } as const;
 export type BossId = keyof typeof BOSSES;

@@ -131,6 +131,12 @@ describe('upgrades', () => {
     expect(extreme.critChance).toBeLessThanOrEqual(0.85);
     expect(extreme.damageTaken).toBe(0.45);
   });
+  it('forced picks are included when eligible and ignored when not', () => {
+    for (let seed = 1; seed < 40; seed++) {
+      expect(rollOffers(new Rng(seed), { orbit: 1, zap: 1 }, { force: ['static'] }).map((o) => o.id)).toContain('static');
+      expect(rollOffers(new Rng(seed), { orbit: 1 }, { force: ['static'] }).map((o) => o.id)).not.toContain('static');
+    }
+  });
   it('lists active synergies', () => {
     expect(activeSynergies({ ricochet: 1, gym: 3 }).map((u) => u.id)).toEqual(['ricochet']);
   });
