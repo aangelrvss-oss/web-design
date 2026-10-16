@@ -410,6 +410,17 @@ p {
   white-space: nowrap;
 }
 
+/* Narrow phones (320–380 px): three buttons don't fit on one line ("Retirar petición"
+   overflowed the screen), so a label may wrap to two lines inside the same 52 px button. */
+@media (max-width: 380px) {
+  .actionbar-inner > .btn {
+    white-space: normal;
+    line-height: 1.1;
+    text-align: center;
+    padding: 0 var(--s-2);
+  }
+}
+
 .actionbar .hint {
   max-width: 560px;
   margin: 0 auto var(--s-2);

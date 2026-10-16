@@ -110,7 +110,7 @@ All coartadas appear at once on the board (places × hours, one pin per person).
   - **Chosen person disconnected or gone** → no defense, straight to the vote (`desconectado`).
 - The defense lasts the pace's defense time (15 s on normal). The defender speaks aloud. Nothing can be changed: declarations, testimonies, pointers, requests and votes are all rejected during it.
 - It ends when the timer runs out, when the defender presses "He terminado mi defensa", when the host ends the phase, or when the defender disconnects. Then the vote starts with its own timer.
-- What is public: who defends, how many pointers they received, and whether a draw decided. Who pointed at whom is revealed only at the verdict. The defense reveals no role.
+- What is public: who defends, how many pointers they received, and whether a draw decided. Who pointed at whom is never shown during the round; it is sent to every device with the verdict data, but the v1.1 interface does not display it (the verdict screen shows the vote count per person). The defense reveals no role.
 - Single-phone mode: there is no secret pointing; the group decides aloud whom to hear (or nobody) and the app records that choice.
 
 ### 4.5 Votación

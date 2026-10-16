@@ -6,7 +6,7 @@ Juego de deducción social para jugar con amigos, cada uno con su móvil. Ha ocu
 - Sin cuentas, sin anuncios, sin IA durante la partida y sin datos personales.
 - Modo principal: un móvil por persona (sala con código, enlace o QR). Alternativa: un solo móvil que se va pasando.
 
-Documentación: [diseño](docs/GAME_DESIGN.md) · [reglas](docs/RULES.md) · [arquitectura](docs/ARCHITECTURE.md) · [investigación](docs/RESEARCH.md) · [estado](docs/CHECKPOINT.md)
+Documentación: [diseño](docs/GAME_DESIGN.md) · [reglas](docs/RULES.md) · [arquitectura](docs/ARCHITECTURE.md) · [investigación](docs/RESEARCH.md) · [estado](docs/CHECKPOINT.md) · [prueba con personas](docs/playtest-v1.1.md)
 
 ## Probarlo sin instalar nada
 
@@ -38,6 +38,7 @@ npm run texts        # inventario de textos + comprobación de terminología →
 PORT=4100 npm start &
 node e2e/match.mjs http://127.0.0.1:4100 6 qa-out   # 4–10 sesiones independientes (+ auditoría axe)
 node e2e/local.mjs http://127.0.0.1:4100 qa-out     # modo un solo móvil
+npm run e2e:crowd                                   # 10 personas, peor caso de tablero lleno, a 390/360/320 px
 DEMO=1 node e2e/local.mjs "file://$PWD/dist/coartada-un-movil.html" qa-out   # demo de un archivo + guía
 # Si Playwright no encuentra Chromium: CHROMIUM_PATH=/ruta/a/chromium
 ```

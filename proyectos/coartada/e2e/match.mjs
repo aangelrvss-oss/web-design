@@ -238,6 +238,9 @@ await tp.goto(`${BASE}/?sala=${code}`);
 await tp.getByRole('button', { name: 'Abrir tu expediente confidencial' }).waitFor();
 const overflow = await tp.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 if (overflow > 0) errors.push(`horizontal overflow at 320px: ${overflow}px`);
+// The fixed action bar does not count towards scrollWidth: check its buttons directly.
+const offBar = await tp.evaluate(() => [...document.querySelectorAll('.actionbar-inner > *')].filter((el) => el.getBoundingClientRect().right > innerWidth + 0.5 || el.scrollWidth > el.clientWidth + 1).map((el) => el.textContent.trim()));
+if (offBar.length) errors.push(`action buttons cut at 320px: ${offBar.join(', ')}`);
 await tp.screenshot({ path: `${OUT}/10-declare-320.png`, fullPage: true });
 
 await browser.close();

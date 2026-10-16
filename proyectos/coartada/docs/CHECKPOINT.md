@@ -10,13 +10,21 @@ Jugable de principio a fin en local: modo online con un móvil por persona (serv
 
 | Cambio | Detalle |
 |---|---|
-| Última defensa (regla nueva) | Durante la investigación cada participante puede señalar en secreto a una persona (puede cambiarla o quitarla, nunca a sí misma). Al terminar la investigación, la persona más señalada tiene 15 s (12 en Rápido, 20 en Relajado) para defenderse en voz alta. Empate: sorteo determinista con la semilla de la ronda entre las empatadas, anunciado como sorteo. Nadie señalado o defensor desconectado: se pasa directamente a la votación. La terminan antes quien se defiende o quien dirige. Los señalamientos solo se muestran (quién a quién) en el veredicto. |
+| Última defensa (regla nueva) | Durante la investigación cada participante puede señalar en secreto a una persona (puede cambiarla o quitarla, nunca a sí misma). Al terminar la investigación, la persona más señalada tiene 15 s (12 en Rápido, 20 en Relajado) para defenderse en voz alta. Empate: sorteo determinista con la semilla de la ronda entre las empatadas, anunciado como sorteo. Nadie señalado o defensor desconectado: se pasa directamente a la votación. La terminan antes quien se defiende o quien dirige. Los señalamientos nunca se muestran durante la ronda; llegan a los dispositivos con los datos del veredicto, pero la interfaz de la v1.1 no los enseña (el veredicto muestra el recuento de votos por persona, no quién votó a quién). |
 | Tiempos por tamaño de grupo | Una sola función, `timingsFor(ritmo, personas)`: investigación ×0,85 con 4–5, ×1 con 6–7, ×1,2 con 8–10 (y +10 s de votación). Máximo por ronda en ritmo normal sin veredicto: 6,8 / 7,5 / 8,6 min. |
 | Tres estados de testimonio | *Coincide*, *Contradice* y *Sin contraste* (si la coartada de la otra persona es automática). Una coartada automática ya no puede «contradecir» ni dar el punto por destapar una mentira. |
 | Puntuación | **Valores sin cambios** (2 / 4 / 3 / 1 / 1 / 1). Solo se aclararon textos: el +1 de voto es de la primera votación; el +1 por destapar una mentira exige un testimonio verdadero que contradiga una coartada falsa (una vez por ronda); el objetivo secreto no cambia quién gana. |
 | Corrección editorial | Glosario único en la app, la guía y la documentación: ronda, partida, coartada, recuerdo, prueba, testimonio, objetivo secreto (antes «encargo»), «la persona culpable». 551 textos inventariados con comprobación automática (`npm run texts`, `docs/TEXT_INVENTORY.md`). |
 | Guía | Reescrita: la ronda de ejemplo se presenta como ejemplo y la genera el motor real (un test comprueba cada dato), con los modos separados, la privacidad, la coartada automática, los empates, los puntos, el reinicio entre rondas y los objetivos que obligan a mentir. |
 | Sin añadir | Ni pruebas, ni papeles, ni horas nuevos (lo pedía el encargo). |
+
+## Mantenimiento de la v1.1 (sin cambios de reglas)
+
+- **Logo:** se recupera la franja roja que tacha «Coartada» (ver el punto 6 de la lista siguiente).
+- **Barra de acciones a 320–360 px:** «Pedir prueba 2», «Pedir terminar», «Retirar petición» y, en el modo de un solo móvil, «Terminar investigación» se salían de la pantalla. «Retirar petición» se salía ya a 360 px, un ancho muy común en Android. El fallo se reprodujo con E2E y se corrigió: por debajo de 380 px la etiqueta puede ocupar dos líneas dentro del mismo botón de 52 px. Los E2E `match`, `local` y `crowd` lo comprueban ahora. **Verificado** (Chromium emulado).
+- **Grupos de 9–10 personas:** `npm run e2e:crowd` ejecuta el peor caso: 10 personas, hasta 10 fichas en una celda, nombres largos y 27 testimonios. Recorre todas las pantallas de la ronda a 390, 360 y 320 px. Resultado: sin solapes, sin fichas fuera de su celda, sin textos cortados y sin desbordamiento. Las listas de votación y de testimonios piden desplazarse bastante, pero se leen. **Parcialmente verificado**: solo en navegador emulado, no en móviles físicos.
+- **Documentación corregida:** decía que el veredicto muestra quién señaló a quién. La interfaz solo muestra el recuento de votos por persona.
+- **Prueba con personas preparada:** `docs/playtest-v1.1.md`. **Pendiente** de realizar.
 
 ## Errores encontrados y corregidos (v1.1)
 
@@ -145,7 +153,7 @@ Si Playwright no encuentra Chromium, añade `CHROMIUM_PATH=/ruta/a/chromium`. Pa
 
 ## Siguientes pasos (por prioridad)
 
-1. Jugar 3–5 rondas con un grupo real de 5–7 personas en móviles reales. Observar:
+1. Hacer la prueba con personas siguiendo `docs/playtest-v1.1.md` (3–5 rondas con 5–7 personas en móviles reales). Observar:
    - si la defensa se usa;
    - si señalar se entiende;
    - cuánto duran las fases;

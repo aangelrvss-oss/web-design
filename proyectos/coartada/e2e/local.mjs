@@ -66,8 +66,18 @@ await sheet.getByRole('button', { name: 'Publicar testimonio' }).click();
 await page.locator('.testimony').first().waitFor();
 await page.screenshot({ path: `${OUT}/22-local-investigate.png`, fullPage: true });
 
+// On a 320 px phone the action buttons must stay on screen and uncut.
+const barAt320 = async (step) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.waitForTimeout(300);
+  const cut = await page.evaluate(() => [...document.querySelectorAll('.actionbar-inner > *')].filter((el) => el.getBoundingClientRect().right > innerWidth + 0.5 || el.scrollWidth > el.clientWidth + 1).map((el) => el.textContent.trim()));
+  if (cut.length) errors.push(`${step}: action buttons cut at 320px: ${cut.join(', ')}`);
+  await page.setViewportSize({ width: 390, height: 844 });
+};
+await barAt320('investigación 1');
 await page.getByRole('button', { name: 'Sacar la prueba 2' }).click();
 await page.getByText('Prueba 2 de 2', { exact: false }).first().waitFor();
+await barAt320('investigación 2');
 await page.getByRole('button', { name: 'Terminar investigación' }).click();
 await page.getByRole('dialog', { name: 'Señalar para la última defensa' }).getByRole('button', { name: culprit, exact: true }).click();
 await page.getByText('Última defensa').first().waitFor();

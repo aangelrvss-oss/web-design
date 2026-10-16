@@ -80,11 +80,11 @@ lobby ──start──▶ declare ──all sealed | timer──▶ investigate
 | Declared alibis | only after the declaration phase | own sealed alibi + own draft |
 | Evidence | only revealed ones | |
 | Testimonies + status (coincide / contradice / sin contraste) | ✓ | own remaining count |
-| Secret pointers for the last defense | count only during investigation; who → whom at the verdict | own pointer |
+| Secret pointers for the last defense | count only during investigation; who → whom in the verdict data (not displayed by the v1.1 UI) | own pointer |
 | Defender and reason | ✓ once the defense starts | |
 | Role, partner | at the verdict | ✓ |
 | True night, memories, encargo | at the verdict | ✓ |
-| Votes (who → whom), seed | at the verdict | own vote |
+| Votes (who → whom), seed | at the verdict (the UI displays the per-person tally and the seed) | own vote |
 | Session tokens | never | never (only once, in the join ack) |
 
 The server sends each socket `{pub, priv}` where `priv` is computed for the player bound to that socket. There is no client-side filtering of secrets: secret data is simply not in other players' payloads. Tests assert this on raw payloads (`tests/server.test.ts`) and on the WebSocket frames real browsers receive (`e2e/match.mjs`).
