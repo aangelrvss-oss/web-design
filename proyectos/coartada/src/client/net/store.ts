@@ -97,7 +97,13 @@ export class Store {
       const s = loadSession();
       if (s && (this.snap.me || this.snap.resuming)) void this.resume(s);
     });
-    socket.on('disconnect', () => this.set({ conn: 'offline' }));
+    socket.on('disconnect', (reason) => {
+      this.set({ conn: 'offline' });
+      // A server shutting down (restart, deploy) closes every socket itself, and Socket.IO never
+      // retries after an "io server disconnect". Reconnect anyway: once the server is back, the
+      // resume tells us whether the room still exists, so a dead round is never left on screen.
+      if (reason === 'io server disconnect') socket.connect();
+    });
     socket.io.on('reconnect_attempt', () => this.set({ conn: 'connecting' }));
     socket.on('state', (msg: StateMessage) => this.onState(msg));
     socket.on('room:closed', ({ reason }) => {
@@ -158,7 +164,15 @@ export class Store {
     } else {
       if (ack.error === 'no_room' || ack.error === 'bad_token') {
         saveSession(null);
-        this.set({ pub: null, priv: null, me: null, notice: ack.error === 'no_room' ? 'Esa sala ya no existe.' : null });
+        // The room is gone (closed, or the server restarted): drop it from the URL too, or the
+        // home screen would offer to join it again.
+        if (ack.error === 'no_room') setRoomInUrl(null);
+        this.set({
+          pub: null,
+          priv: null,
+          me: null,
+          notice: ack.error === 'no_room' ? 'Esa sala ya no existe (se cerró o el servidor se reinició). Crea una sala nueva o únete a otra con su código.' : null,
+        });
       }
       this.set({ resuming: false });
     }

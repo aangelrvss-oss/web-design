@@ -22,6 +22,7 @@
     "simulate": "tsx scripts/simulate.ts",
     "e2e": "node e2e/match.mjs",
     "e2e:crowd": "node e2e/crowd.mjs",
+    "e2e:restart": "node e2e/restart.mjs",
     "build:demo": "node scripts/build-demo.mjs",
     "texts": "tsx scripts/text-inventory.ts"
   },

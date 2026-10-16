@@ -110,9 +110,9 @@ Resultado: sin problemas detectados.
 
 ## src/client/net/store.ts
 
-- L107: Te han sacado de la sala.
-- L107: La sala se cerró por inactividad.
-- L161: Esa sala ya no existe.
+- L113: Te han sacado de la sala.
+- L113: La sala se cerró por inactividad.
+- L174: Esa sala ya no existe (se cerró o el servidor se reinició). Crea una sala nueva o únete a otra con su código.
 
 ## src/client/screens/Declare.tsx
 

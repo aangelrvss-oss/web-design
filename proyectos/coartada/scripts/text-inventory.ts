@@ -52,7 +52,16 @@ for (const file of DIRS.flatMap(files).filter((f) => /\.(tsx?|mts)$/.test(f))) {
       const parent = node.parent;
       const isAttrName =
         parent && ts.isJsxAttribute(parent) && ['className', 'role', 'type', 'key', 'id', 'href'].includes(parent.name.getText());
-      if (!isAttrName) add(node, node.text);
+      // A literal only compared against (`reason === 'io server disconnect'`, `case '…':`) is a
+      // code value, never shown on screen.
+      const isComparedValue =
+        parent &&
+        ((ts.isBinaryExpression(parent) &&
+          [ts.SyntaxKind.EqualsEqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsEqualsToken, ts.SyntaxKind.EqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsToken].includes(
+            parent.operatorToken.kind,
+          )) ||
+          (ts.isCaseClause(parent) && parent.expression === node));
+      if (!isAttrName && !isComparedValue) add(node, node.text);
     } else if (ts.isTemplateExpression(node)) {
       add(node, node.head.text + node.templateSpans.map((s) => '{…}' + s.literal.text).join(''));
     }

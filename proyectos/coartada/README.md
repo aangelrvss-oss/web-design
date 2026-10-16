@@ -39,6 +39,7 @@ PORT=4100 npm start &
 node e2e/match.mjs http://127.0.0.1:4100 6 qa-out   # 4–10 sesiones independientes (+ auditoría axe)
 node e2e/local.mjs http://127.0.0.1:4100 qa-out     # modo un solo móvil
 npm run e2e:crowd                                   # 10 personas, peor caso de tablero lleno, a 390/360/320 px
+npm run e2e:restart                                 # reinicio del servidor a mitad de ronda (arranca su propio servidor desde dist/, puerto 4190)
 DEMO=1 node e2e/local.mjs "file://$PWD/dist/coartada-un-movil.html" qa-out   # demo de un archivo + guía
 # Si Playwright no encuentra Chromium: CHROMIUM_PATH=/ruta/a/chromium
 ```
@@ -50,7 +51,8 @@ DEMO=1 node e2e/local.mjs "file://$PWD/dist/coartada-un-movil.html" qa-out   # d
 1. En un portátil conectado a la Wi-Fi de casa: `npm install && npm run build && npm start`.
 2. Averigua la IP local del portátil (p. ej. `192.168.1.40`; en macOS `ipconfig getifaddr en0`, en Linux `hostname -I`, en Windows `ipconfig`).
 3. En tu móvil abre `http://192.168.1.40:3000`, pulsa **Crear sala** y escribe tu nombre.
-4. Tus amigos escanean el **QR** de la sala con la cámara (o abren el enlace que compartes, o entran en la misma dirección y escriben el código de 4 letras).
+4. Tus amigos escanean el **QR** de la sala con la cámara, o entran en la misma dirección y escriben el código de 4 letras. (Por `http://` en la red local, el botón «Compartir enlace» no hace nada: el navegador solo permite compartir en páginas seguras.)
+   Crea la sala desde una dirección con la IP, nunca desde `localhost`: el QR usa la dirección de quien crea la sala. Guía completa para una prueba con móviles: `docs/playtest-v1.1.md`, apartado E.
 5. Con 4 o más personas en la sala, pulsa **Empezar partida**.
 
 Para jugar a distancia (videollamada) hace falta una URL pública: ver «Desplegar».
@@ -59,10 +61,20 @@ Para jugar a distancia (videollamada) hace falta una URL pública: ver «Despleg
 
 El juego es un único servicio Node con WebSocket. Las salas viven en memoria, así que **usa una sola instancia** (sin escalado horizontal). No hacen falta secretos.
 
-**Render.com** (hay `render.yaml` en esta carpeta):
-1. Sube el repositorio a GitHub y en Render elige *New → Blueprint* apuntando al repo (o *New → Web Service* con *Root directory* `proyectos/coartada`).
-2. Build: `npm ci && npm run build` · Start: `node dist/server.mjs` · Health check: `/healthz`.
-3. Variable `TRUST_PROXY=1`. Render da HTTPS y WebSocket automáticamente.
+**Render.com.** Es un único *Web Service*: la misma URL sirve la web y el WebSocket, y el cliente se conecta al origen desde el que se abre, así que no hay URLs que configurar. Render da HTTPS y WebSocket automáticamente.
+1. *New → Web Service*. Elige el repositorio y la rama que contenga esta versión; *Root Directory*: `proyectos/coartada`; *Runtime*: Node.
+2. Build: `npm ci && npm run build` · Start: `npm start` · *Health Check Path*: `/healthz` · *Instance Type*: **Free** (o uno de pago si no se aceptan reinicios) · *Region*: la más cercana a los jugadores.
+3. Variables: `NODE_VERSION=22` y `TRUST_PROXY=1`.
+   - No definas `NODE_ENV`: con `production`, `npm ci` no instala Vite ni esbuild y la build falla. Render ya lo pone por su cuenta al ejecutar.
+   - Tampoco definas `PORT` ni `HOST`: Render da `PORT` y el servidor escucha en `0.0.0.0`.
+4. Desactiva *Auto-Deploy* mientras se juega: cada despliegue reinicia el servidor y borra las salas.
+
+> El `render.yaml` incluido no indica `plan`. En un *Blueprint*, Render crea entonces una instancia **de pago**. Para usar el plan gratuito, crea el servicio a mano como arriba (o añade `plan: free` al blueprint antes de usarlo).
+>
+> En el plan gratuito:
+> - el servicio se duerme tras 15 min sin tráfico, y el primer acceso tarda alrededor de 1 min;
+> - Render puede reiniciarlo en cualquier momento;
+> - un reinicio borra todas las salas: cada móvil vuelve a la portada con el aviso «Esa sala ya no existe…» y hay que crear otra sala (los puntos no se recuperan).
 
 **Docker** (Fly.io, Railway, un VPS…):
 ```bash
@@ -80,7 +92,8 @@ Variables (todas opcionales, ver `.env.example`): `PORT`, `HOST`, `TRUST_PROXY`,
 | Síntoma | Causa probable y solución |
 |---|---|
 | El móvil no abre `http://192.168.x.x:3000` | Móvil y portátil en redes distintas (datos móviles, Wi-Fi de invitados) o el cortafuegos bloquea el puerto 3000. Conecta todo a la misma Wi-Fi y permite Node en el cortafuegos. |
-| «Reconectando…» que no se va | El servidor se ha reiniciado (las salas se pierden) o la conexión es mala. Si persiste, vuelve al inicio y crea otra sala. |
+| «Reconectando…» o «Sin conexión. Reintentando…» que no se va | El servidor no responde (está caído o arrancando: en el plan gratuito de Render, el arranque en frío tarda alrededor de 1 min) o la conexión del móvil es mala. El móvil sigue reintentando solo. |
+| «Esa sala ya no existe (se cerró o el servidor se reinició)…» | El servidor se reinició (despliegue, reinicio del plan gratuito, caída) y las salas, que viven en memoria, se perdieron. Cread una sala nueva; los puntos no se recuperan. |
 | «No existe ninguna sala con ese código» | Código mal escrito o sala cerrada por inactividad (15 min sin nadie, 6 h sin actividad). |
 | La cámara no reconoce el QR | Sube el brillo de la pantalla que lo muestra o usa «Compartir enlace». |
 | No suena nada | El sonido está desactivado por defecto: botón del altavoz arriba. En iPhone, quita el modo silencio. |

@@ -149,3 +149,238 @@ Nunca se ha probado con dispositivos reales (ver `CHECKPOINT.md`). Aprovecha la 
 - [ ] Un móvil estrecho (de 320–360 px de ancho, como un iPhone SE o un Android pequeño): los tres botones de la investigación caben, y la etiqueta puede ocupar dos líneas.
 - [ ] Con 8 o más personas: ¿se distinguen las fichas del tablero? ¿Alguien se queja de tener que desplazarse mucho por la votación o los testimonios?
 - [ ] Sonido (si alguien lo activa): ¿suena en iPhone con el modo silencio quitado?
+
+---
+
+## E. Prueba multijugador con móviles físicos (4–6 personas)
+
+Objetivo: validar el **funcionamiento multijugador, la privacidad y la experiencia** con un móvil por persona, antes de cambiar nada. Se juega la v1.1 tal cual.
+
+> **Importante:** el archivo `coartada-un-movil.html` (y el artefacto publicado) es **solo el modo de un solo móvil**: no tiene servidor ni conexión, así que no sirve para esta prueba. Hace falta el servidor del proyecto.
+
+### E.1 Cómo funciona la conexión
+
+- Un **portátil u ordenador** ejecuta el servidor (`dist/server.mjs`). El servidor entrega la web del juego y la conexión en tiempo real (WebSocket) por el **mismo puerto**, el 3000 por defecto. No hay base de datos, ni cuentas, ni claves.
+- Los móviles abren la web **desde el portátil** por la Wi-Fi: `http://IP-DEL-PORTÁTIL:3000`. El cliente se conecta al mismo origen del que se cargó; no hay ninguna URL que configurar.
+- El servidor escucha en `0.0.0.0` (todas las interfaces de red). En una Wi-Fi doméstica, el router no deja entrar conexiones desde Internet si no abres puertos, así que **no hace falta ni conviene abrir puertos en el router**. Para limitarlo además a la Wi-Fi, arranca con `HOST=IP-DEL-PORTÁTIL`.
+- **No uses una Wi-Fi pública** (cafetería, coworking), porque otras personas de esa red podrían abrir la web, y tampoco una red de invitados: suele aislar unos dispositivos de otros y los móviles no llegarán al portátil.
+- Las salas viven **en la memoria del servidor**. Si se cierra o se reinicia, las salas desaparecen.
+- La conexión es **HTTP sin cifrar**. Para una prueba en casa no supone un problema (solo viajan datos de la partida), pero tiene un efecto: el botón **«Compartir enlace» no funciona por HTTP**, porque el navegador solo permite compartir y copiar en páginas seguras. Usad el **QR** o el **código de 4 letras**. Este defecto está confirmado y se describe en E.5.
+
+### E.2 Puesta en marcha (en el portátil)
+
+Requisito: Node.js 20 o superior (`node -v`).
+
+```bash
+cd proyectos/coartada
+npm ci                 # instala exactamente las dependencias del lockfile (solo la primera vez)
+npm run build          # genera dist/client y dist/server.mjs
+npm start              # = node dist/server.mjs  → escucha en 0.0.0.0:3000
+```
+
+Si todo va bien, la terminal muestra una línea parecida a esta:
+
+`{"t":"…","msg":"listening","host":"0.0.0.0","port":3000}`
+
+Variantes opcionales:
+
+```bash
+PORT=8080 npm start                    # otro puerto
+HOST=192.168.1.40 npm start            # solo en la interfaz de la Wi-Fi (sustituye por tu IP)
+# Windows (PowerShell):  $env:PORT=8080; npm start
+```
+
+**IP del portátil en la Wi-Fi:**
+- macOS: `ipconfig getifaddr en0`
+- Linux: `hostname -I` (la primera, del tipo `192.168.x.x` o `10.x.x.x`)
+- Windows: `ipconfig` (campo «Dirección IPv4» del adaptador Wi-Fi)
+
+**Comprobación desde el propio portátil:** abre `http://IP:3000/healthz` en el navegador. Debe responder `{"ok":true,"rooms":0}`.
+
+**Cortafuegos:**
+- macOS: si pregunta si «node» acepta conexiones entrantes, responde *Permitir*.
+- Windows: marca solo *Redes privadas* (no públicas) y comprueba que la Wi-Fi esté configurada como red privada.
+
+No uses `npm run dev` para la prueba: es el modo de desarrollo (puerto 5173, recarga en caliente) y no es lo que se va a usar de verdad.
+
+### E.3 Conectar los móviles y crear la sala
+
+1. **Todos los móviles en la misma Wi-Fi que el portátil.** Desactivad los datos móviles si el móvil tiende a cambiarse de red.
+2. Desde **un móvil**, abrid `http://IP:3000`. Si carga la portada, la red funciona.
+3. **Quien dirige crea la sala desde su móvil** (o desde el portátil, pero entrando por `http://IP:3000`, **nunca por `localhost`**). El QR y el enlace se construyen con la dirección que tiene abierta quien crea la sala: si es `localhost`, el QR no funcionará en los demás móviles. Para comprobarlo, la sala muestra «entrad en IP:3000 con el código».
+4. El resto se une de una de estas dos formas:
+   - **Escaneando el QR** con la cámara. Si el móvil ofrece abrirlo en el navegador, aceptad; mejor en Safari o Chrome que dentro de otra app.
+   - **Escribiendo la dirección** `http://IP:3000` → «Unirme con un código» → el código de 4 letras (da igual en mayúsculas o minúsculas).
+5. **Comprobar que todos están en la misma sala:**
+   - todos ven el **mismo código** de sala;
+   - la lista de personas coincide en todos los móviles;
+   - el contador `N/10` de quien dirige cuadra con la gente que hay;
+   - nadie aparece con la etiqueta «Sin conexión».
+6. Quien dirige elige **Rondas: 3**, ritmo **Normal** y objetivos secretos **desactivados**, y pulsa **Empezar partida** (hacen falta al menos 4 personas conectadas).
+
+**Cada persona debe usar siempre el mismo navegador del mismo móvil.** La sesión se guarda en ese navegador. Si alguien abre el enlace en otro navegador o en el visor de una app (WhatsApp, Telegram…), entrará como persona nueva.
+
+### E.4 Cerrar la sesión de pruebas
+
+1. Al terminar, en el portátil: **Ctrl+C** en la terminal del servidor. Se registra `shutting down` y todas las salas desaparecen; no queda nada guardado en el portátil.
+2. En los móviles basta con cerrar la pestaña. Queda un identificador de sesión en el navegador, sin ningún dato personal, que no sirve para nada una vez cerrada la sala.
+3. Si diste permiso en el cortafuegos solo para esta prueba, puedes retirarlo: en macOS, en Ajustes del sistema → Red → Cortafuegos → Opciones; en Windows, en Firewall de Windows Defender → Permitir una aplicación.
+
+### E.5 Plan progresivo
+
+Las pruebas son progresivas: **no hace falta hacer las tres seguidas**. Con el grupo que se pueda reunir, jugad **al menos 2 rondas completas**. La primera es de aprendizaje; los datos de juego se juzgan sobre todo desde la segunda.
+
+| Prueba | Personas | Rondas | Objetivo principal | Pruebas de fallo programadas (solo con el móvil de quien facilita) |
+|---|---|---|---|---|
+| 1 | 4 | 2–3 | Flujo completo (E.6, recorrido C1–C11) y casos básicos | Recargar en la declaración; bloquear la pantalla 30 s en la investigación |
+| 2 | 5 | 2–3 | ¿La interacción y la deducción funcionan con una persona más? | Modo avión 20 s en la investigación; todos pulsan «Pedir prueba 2» a la vez, a la cuenta de tres |
+| 3 | 6 | 2–3 | Grupo previsto; aparece el **cómplice** | Una 7.ª persona entra con la ronda empezada; alguien sale con «Salir de la sala» en la última ronda (solo si ya se ha jugado lo necesario) |
+
+- Las pruebas de fallo las hace **la persona facilitadora con su propio móvil**, para no estropear la ronda a nadie. En la prueba 1 puede jugar; en las demás, mejor que observe.
+- **No uséis «Terminar esta fase»** del menú salvo bloqueo: cambia el ritmo natural. Si se usa, anotadlo.
+- Para comprobar qué pasa cuando alguien tarda demasiado, basta con que el móvil de quien facilita **no haga nada** en una fase.
+
+### E.6 Comprobaciones obligatorias
+
+Marcad ✓ (como se espera), ✗ (no) o — (no se ha probado). Lo esperado sale de las reglas y de las pruebas automáticas del 16-10-2026 (E.9).
+
+**A. Entrada y sincronización**
+
+| # | Comprobación | Esperado |
+|---|---|---|
+| A1 | Cada persona entra desde su móvil (QR o código) | Aparece en la lista de todos en 1–2 s |
+| A2 | Todos ven la misma sala, las mismas personas y la misma fase | El mismo código, la misma lista y el mismo título de fase |
+| A3 | Los cambios de fase llegan a todos | Todos cambian de pantalla a la vez (±1 s) y los temporizadores coinciden (±1 s) |
+| A4 | Alguien entra con la ronda empezada | Ve la ronda sin jugar («Estás viendo esta ronda sin jugar») y entra en la siguiente con su papel |
+| A5 | Recargar la página (en cualquier fase) | Vuelve a su sitio con su expediente; conserva el borrador de la declaración, y su voto si ya votó |
+| A6 | Perder la conexión 20–60 s y volver | Aviso «Reconectando…» y recuperación automática; la mesa no se bloquea mientras tanto |
+
+**B. Privacidad**
+
+| # | Comprobación | Esperado |
+|---|---|---|
+| B1 | Cada persona solo ve su papel, su noche real y sus recuerdos | El expediente privado solo existe en el móvil de su dueño |
+| B2 | Nada en el tablero, los testimonios, la defensa ni la votación revela el papel de otra persona | Las coartadas y los testimonios pueden ser mentira, pero ninguna pantalla dice quién es culpable antes del veredicto |
+| B3 | Señalamientos secretos | Durante la investigación solo se ve **cuántas** personas han señalado; en la defensa, a quién le toca, con cuántos señalamientos y si hubo sorteo. Nunca quién señaló a quién (la v1.1 tampoco lo muestra en el veredicto) |
+| B4 | Votos | Durante la votación solo se ve **quién** ha votado, no a quién. El veredicto muestra el recuento por persona |
+| B5 | Cómplice (con 6) | La persona culpable y la cómplice saben quién es la otra; nadie más lo sabe |
+| B6 | Veredicto | Revela lo previsto: papeles, dónde estuvo cada cual, coartadas frente a la verdad, si los testimonios eran ciertos, los puntos y la semilla |
+| B7 | Pregunta discreta a cada persona tras la ronda: «¿Has visto en tu pantalla algo privado de otra persona?» | No |
+
+La auditoría de red automática ya comprobó, en navegadores emulados contra este mismo servidor, que ningún móvil **recibe** papeles, noches, recuerdos, votos, señalamientos ni la semilla de otra persona antes del veredicto. En la prueba física se comprueba lo que **se ve**, y que nadie puede mirar el móvil del vecino sin que se note (expediente plegado, botón para abrirlo).
+
+**C. Recorrido completo** (en la primera ronda de la prueba 1)
+
+| # | Paso | Esperado |
+|---|---|---|
+| C1 | Crear la sala y unirse | Ver E.3 |
+| C2 | Repartir papeles | Cada cual abre su expediente confidencial en privado |
+| C3 | Declarar y sellar | Tres horas, un sitio por hora; «Sellar declaración»; se ve quién ha sellado, no qué |
+| C4 | Revelar el tablero | Todas las coartadas aparecen a la vez cuando sellan todos o se acaba el tiempo |
+| C5 | Publicar testimonios | Hasta 3 por persona; cada uno sale como *Coincide*, *Contradice* o *Sin contraste* |
+| C6 | Pruebas | La prueba 1 sale al empezar la investigación; la 2, cuando todos la piden o acaba la primera parte |
+| C7 | Señalar en secreto | Panel «Última defensa» → «Señalar a alguien»; se puede cambiar o quitar |
+| C8 | Última defensa | Le toca a la persona más señalada (empate: sorteo; nadie señalado: no hay defensa); 15 s; puede terminarla ella o quien dirige |
+| C9 | Votar y desempatar | Voto secreto; si hay empate, desempate solo entre las empatadas; si se repite, nadie es acusado |
+| C10 | Resultado y puntos | Puntos según RULES §6; comprobar a mano una línea de puntos de alguien |
+| C11 | Nueva ronda | Caso, papeles y recuerdos nuevos; solo se conservan los puntos |
+
+**D. Casos de fallo**
+
+| # | Situación | Esperado (verificado en pruebas automáticas) | Clasificación |
+|---|---|---|---|
+| D1 | Recargar la página | Vuelve a su sitio, con su expediente, su borrador y su voto; no puede votar dos veces | Comportamiento esperado |
+| D2 | Perder la conexión y volver | Recupera su sitio; mientras falta, la fase avanza sin esperarle; si no selló a tiempo, su coartada es **automática**; si no vota, no cuenta | Comportamiento esperado |
+| D3 | Quien dirige pierde la conexión | Pasados 20 s, otra persona pasa a dirigir y la partida sigue | Comportamiento esperado |
+| D4 | Alguien pulsa «Salir de la sala» a mitad de ronda | Sigue en la ronda como desconectado (coartada automática, sin voto) y se le quita al acabarla. **No puede recuperar su sitio**: si vuelve a entrar, lo hace como persona nueva, mira la ronda y empieza la siguiente con 0 puntos | Esperado según las reglas; **pendiente de decisión** si se quiere que pueda volver con sus puntos |
+| D5 | Dos acciones casi a la vez (todos sellan o piden la prueba 2 a la vez; quien dirige termina la fase mientras alguien actúa; doble pulsación al votar o en «Siguiente ronda») | Una sola transición de fase; la acción repetida se rechaza con «Eso ya está hecho.» o «Esa acción ya no está disponible en esta fase.» | Comportamiento esperado |
+| D6 | Alguien tarda demasiado | Al acabar el tiempo: coartada automática marcada, la fase avanza, el voto no emitido no cuenta y, si nadie vota, nadie es acusado. La defensa termina sola a los 15 s | Comportamiento esperado |
+| D7 | Termina la última ronda e intentan seguir | En el último veredicto, quien dirige ve «Ver clasificación final». En la clasificación, votar o empezar se rechaza y solo queda «Nueva partida», que vuelve a la sala con los puntos a cero. (A mitad de partida, «Ir a la sala» vuelve a la sala **conservando** los puntos.) | Comportamiento esperado |
+| D8 | «Compartir enlace» o «Invitar a más gente» por HTTP en la red local | **No hace nada y no muestra ningún aviso** (el navegador bloquea compartir y copiar en páginas no seguras). Alternativa: el QR o el código | **Defecto confirmado**, menor. No se corrige en esta fase (sería un cambio de interfaz) |
+| D9 | El servidor se reinicia a mitad de ronda (despliegue, reinicio del plan gratuito de Render, caída) | Mientras está caído: aviso «Sin conexión. Reintentando…» y el móvil reintenta solo. Cuando vuelve: cada móvil regresa a la portada con «Esa sala ya no existe (se cerró o el servidor se reinició). Crea una sala nueva o únete a otra con su código.» La sala, la ronda y los puntos se pierden (viven en memoria); quien dirige crea otra sala y el resto se une | Comportamiento esperado (arreglado el 16-10-2026: antes el móvil se quedaba en la ronda muerta tras un reinicio ordenado). Si ocurre, anotadlo con la hora |
+
+### E.7 Plantilla de registro
+
+**Dispositivos**
+
+| Persona (inicial) | Modelo de móvil | Sistema y versión | Navegador | ¿Cómo entró? (QR / código) | Observaciones |
+|---|---|---|---|---|---|
+| | | | | | |
+
+**Resultados por comprobación o incidencia**
+
+| Prueba (4/5/6) | Ronda | Duración de la ronda | Fase | Comprobación (A1…D9) o «nuevo» | Resultado esperado | Resultado observado | ¿Reproducible? (sí / no / sin probar) | Captura o descripción (**sin secretos**: tapa papeles y expedientes) | Severidad |
+|---|---|---|---|---|---|---|---|---|---|
+| | | | | | | | | | |
+
+Severidad:
+- **Bloqueante:** impide seguir la ronda o expone un secreto.
+- **Importante:** obliga a ayudar o confunde a la mayoría.
+- **Menor:** molesta, pero se juega.
+
+Las incidencias de juego (comprensión, equilibrio, diversión) van en la hoja del apartado C.
+
+### E.8 Preguntas al terminar (multijugador)
+
+Se hacen tal cual, sin explicar qué se espera:
+
+1. ¿Entendiste qué tenías que hacer en cada fase?
+2. ¿Tuviste algún problema con el móvil?
+3. ¿Te pareció que tus decisiones importaban?
+4. ¿La Última defensa te ayudó a decidir el voto?
+5. ¿Qué parte te resultó más confusa?
+6. ¿Jugarías otra ronda?
+
+### E.9 Qué se ha verificado ya y qué no
+
+Verificado el 16-10-2026, en este entorno, con el servidor de producción (`node dist/server.mjs` en `0.0.0.0:3000`) y accediendo **por la IP de la máquina, no por localhost**, es decir, en una página no segura como en una Wi-Fi doméstica:
+
+- Ronda completa con revancha, reconexión y vuelta tras perder la red, con 4, 5 y 6 navegadores Chromium independientes con pantalla de móvil emulada. Incluye la auditoría de privacidad de cada trama recibida.
+- Casos de fallo D1–D7 con clientes de prueba conectados a ese mismo servidor.
+- Una ronda en la que **nadie hace nada** (4 personas, ritmo rápido), con los temporizadores reales del servidor:
+  - declaración de 75 s, con 4 coartadas automáticas;
+  - investigación de 65 s + 90 s;
+  - sin defensa, porque nadie señaló;
+  - votación de 30 s;
+  - veredicto «nadie acusado» a los 260 s, sin bloqueos.
+- El QR y el texto de la sala usan la IP. «Compartir enlace» no funciona por HTTP (D8).
+
+Verificado también el 16-10-2026 con `npm run e2e:restart` (servidor local, Chromium con pantalla de móvil emulada):
+- reinicio ordenado (SIGTERM, lo que hace Render) y caída brusca (SIGKILL) en plena declaración: los dos móviles vuelven solos a la portada con el aviso, sin la ronda muerta, sin la sala en la URL ni la sesión guardada, y pueden crear una sala nueva y unirse a ella (D9);
+- con el servidor caído 15 s, el aviso llega unos 4 s después de que vuelva;
+- un corte de red con el servidor activo sigue recuperando la misma ronda.
+
+**No** se ha probado nada de esto:
+- en Render, ni con una URL HTTPS pública;
+- en móviles físicos;
+- en Safari de iOS ni en Firefox;
+- en una Wi-Fi real con varios dispositivos;
+- con pantallas que se bloquean de verdad o apps en segundo plano;
+- leyendo el QR con una cámara real.
+
+### E.10 Variante: jugar con una URL HTTPS de Render
+
+Sirve para jugar desde redes distintas o sin portátil. **El servicio no se ha desplegado ni probado en Render**: estos pasos se apoyan en la arquitectura actual (un solo servicio que sirve la web y el WebSocket desde el mismo origen) y en la documentación de Render. Hay que comprobarlos en la prueba previa.
+
+**Antes del día de la sesión**
+1. Crear el servicio siguiendo el README, apartado «Desplegar» (plan *Free*, *Auto-Deploy* desactivado).
+2. Abrir `https://<servicio>.onrender.com/healthz`; debe responder `{"ok":true,"rooms":0}`.
+3. Prueba previa con dos móviles, uno con datos móviles y otro con Wi-Fi:
+   - crear sala;
+   - unirse por QR;
+   - comprobar que «Compartir enlace» funciona (por HTTPS debería; D8 solo afecta a HTTP);
+   - jugar una ronda corta.
+
+**El día de la sesión**
+1. **Despertar el servicio 2–3 min antes:** en el plan gratuito se duerme tras 15 min sin tráfico y tarda alrededor de 1 min en arrancar.
+2. Quien dirige crea la sala desde `https://<servicio>.onrender.com`. El QR y el enlace usan esa dirección.
+3. El resto entra por QR, por enlace o por código. Da igual la red: cada móvil puede usar sus datos.
+4. **No hagáis push ni despliegues durante la sesión:** reinician el servidor (D9).
+5. En las pausas largas (más de 10 min), dejad al menos un móvil con la sala abierta. Si todos se bloquean más de 15 min, el servicio puede dormirse y la sala se pierde.
+6. Si el servidor se reinicia (D9):
+   - todos vuelven a la portada con el aviso;
+   - quien dirige crea otra sala y el resto se une;
+   - los puntos de la partida se pierden;
+   - anotad la hora y en qué fase estabais.
+
+**Al terminar:** suspender o borrar el servicio en el panel de Render.

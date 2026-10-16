@@ -24,7 +24,13 @@ Jugable de principio a fin en local: modo online con un móvil por persona (serv
 - **Barra de acciones a 320–360 px:** «Pedir prueba 2», «Pedir terminar», «Retirar petición» y, en el modo de un solo móvil, «Terminar investigación» se salían de la pantalla. «Retirar petición» se salía ya a 360 px, un ancho muy común en Android. El fallo se reprodujo con E2E y se corrigió: por debajo de 380 px la etiqueta puede ocupar dos líneas dentro del mismo botón de 52 px. Los E2E `match`, `local` y `crowd` lo comprueban ahora. **Verificado** (Chromium emulado).
 - **Grupos de 9–10 personas:** `npm run e2e:crowd` ejecuta el peor caso: 10 personas, hasta 10 fichas en una celda, nombres largos y 27 testimonios. Recorre todas las pantallas de la ronda a 390, 360 y 320 px. Resultado: sin solapes, sin fichas fuera de su celda, sin textos cortados y sin desbordamiento. Las listas de votación y de testimonios piden desplazarse bastante, pero se leen. **Parcialmente verificado**: solo en navegador emulado, no en móviles físicos.
 - **Documentación corregida:** decía que el veredicto muestra quién señaló a quién. La interfaz solo muestra el recuento de votos por persona.
-- **Prueba con personas preparada:** `docs/playtest-v1.1.md`. **Pendiente** de realizar.
+- **Prueba con personas preparada:** `docs/playtest-v1.1.md`. Incluye el apartado E (multijugador con móviles físicos en la Wi-Fi) y E.10 (con una URL HTTPS de Render). **Pendiente** de realizar.
+- **Reconexión tras un reinicio del servidor** (16-10-2026, solo cliente: `src/client/net/store.ts`).
+  - **Problema:** al apagarse de forma ordenada (SIGTERM, que es lo que hace Render al reiniciar o desplegar), el servidor cierra él mismo los sockets. Socket.IO no reintenta tras un «io server disconnect», así que el móvil se quedaba indefinidamente en la ronda muerta con «Sin conexión. Reintentando…». Tras una caída brusca sí se reconectaba, pero la URL seguía apuntando a la sala muerta, y la portada se abría en modo «unirse» con ese código, sin ofrecer «Crear sala».
+  - **Arreglo:** ante una desconexión iniciada por el servidor, el cliente vuelve a conectar él mismo (después, el *backoff* normal). Al reanudar, si la sala ya no existe, borra la sesión, la ronda y la sala de la URL y muestra «Esa sala ya no existe (se cerró o el servidor se reinició). Crea una sala nueva o únete a otra con su código.» No intenta recuperar salas ni puntos.
+  - **Prueba nueva:** `npm run e2e:restart`. Con SIGTERM y con SIGKILL en plena declaración, 2 navegadores y 2 clientes de prueba deben volver a la portada con el aviso, sin rastro de la sala, y poder crear y unirse a una sala nueva. Comprueba también que un corte de red con el servidor activo sigue recuperando la misma ronda. Con el código anterior la prueba falla; con el arreglo pasa.
+  - **Verificado** con servidor local y Chromium emulado. **No verificado** en Render ni en móviles físicos.
+- **Inventario de textos:** `scripts/text-inventory.ts` ya no cuenta como texto visible las cadenas que solo se comparan en el código (`reason === 'io server disconnect'`). Las 551 entradas coinciden con las del commit anterior salvo el aviso nuevo.
 
 ## Errores encontrados y corregidos (v1.1)
 
@@ -63,6 +69,22 @@ Jugable de principio a fin en local: modo online con un móvil por persona (serv
 | Emulación del visor de artefactos (iframe aislado, `scrollTo` parcheado) | Los dos botones de la portada abren su pantalla; sin errores en consola |
 | `npm run simulate` y `INDEPENDENT=1 npm run simulate` | 7.200 rondas cada uno; 0 rondas bloqueadas o inválidas (ver abajo) |
 
+### Validación tras el arreglo de reconexión (16-10-2026, 12:29–12:32 UTC, en este entorno)
+
+| Comando | Resultado |
+|---|---|
+| `npm run typecheck` | Sin errores |
+| `npm test` | **94/94** en 6 archivos |
+| `npm run validate` | Los 25 casos son válidos |
+| `npm run texts` | 551 textos, 0 problemas |
+| `npm run build` y `npm run build:demo` | Correctos |
+| `node e2e/match.mjs … 4`, `… 5`, `… 6` | Correctos, con la auditoría de privacidad de las tramas recibidas por cada navegador; axe: 0 violaciones en 7 pantallas en cada ejecución |
+| `node e2e/local.mjs` (app servida) y `DEMO=1 … coartada-un-movil.html` | Correctos; axe: 0 violaciones |
+| `npm run e2e:crowd` | Correcto (10 personas, 390/360/320 px) |
+| `npm run e2e:restart` | Correcto. Con SIGTERM y con SIGKILL, el aviso aparece en 0,8 s y ambos móviles crean una sala nueva y se unen a ella; el corte de red recupera la misma ronda |
+
+Todo con servidor local y Chromium emulado. Nada de esto se ha ejecutado en Render ni en móviles físicos.
+
 ## Simulación (bots, no personas)
 
 En `docs/balance-sim.txt` (la mesa comparte criterio) y `docs/balance-sim-independiente.txt` (cada bot decide solo): 400 rondas por celda.
@@ -94,12 +116,21 @@ Interpretación: la estructura de información no es trivial ni imposible y ning
 
 ## Errores abiertos y riesgos para la prueba con personas
 
+- **«Compartir enlace» no funciona por HTTP en la red local.** El navegador solo permite compartir y copiar en páginas seguras (HTTPS o localhost). El botón no hace nada ni muestra ningún aviso. Alternativa: el QR o el código. Defecto menor, confirmado el 16-10-2026 en Chromium accediendo por IP. Sin corregir (sería un cambio de interfaz).
+- **Quien sale con «Salir de la sala» no puede recuperar su sitio.** Si vuelve, entra como persona nueva y con 0 puntos. Es coherente con las reglas, pero queda pendiente de decisión.
+
 - **La defensa puede no cambiar nada.** Con 15 s y sin poder modificar ya declaraciones ni testimonios, puede quedarse en un trámite. Hay que observar si las mesas la usan o la saltan.
 - **Señalar en secreto es un paso extra** durante la investigación, la fase más cargada. Hay que ver si se entiende sin explicación y si la gente olvida hacerlo (en ese caso no hay defensa, lo que es válido pero quita el momento).
 - **En el modo de un solo móvil la defensa la elige el grupo en voz alta**, no por votos secretos (no hay forma de señalar en secreto con un solo teléfono sin otra ronda de relevos). Está documentado en RULES §12.
 - **Grupos de 6 o más** podrían favorecer a la persona culpable (simulación independiente).
 - **Con 9–10 personas el tablero está lleno** (hasta 10 fichas por celda); se puede usar, pero es denso.
-- **Salas en memoria:** reiniciar el servidor cierra todas las salas. Hay que usar una sola instancia.
+- **Salas en memoria:** reiniciar el servidor cierra todas las salas y se pierden los puntos. Desde el arreglo del 16-10-2026, los móviles vuelven solos a la portada con un aviso y hay que crear otra sala. Hay que usar una sola instancia.
+- **Render no se ha desplegado ni probado.** Riesgos conocidos del plan gratuito (según la documentación de Render):
+  - se duerme tras 15 min sin tráfico y el arranque en frío tarda alrededor de 1 min;
+  - Render puede reiniciarlo en cualquier momento;
+  - un despliegue reinicia el servidor.
+
+  El `render.yaml` no declara `plan`, y un *Blueprint* crearía entonces una instancia de pago. El README explica cómo crear el servicio gratuito a mano. Sin verificar: «Compartir enlace» por HTTPS, la latencia y si 0,1 CPU basta.
 - **Sin probar en iOS Safari ni en Firefox:**
   - márgenes seguros y teclado sobre los campos;
   - lectura del QR;
@@ -147,6 +178,8 @@ node e2e/match.mjs http://127.0.0.1:4100 6 qa-out
 node e2e/local.mjs http://127.0.0.1:4100 qa-out
 npm run build:demo && DEMO=1 node e2e/local.mjs "file://$PWD/dist/coartada-un-movil.html" qa-out
 npm run simulate && INDEPENDENT=1 npm run simulate
+npm run e2e:crowd                  # con el servidor de QA arrancado
+npm run e2e:restart                # arranca su propio servidor desde dist/
 ```
 
 Si Playwright no encuentra Chromium, añade `CHROMIUM_PATH=/ruta/a/chromium`. Para jugar en la misma Wi-Fi o desplegar, sigue el README.
@@ -158,7 +191,7 @@ Si Playwright no encuentra Chromium, añade `CHROMIUM_PATH=/ruta/a/chromium`. Pa
    - si señalar se entiende;
    - cuánto duran las fases;
    - si la prueba 2 llega a buen momento.
-2. Desplegar una instancia (Render o Docker) y comprobar la URL pública desde dos redes móviles.
+2. Desplegar una instancia (Render: README, «Desplegar»; protocolo: `docs/playtest-v1.1.md`, E.10) y comprobar la URL pública desde dos redes móviles.
 3. Probar a mano en iOS Safari y en Chrome para Android (lista de arriba).
 4. Ajustar con datos de personas: tiempos, número de recuerdos, señuelos y umbral de cómplice (sobre todo con 6 o más).
 
