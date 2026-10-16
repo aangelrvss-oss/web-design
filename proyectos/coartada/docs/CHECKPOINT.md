@@ -34,7 +34,7 @@ Jugable de principio a fin en local: modo online con un móvil por persona (serv
    - Lobby online «Empezar ronda» frente a local «Empezar partida» (ahora «Empezar partida» en los dos).
 
    **Verificado** por inventario y revisión manual.
-6. **El logotipo de la guía tachaba la palabra** (la barra quedaba a la altura del texto). **Verificado** (captura).
+6. **Logotipo.** La franja roja que tacha «Coartada» es intencionada: es la seña de la marca y se recupera tal como estaba en la v1.0, aunque una revisión intermedia la había movido debajo del nombre. Ahora es una capa propia, por delante de las letras, medida en em: queda centrada en la altura media de las minúsculas y sobresale lo mismo por los dos lados. Antes acababa en un punto arbitrario porque el logo ocupaba todo el ancho de la columna. Medido en 320, 360, 390 y 1280 px, en la portada y en la guía: centro a ≤1,3 px de la mitad de las minúsculas, sobresale igual por ambos lados (±0,6 px) y sin desbordamiento horizontal. **Verificado** (Chromium emulado).
 7. **El validador de contenido no comprobaba las horas**: ahora exige formato HH:MM, orden cronológico y como mucho un cruce de medianoche. **Verificado.**
 8. **El E2E de 10 jugadores fallaba** porque el script solo tenía 8 nombres (fallo del script, no del juego). **Verificado.**
 9. **La demo de un archivo no pasaba de la portada en el visor de artefactos** (un efecto devolvía el resultado de `scrollTo`). Corregido antes de la v1.1 y comprobado otra vez con la v1.1 en un iframe aislado que imita el visor. **Verificado** (en emulación, no en el visor real).

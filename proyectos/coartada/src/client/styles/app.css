@@ -1247,17 +1247,24 @@ hr.rule {
   color: var(--paper);
   position: relative;
   display: inline-block;
-  margin-bottom: 0.18em;
+  /* hug the word even as a stretched flex item, so the strike's ends track the letters */
+  width: fit-content;
+  align-self: flex-start;
+  isolation: isolate;
 }
 
 .wordmark .bar {
-  /* a red rule under the name, like a file underlined in ink; never over the letters */
+  /* A solid stamp-red strike laid OVER the name (its own layer, so the type is never
+     distorted). Sized in em, so it follows the wordmark at every font size: centred on the
+     lowercase letters' mid-height, slightly wider than the word on both sides. */
   position: absolute;
-  left: 0;
-  right: 30%;
-  top: 100%;
-  height: 0.09em;
+  z-index: 1;
+  left: -0.12em;
+  right: -0.15em;
+  top: 0.39em;
+  height: 0.2em;
   background: var(--stamp);
+  pointer-events: none;
   transform-origin: left;
   animation: strike 700ms 300ms var(--ease) both;
 }
