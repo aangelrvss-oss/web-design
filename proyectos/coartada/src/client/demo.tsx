@@ -9,6 +9,7 @@ import '@fontsource/courier-prime/700.css';
 import './styles/app.css';
 import { LocalGame } from './screens/Local';
 import { Guide } from './screens/Guide';
+import { GuideHost } from './screens/QuickGuide';
 import { ToastHost } from './ui/kit';
 
 type View = 'inicio' | 'guia' | 'jugar';
@@ -34,6 +35,7 @@ function DemoApp() {
       <>
         <LocalGame onExit={() => setView('inicio')} />
         <ToastHost />
+        <GuideHost />
       </>
     );
   if (view === 'guia') return <Guide onPlay={() => setView('jugar')} onBack={() => setView('inicio')} />;
@@ -61,7 +63,7 @@ function DemoApp() {
         </button>
         <p className="muted small">
           Esta página es la versión de un solo móvil: de 4 a 10 personas, os lo vais pasando para las partes secretas. La versión con un
-          móvil por persona necesita el servidor del proyecto; la guía explica cómo ponerlo en marcha.
+          móvil por persona necesita el servidor del proyecto.
         </p>
       </div>
     </main>

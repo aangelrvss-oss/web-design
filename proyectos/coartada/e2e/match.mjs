@@ -6,7 +6,7 @@
 //
 // Mobile contexts use a 390×844 touch viewport; the last player uses a desktop viewport.
 import { chromium } from 'playwright-core';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { auditA11y } from './a11y.mjs';
 const a11yReport = [];
 
@@ -18,6 +18,8 @@ mkdirSync(OUT, { recursive: true });
 const NAMES = ['Ana', 'Bruno', 'Carla', 'Dani', 'Eva', 'Fede', 'Gala', 'Hugo', 'Inés', 'Jon'];
 const log = (...a) => console.log('·', ...a);
 const errors = [];
+// The defense length on Normal pace, read from the engine's constants (not duplicated here).
+const DEFENSE_NORMAL = Number(readFileSync(new URL('../src/shared/types.ts', import.meta.url), 'utf8').match(/normal: \{[^}]*defense: (\d+)/)[1]);
 
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
 const players = [];
@@ -29,13 +31,27 @@ for (let i = 0; i < N; i++) {
       : { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
   );
   const page = await ctx.newPage();
+  // One phone without vibration support (like an iPhone): everything must work the same.
+  if (i === 1) await page.addInitScript(() => delete Navigator.prototype.vibrate);
+  // The others count the buzzes they would make.
+  else await page.addInitScript(() => {
+    window.__vib = [];
+    Navigator.prototype.vibrate = function (p) {
+      window.__vib.push(p);
+      return true;
+    };
+  });
   page.on('pageerror', (e) => errors.push(`${NAMES[i]} pageerror: ${e.message}`));
   // Connection errors while we deliberately cut the network are expected.
   page.on('console', (m) => m.type() === 'error' && !/ERR_INTERNET_DISCONNECTED/.test(m.text()) && errors.push(`${NAMES[i]} console: ${m.text()}`));
   const frames = [];
-  // Record every WebSocket frame this browser receives (what DevTools would show).
-  page.on('websocket', (ws) => ws.on('framereceived', (f) => frames.push(String(f.payload))));
-  players.push({ name: NAMES[i], page, ctx, desktop, frames });
+  const sent = [];
+  // Record every WebSocket frame this browser receives and sends (what DevTools would show).
+  page.on('websocket', (ws) => {
+    ws.on('framereceived', (f) => frames.push(String(f.payload)));
+    ws.on('framesent', (f) => sent.push(String(f.payload)));
+  });
+  players.push({ name: NAMES[i], page, ctx, desktop, frames, sent });
 }
 const [host] = players;
 const shot = async (p, name, full = true) => p.page.screenshot({ path: `${OUT}/${name}-${p.desktop ? 'desktop' : 'mobile'}.png`, fullPage: full });
@@ -66,6 +82,21 @@ for (const [i, p] of players.slice(1).entries()) {
 }
 await host.page.getByText(`${N}/10`).waitFor();
 await shot(host, '02-lobby');
+
+// ── Quick guide from the lobby: "?" opens it over the room, every section, then back.
+await players[1].page.getByRole('button', { name: 'Guía rápida' }).first().click();
+{
+  const guide = players[1].page.getByRole('dialog', { name: 'Guía rápida' });
+  await guide.getByRole('heading', { name: 'Guía rápida' }).waitFor();
+  for (const tab of ['La ronda', 'Papeles', 'Defensa y voto', 'Puntos']) {
+    await guide.getByRole('tab', { name: tab }).click();
+    if ((await guide.getByRole('tab', { name: tab }).getAttribute('aria-selected')) !== 'true') errors.push(`guide tab ${tab} not selected`);
+  }
+  await auditA11y(players[1].page, 'guía rápida', errors, a11yReport);
+  await guide.getByRole('button', { name: 'Volver a la partida' }).click();
+  await players[1].page.getByText('En la sala').waitFor();
+  log('quick guide opens from the lobby and closes back to it');
+}
 await auditA11y(host.page, 'sala de espera', errors, a11yReport);
 await shot(players[N - 1], '02-lobby');
 
@@ -123,19 +154,56 @@ await host.page.locator('.testimony').first().waitFor();
 log('testimony visible on host');
 
 // ── Ready ×2 → vote
+// ── Private notes: written on one phone, they must never travel or show up anywhere else.
+const NOTE = `nota-privada-${Date.now()}`;
+{
+  const p = players[1];
+  // The «Cuaderno» button opens straight on the notebook (the file is the other tab).
+  await p.page.getByRole('button', { name: 'Tu cuaderno y tu expediente' }).click();
+  if ((await p.page.getByRole('tab', { name: 'Mi cuaderno' }).getAttribute('aria-selected')) !== 'true') errors.push('the notebook does not open on «Mi cuaderno»');
+  await p.page.getByLabel('Nueva observación').fill(NOTE);
+  await p.page.getByRole('button', { name: 'Apuntar', exact: true }).click();
+  await p.page.getByRole('group', { name: /^Tu nota sobre/ }).first().getByRole('button', { name: 'Sospecho' }).click();
+  await p.page.keyboard.press('Escape');
+  await p.page.reload();
+  await p.page.getByRole('button', { name: 'Tu cuaderno y tu expediente' }).click();
+  if (!(await p.page.locator('.notes-clues').innerText()).includes(NOTE)) errors.push('private notes did not survive a reload on the same phone');
+  await p.page.keyboard.press('Escape');
+  log('private notes kept on the phone that wrote them (also after a reload)');
+}
+
 // ── Secret pointers for the last defense: everyone points at the culprit, who points elsewhere.
 for (const p of players) {
   const target = p === culprit ? players.find((q) => q !== p).name : culprit.name;
-  await p.page.getByRole('button', { name: /Señalar a alguien|Cambiar a quién señalo/ }).click();
-  await p.page.getByRole('dialog', { name: 'Señalar para la última defensa' }).getByRole('button', { name: target, exact: true }).click();
+  await p.page.locator('#point-panel').getByRole('button', { name: target, exact: true }).click();
+  await p.page.getByText(`Registrado: señalas a ${target}`).waitFor();
+}
+// ── Quick guide mid-investigation: it must not touch the phase, the pick, the timer or anything private.
+{
+  const p = players[2];
+  const target = p === culprit ? players.find((q) => q !== p).name : culprit.name;
+  const timerBefore = await p.page.locator('.timer-num').innerText();
+  await p.page.getByRole('button', { name: 'Guía rápida' }).first().click();
+  const guide = p.page.getByRole('dialog', { name: 'Guía rápida' });
+  await guide.getByRole('tab', { name: 'Defensa y voto' }).click();
+  const text = await guide.innerText();
+  for (const q of players) if (text.includes(q.name)) errors.push(`the quick guide shows a player name (${q.name})`);
+  await p.page.waitForTimeout(1500);
+  await guide.getByRole('button', { name: 'Volver a la partida' }).click();
   await p.page.getByText(`Señalas a ${target}`).first().waitFor();
+  await p.page.getByRole('button', { name: 'Pedir prueba 2' }).waitFor();
+  const timerAfter = await p.page.locator('.timer-num').innerText();
+  const secs = (t) => Number(t.split(':')[0]) * 60 + Number(t.split(':')[1]);
+  if (!(secs(timerAfter) < secs(timerBefore))) errors.push(`timer did not keep running behind the guide (${timerBefore} → ${timerAfter})`);
+  log(`quick guide mid-round: same phase, same pick, timer ${timerBefore} → ${timerAfter}`);
 }
 for (const p of players) await p.page.getByRole('button', { name: 'Pedir prueba 2' }).click();
 await host.page.getByText('Prueba 2 de 2', { exact: false }).first().waitFor();
 await shot(host, '07-second-trace');
 for (const p of players) await p.page.getByRole('button', { name: 'Pedir terminar' }).click();
 // ── Última defensa: the culprit was the most pointed; the defense screen shows for all.
-// The countdown must never show more than the phase lasts (15 s on Normal pace): read it
+// The countdown must never show more than the phase lasts (25 s on Normal pace, PACE_TIMINGS
+// in src/shared/types.ts): read it
 // on every phone as soon as the screen appears.
 const firstShown = await Promise.all(
   players.map(async (p) => {
@@ -144,7 +212,7 @@ const firstShown = await Promise.all(
   }),
 );
 log('defense countdown on arrival', firstShown.join(' '));
-for (const [i, shown] of firstShown.entries()) if (!(shown <= 15)) errors.push(`${players[i].name} defense countdown shows ${shown} s (> 15)`);
+for (const [i, shown] of firstShown.entries()) if (!(shown <= DEFENSE_NORMAL)) errors.push(`${players[i].name} defense countdown shows ${shown} s (> ${DEFENSE_NORMAL})`);
 for (const p of players) await p.page.getByText('Última defensa').first().waitFor();
 await shot(host, '07b-defense');
 await shot(culprit, '07b-defense-defender');
@@ -153,16 +221,55 @@ const defenderName = (await host.page.locator('.defense-name').innerText()).trim
 if (defenderName !== culprit.name) errors.push(`expected ${culprit.name} to defend, got ${defenderName}`);
 await culprit.page.getByRole('button', { name: 'He terminado mi defensa' }).click();
 for (const p of players) await p.page.getByRole('heading', { name: '¿Quién lo hizo?' }).waitFor();
+// The end of the last defense: one short buzz where supported, none where not, never an error.
+for (const [i, p] of players.entries()) {
+  if (i === 1) {
+    if (await p.page.evaluate(() => 'vibrate' in navigator)) errors.push('vibration: could not remove it on the test phone');
+    continue;
+  }
+  const buzzes = await p.page.evaluate(() => window.__vib.length);
+  if (buzzes !== 1) errors.push(`vibration: ${p.name} buzzed ${buzzes} times at the end of the defense (expected 1)`);
+}
+log('vibration: one buzz at the end of the defense; a phone without vibration plays on without errors');
 await shot(host, '08-vote');
 await auditA11y(host.page, 'votación', errors, a11yReport);
+
+// The vote says what to do now, and the notebook is still there (same notes, another phase).
+{
+  const p = players[1];
+  if (!(await p.page.locator('.vote-reminder').innerText()).includes('vota a quien crees culpable')) errors.push('vote: no reminder of what to do');
+  // «Señalar» is the last-defense pick; the vote says «votar» and keeps its timed rule.
+  if ((await p.page.locator('.vote-reminder').innerText()).includes('eñala')) errors.push('vote: the reminder uses the word of the last-defense pick');
+  if (!(await p.page.locator('main').innerText()).includes('Quien no vote a tiempo no cuenta')) errors.push('vote: the timed rule is missing with one phone each');
+  if (!(await p.page.locator('.actionbar .hint').innerText()).includes('Toca a una persona')) errors.push('vote: the bar does not say what is missing');
+  await p.page.getByRole('button', { name: 'Mi cuaderno' }).click();
+  if (!(await p.page.getByRole('dialog', { name: 'Mi cuaderno' }).innerText()).includes(NOTE)) errors.push('vote: the notebook lost the notes written during the investigation');
+  await p.page.keyboard.press('Escape');
+  log('vote: reminder, pending-action hint and the same notebook as in the investigation');
+}
 
 // Everyone except the culprit accuses the culprit; the culprit accuses someone else.
 for (const p of players) {
   const target = p === culprit ? players.find((q) => q !== p).name : culprit.name;
   await p.page.getByRole('radio', { name: new RegExp(`^${target}`) }).click();
+  if (p === players[1] && !(await p.page.locator('.actionbar .hint').innerText()).includes(`Falta confirmar: pulsa «Acusar a ${target}»`)) errors.push('vote: no reminder to confirm');
   await p.page.getByRole('button', { name: `Acusar a ${target}` }).click();
+  if (p === players[1]) {
+    await p.page.getByText('Tu voto está registrado').waitFor();
+    // Somebody who hasn't voted yet sees who has voted, never for whom.
+    const other = await players[2].page.locator('body').innerText();
+    if (other.includes('Acusas a') || other.includes('Tu voto está registrado')) errors.push('vote: another phone shows this vote');
+  }
 }
 for (const p of players) await p.page.getByText('Veredicto').first().waitFor();
+
+// The note never left the phone: not in any frame any browser received, not on anyone else's screen.
+for (const p of players) {
+  if (p.frames.some((f) => f.includes(NOTE))) errors.push(`${p.name} received the private note over the network`);
+  if (p.sent.some((f) => f.includes(NOTE))) errors.push(`${p.name} sent the private note over the network`);
+  if (p !== players[1] && (await p.page.content()).includes(NOTE)) errors.push(`${p.name}'s screen shows another player's private note`);
+}
+log('private note: in no network frame and on no other screen');
 
 // ── Network privacy audit on what each browser actually received
 const resultIdx = (frames) => frames.findIndex((f) => f.includes('"phase":"result"'));
@@ -193,7 +300,7 @@ for (const p of players) {
 }
 log('network audit:', players.map((p) => `${p.name}=${p.frames.length} frames`).join(' '));
 await host.page.getByRole('button', { name: 'Ver todo' }).click().catch(() => {});
-await host.page.locator('[data-tab="Lo que pasó de verdad"]').waitFor();
+await host.page.locator('[data-tab="Expediente cerrado"]').waitFor();
 await shot(host, '09-result');
 await auditA11y(host.page, 'veredicto', errors, a11yReport);
 await players[N - 1].page.getByRole('button', { name: 'Ver todo' }).click().catch(() => {});

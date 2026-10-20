@@ -3,30 +3,19 @@
 // regenerates from its seed to make sure the guide matches the real rules.
 import { GUIDE_EXAMPLE as G } from '../../shared/content/example';
 import { getScenario } from '../../shared/content/scenarios';
-import { PACE_TIMINGS } from '../../shared/types';
-import { ActionBar, Icon, Pin, Stamp } from '../ui/kit';
+import { DEFAULT_SETTINGS, PACE_TIMINGS } from '../../shared/types';
+import { TraceRing } from '../ui/game';
+import type { AvatarId } from '../../shared/characters';
+import { ActionBar, Icon, Pin, Stamp, Token } from '../ui/kit';
+import { QuickGuide } from './QuickGuide';
 
 const CASE = getScenario(G.scenarioId);
 const zoneName = (id: string) => CASE.zones.find((z) => z.id === id)!.name;
 const HOURS = CASE.slots;
 const COLORS: Record<string, number> = { Ana: 0, Bruno: 1, Carla: 2, Dani: 3, Eva: 4 };
-const P = (name: string) => ({ name, color: COLORS[name] });
+const AVATAR: Record<string, AvatarId> = { Ana: 'periodista', Bruno: 'mecanico', Carla: 'profesora', Dani: 'cocinero', Eva: 'medica' };
+const P = (name: string) => ({ name, color: COLORS[name], avatar: AVATAR[name] });
 const DEFENSE = PACE_TIMINGS.normal.defense;
-
-function Ring() {
-  return (
-    <svg className="trace-ring" viewBox="0 0 100 60" preserveAspectRatio="none" aria-hidden>
-      <path
-        d="M8 32 C 6 12, 40 4, 62 6 C 88 8, 98 22, 94 38 C 90 54, 50 58, 28 54 C 10 50, 4 40, 12 26"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        vectorEffect="non-scaling-stroke"
-      />
-    </svg>
-  );
-}
 
 function MiniBoard() {
   return (
@@ -54,14 +43,9 @@ function MiniBoard() {
               return (
                 <div key={h} role="cell" className={`cell ${scene ? 'scene' : ''}`}>
                   {scene && <span className="scene-tag">Escena</span>}
-                  {ti >= 0 && (
-                    <>
-                      <Ring />
-                      <span className="trace-num">P{ti + 1}</span>
-                    </>
-                  )}
+                  {ti >= 0 && <TraceRing index={ti} />}
                   {here.map((p) => (
-                    <Pin key={p} player={P(p)} />
+                    <Token key={p} player={P(p)} label={p} />
                   ))}
                 </div>
               );
@@ -71,7 +55,7 @@ function MiniBoard() {
       </div>
       <div className="board-legend">
         <span>Rayado rojo: lugar y hora del incidente</span>
-        <span>Círculo azul: prueba</span>
+        <span>Contorno azul: prueba</span>
       </div>
     </div>
   );
@@ -132,40 +116,6 @@ export function Guide({ onPlay, onBack }: { onPlay: () => void; onBack: () => vo
           declaró Marta. Salen dos pruebas que siempre dicen la verdad sobre la persona culpable. La persona más señalada tiene una última
           defensa y, al final, votáis en secreto.
         </p>
-      </section>
-
-      <section className="stack" aria-labelledby="g-modos">
-        <h2 id="g-modos">Dos formas de jugar</h2>
-        <div className="guide-two">
-          <div className="paper stack">
-            <h3>Un solo móvil</h3>
-            <p className="guide-text">Es lo que ofrece esta página. No necesita internet ni servidor.</p>
-            <ol className="guide-text stack" style={{ paddingLeft: '1.2em', margin: 0, gap: 6 }}>
-              <li>Escribid los nombres (de 4 a 10) y pulsad «Empezar partida».</li>
-              <li>
-                Pasad el móvil. Cuando te toque, pulsa «Soy…», <b>lee tu expediente en privado</b>, sella tu declaración y pulsa «Ocultar y
-                pasar».
-              </li>
-              <li>Con el móvil en el centro: revelad las coartadas, hablad, testificad y sacad la segunda prueba.</li>
-              <li>Al terminar la investigación, decidid en voz alta a quién escucháis en la última defensa.</li>
-              <li>Para votar, el móvil vuelve a dar la vuelta en secreto.</li>
-            </ol>
-            <p className="small muted">En este modo no hay tiempo límite para declarar ni para votar: el móvil tarda lo que tarde en dar la vuelta.</p>
-          </div>
-          <div className="paper stack">
-            <h3>Un móvil por persona</h3>
-            <p className="guide-text">
-              La versión principal: sala con código de 4 letras, enlace o QR. Necesita el servidor del proyecto (ver «Ponerlo en marcha» al
-              final).
-            </p>
-            <ol className="guide-text stack" style={{ paddingLeft: '1.2em', margin: 0, gap: 6 }}>
-              <li>Una persona crea la sala; el resto escanea el QR o escribe el código.</li>
-              <li>Cada cual ve su expediente solo en su móvil.</li>
-              <li>Los testimonios, los señalamientos y los votos se hacen desde cada móvil.</li>
-              <li>Quien crea la sala la dirige: empieza las rondas y puede terminar una fase antes de tiempo.</li>
-            </ol>
-          </div>
-        </div>
       </section>
 
       <section className="stack" aria-labelledby="g-ronda">
@@ -338,8 +288,7 @@ export function Guide({ onPlay, onBack }: { onPlay: () => void; onBack: () => vo
             }
           >
             <p>
-              Sale cuando se acaba el tiempo de la primera parte de la investigación, o antes si todo el mundo pulsa «Pedir prueba 2» (en el
-              modo de un solo móvil, cuando pulsáis «Sacar la prueba 2»). En el ejemplo solo encajan Ana y Eva con
+              Sale cuando se acaba el tiempo de la primera parte de la investigación, o antes si todo el mundo pulsa «Pedir prueba 2». En el ejemplo solo encajan Ana y Eva con
               las dos pruebas: quedan dos sospechosas. Ojo: una persona culpable puede mentir justo en esas horas para no aparecer.
             </p>
           </Step>
@@ -360,13 +309,12 @@ export function Guide({ onPlay, onBack }: { onPlay: () => void; onBack: () => vo
           >
             <p>
               Durante la investigación, cada persona puede <b>señalar en secreto</b> a quien quiere oír, y cambiarlo cuando quiera. Al
-              terminar la investigación, la más señalada tiene {DEFENSE} segundos (12 en ritmo rápido, 20 en relajado) para defenderse en voz
+              terminar la investigación, la más señalada tiene {DEFENSE} segundos ({PACE_TIMINGS.rapido.defense} en ritmo rápido, {PACE_TIMINGS.relajado.defense} en relajado) para defenderse en voz
               alta.
             </p>
             <p>
               Si hay empate, la app sortea entre las personas empatadas. Si nadie señala a nadie, o la persona elegida no está conectada, no
-              hay defensa y se vota directamente. La defensa no revela el papel de nadie. En el modo de un solo móvil, el grupo decide en voz
-              alta a quién escuchar.
+              hay defensa y se vota directamente. La defensa no revela el papel de nadie.
             </p>
           </Step>
 
@@ -407,7 +355,7 @@ export function Guide({ onPlay, onBack }: { onPlay: () => void; onBack: () => vo
           <dt>Ronda</dt>
           <dd>Una investigación completa: desde el reparto de papeles hasta el veredicto y los puntos.</dd>
           <dt>Partida</dt>
-          <dd>El conjunto de rondas que se juegan seguidas (5 por defecto). Los puntos se acumulan durante toda la partida.</dd>
+          <dd>El conjunto de rondas que se juegan seguidas ({DEFAULT_SETTINGS.rounds} por defecto). Los puntos se acumulan durante toda la partida.</dd>
           <dt>Coartada</dt>
           <dd>El sitio que una persona declara para una hora. Cada declaración tiene tres coartadas, una por hora.</dd>
           <dt>Recuerdo</dt>
@@ -421,75 +369,10 @@ export function Guide({ onPlay, onBack }: { onPlay: () => void; onBack: () => vo
         </dl>
       </section>
 
-      <section className="stack" aria-labelledby="g-papeles">
-        <h2 id="g-papeles">Los tres papeles</h2>
-        <div className="guide-roles">
-          <div className="paper stack">
-            <Stamp tone="blue">Inocente</Stamp>
-            <p>No lo hiciste. Ganas si el grupo acusa a la persona culpable.</p>
-          </div>
-          <div className="paper stack">
-            <Stamp>Culpable</Stamp>
-            <p>Lo hiciste tú. Ganas si el grupo acusa a otra persona o a nadie. Siempre hay exactamente una.</p>
-          </div>
-          <div className="paper stack">
-            <Stamp>Cómplice</Stamp>
-            <p>Solo a partir de 6 personas. Sabes quién es la culpable (y ella sabe quién eres tú). Ganas si no la acusan.</p>
-          </div>
-        </div>
-      </section>
-
-      <section className="paper tabbed" data-tab="El dilema de la persona culpable">
-        <div className="guide-two">
-          <div>
-            <h3>Mentir poco</h3>
-            <p className="guide-text">
-              Solo cambias la hora del incidente. Nadie te podrá contradecir con un recuerdo, pero las pruebas te situarán donde estuviste de
-              verdad, junto a algún inocente.
-            </p>
-          </div>
-          <div>
-            <h3>Mentir mucho</h3>
-            <p className="guide-text">
-              Cambias más horas para no encajar con las pruebas. Pero si alguien estuvo contigo y lo recuerda, su testimonio contradirá tu
-              coartada.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="stack" aria-labelledby="g-puntos">
-        <h2 id="g-puntos">Puntos</h2>
-        <div className="paper">
-          <table className="truth-table">
-            <thead>
-              <tr>
-                <th scope="col">Qué pasa</th>
-                <th scope="col">Quién puntúa</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                ['El grupo acusa a la persona culpable', '+2 cada inocente'],
-                ['La persona culpable se libra (acusan a otra persona o a nadie)', '+4 la culpable, +3 su cómplice'],
-                ['Tu voto en la primera votación fue para la persona culpable', '+1, solo inocentes, gane quien gane'],
-                ['Publicaste un testimonio verdadero que contradice una coartada falsa', '+1, cualquier papel, una vez por ronda'],
-                ['Cumpliste tu objetivo secreto (si están activados)', '+1'],
-              ].map(([a, b]) => (
-                <tr key={a}>
-                  <td>{a}</td>
-                  <td style={{ fontWeight: 700 }}>{b}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <ul className="small" style={{ margin: '10px 0 0', paddingLeft: '1.1em' }}>
-            <li>El cómplice no puntúa si la persona culpable es acusada.</li>
-            <li>El voto del desempate no da el punto de «votar a la persona culpable»; solo cuenta la primera votación.</li>
-            <li>Un mismo testimonio puede dar dos puntos distintos: el de destapar una mentira y el de un objetivo que lo pida.</li>
-            <li>Los puntos se suman al terminar cada ronda. Si la partida se interrumpe a mitad de una ronda, esa ronda no puntúa.</li>
-          </ul>
-        </div>
+      <section className="stack" aria-labelledby="g-resumen">
+        <h2 id="g-resumen">Papeles, defensa y puntos</h2>
+        <p className="guide-text muted">Es la misma guía rápida que se abre en el juego con el botón de ayuda de la barra superior.</p>
+        <QuickGuide all={['papeles', 'defensa', 'puntos']} untimedTurns />
       </section>
 
       <section className="paper tabbed stack" data-tab="Objetivos secretos (opcionales)">
@@ -507,34 +390,6 @@ export function Guide({ onPlay, onBack }: { onPlay: () => void; onBack: () => vo
         <p className="guide-text">
           Caso nuevo, papeles nuevos, recuerdos, pruebas y objetivos repartidos otra vez; testimonios, señalamientos y votos a cero; el
           temporizador empieza de nuevo. Solo se conservan los puntos. Una partida nueva pone también los puntos a cero.
-        </p>
-      </section>
-
-      <section className="stack" aria-labelledby="g-faq">
-        <h2 id="g-faq">Preguntas rápidas</h2>
-        {[
-          ['¿Puedo mentir si soy inocente?', 'Sí, pero te arriesgas: un testimonio verdadero que te contradiga da un punto a quien lo publique y te hace parecer culpable.'],
-          ['¿Las pruebas pueden equivocarse?', 'No. Siempre dicen dónde estuvo de verdad la persona culpable. Lo que puede ser falso son las coartadas y los testimonios.'],
-          ['Si un testimonio coincide, ¿es verdad?', 'No necesariamente. «Coincide» solo dice que las dos versiones encajan. Dos personas pueden coincidir por casualidad o porque una miente.'],
-          ['¿Qué es una coartada automática?', 'La que pone la app cuando alguien no sella a tiempo y no había elegido las tres horas. Se marca como «automática» y los testimonios sobre esa persona salen «sin contraste».'],
-          ['¿Qué pasa si alguien se desconecta?', 'En el modo de un móvil por persona, sigue en la ronda: si no sella, recibe una coartada automática; si no vota, no cuenta. Si vuelve a abrir el enlace en el mismo móvil y navegador, recupera su sitio y su expediente.'],
-          ['¿Hay que registrarse?', 'No. Ni cuentas ni correos. Esta página no envía nada a ningún sitio.'],
-        ].map(([q, a]) => (
-          <details key={q} className="paper guide-faq">
-            <summary>{q}</summary>
-            <p className="guide-text">{a}</p>
-          </details>
-        ))}
-      </section>
-
-      <section className="paper tabbed stack" data-tab="Ponerlo en marcha (un móvil por persona)">
-        <p className="guide-text">
-          Hace falta un ordenador con Node.js y el proyecto descargado. Dentro de la carpeta <code>proyectos/coartada</code>:
-        </p>
-        <pre className="guide-code">npm install{'\n'}npm run build{'\n'}npm start</pre>
-        <p className="guide-text">
-          Con todos los móviles en la misma red wifi, abrid <code>http://IP-del-ordenador:3000</code>, cread una sala y que el resto escanee
-          el QR. Para jugar a distancia hay que publicar el servidor en internet; el README del proyecto explica cómo.
         </p>
       </section>
 

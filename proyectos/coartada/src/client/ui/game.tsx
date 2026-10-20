@@ -1,36 +1,94 @@
 // Game-specific components: the alibi board, the private file, evidence and testimonies.
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import type { PrivateView, PublicTestimony, PublicView } from '../../shared/engine/views';
 import { describeEncargo } from '../../shared/engine/encargos';
+import { ringBox, type Box } from '../lib/ring';
 import { atHour, listJoin, playerName, ROLE_GOAL, ROLE_NAME, zoneName } from '../lib/text';
-import { Icon, Pin, Stamp } from './kit';
+import { shortNames } from '../lib/colors';
+import { CaseScene } from './ambience';
+import { EvidenceBag, Suspect } from './illustrations';
+import { Icon, Pin, Stamp, Token } from './kit';
+import { ExperimentalTag, ForgeryChooser, ForgeryNote, isForgeryRound, TraceStatusTag } from './pruebaFalsa';
 
-// Hand-drawn ballpoint ring used to circle evidence on the board.
-function Ring() {
+// Hand-drawn ballpoint loop around a piece of evidence on the board. It is measured against the
+// pins actually in its cell (lib/ring.ts), so it hugs a pair, grows for a crowd and follows the
+// pins when the screen width changes how they wrap. A rounded-box loop rather than an ellipse,
+// so the pins in the corners of a block stay inside too.
+export function TraceRing({ index, fresh }: { index: number; fresh?: boolean }) {
+  const ref = useRef<SVGSVGElement>(null);
+  const [fit, setFit] = useState<{ box: Box; cellWidth: number } | null>(null);
+  useLayoutEffect(() => {
+    const cell = ref.current?.parentElement;
+    if (!cell) return;
+    const measure = () => {
+      // Each person is a pin with their name under it: the loop goes round both.
+      const pins = [...cell.querySelectorAll<HTMLElement>('.token')].map((p) => ({ left: p.offsetLeft, top: p.offsetTop, width: p.offsetWidth, height: p.offsetHeight }));
+      const box = ringBox(pins, { width: cell.clientWidth, height: cell.clientHeight });
+      setFit((f) =>
+        f && f.cellWidth === cell.clientWidth && f.box.left === box.left && f.box.top === box.top && f.box.width === box.width && f.box.height === box.height
+          ? f
+          : { box, cellWidth: cell.clientWidth },
+      );
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const resize = new ResizeObserver(measure);
+    resize.observe(cell);
+    const moves = new MutationObserver(measure);
+    moves.observe(cell, { childList: true, subtree: true });
+    return () => {
+      resize.disconnect();
+      moves.disconnect();
+    };
+  }, []);
+  const b = fit?.box;
   return (
-    <svg className="trace-ring" viewBox="0 0 100 60" preserveAspectRatio="none" aria-hidden>
-      <path
-        d="M8 32 C 6 12, 40 4, 62 6 C 88 8, 98 22, 94 38 C 90 54, 50 58, 28 54 C 10 50, 4 40, 12 26"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        vectorEffect="non-scaling-stroke"
-      />
-    </svg>
+    <>
+      <svg
+        ref={ref}
+        className={`trace-ring ${fresh ? 'fresh' : ''}`}
+        style={b ? { left: b.left, top: b.top, width: b.width, height: b.height } : { visibility: 'hidden' }}
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        aria-hidden
+      >
+        <path
+          d="M12 2.5 C 40 1, 70 2, 88 1.8 C 97 1.5, 99 6, 98.6 14 C 98 40, 99.2 66, 98.4 86 C 98 96, 94 98.6, 84 98.3 C 60 99.2, 36 98.4, 14 98.8 C 4 99, 1.2 94, 1.5 84 C 1 60, 2 34, 1.4 14 C 1.2 5, 5 2, 18 3.6"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+      <span
+        className="trace-num"
+        aria-hidden
+        style={b && fit ? { right: Math.max(0, fit.cellWidth - (b.left + b.width) - 3), top: Math.max(0, b.top - 9) } : { visibility: 'hidden' }}
+      >
+        P{index + 1}
+      </span>
+    </>
   );
 }
 
 export function Board({
   pub,
   selected,
+  selectedSlot,
   onSelect,
   flip,
+  freshTraces = [],
 }: {
   pub: PublicView;
   selected: string | null;
-  onSelect: (id: string | null) => void;
+  /** The hour of the tapped pin, when a pin (not a name) was used to select someone. */
+  selectedSlot?: number | null;
+  /** `slot` is the hour of the pin tapped; undefined when chosen from the names under the board. */
+  onSelect: (id: string | null, slot?: number) => void;
   flip?: boolean;
+  /** Evidence that has just appeared: its cell flashes and its loop is drawn in. */
+  freshTraces?: number[];
 }) {
   const round = pub.round!;
   const decl = round.declarations;
@@ -43,7 +101,10 @@ export function Board({
       conflicts.add(`${t.by}|${t.slot}`);
     }
   }
-  const players = round.participants.map((id) => pub.players.find((p) => p.id === id) ?? { id, name: '¿?', color: 0, connected: false });
+  const players = round.participants.map((id) => pub.players.find((p) => p.id === id) ?? { id, name: '¿?', color: 0, connected: false, avatar: null });
+  // Under each pin, a short name that is never the same for two people; the full name is in the
+  // button's label and in the summary that tapping opens.
+  const short = shortNames(players, 5);
   let order = 0;
   return (
     <section className={`paper kraft board tabbed ${flip ? 'flip-in' : ''}`} data-tab="Tablero de coartadas" aria-label="Tablero de coartadas">
@@ -71,28 +132,25 @@ export function Board({
                 <div
                   key={slotLabel}
                   role="cell"
-                  className={`cell ${isScene ? 'scene' : ''}`}
+                  className={`cell ${isScene ? 'scene' : ''} ${traceIdx >= 0 && freshTraces.includes(traceIdx) ? 'fresh-trace' : ''}`}
                   aria-label={`${z.name} ${atHour(slotLabel)}: ${here.length ? here.map((p) => p.name).join(', ') : 'nadie'}${isScene ? ' (lugar del incidente)' : ''}${traceIdx >= 0 ? ` (prueba ${traceIdx + 1})` : ''}`}
                 >
                   {isScene && <span className="scene-tag">Escena</span>}
-                  {traceIdx >= 0 && (
-                    <>
-                      <Ring />
-                      <span className="trace-num">P{traceIdx + 1}</span>
-                    </>
-                  )}
+                  {traceIdx >= 0 && <TraceRing index={traceIdx} fresh={freshTraces.includes(traceIdx)} />}
                   {here.map((p) => (
                     <button
                       key={p.id}
                       type="button"
-                      onClick={() => onSelect(selected === p.id ? null : p.id)}
-                      style={{ background: 'none', border: 0, padding: 0, lineHeight: 0 }}
+                      className="board-token"
+                      onClick={() => onSelect(selected === p.id && (selectedSlot === undefined || selectedSlot === slot) ? null : p.id, slot)}
                       aria-label={p.name}
+                      title={p.name}
                     >
-                      <Pin
+                      <Token
                         player={p}
+                        label={short[p.id]}
                         style={{ ['--i' as string]: order++ }}
-                        className={[
+                        pinClass={[
                           selected && selected !== p.id ? 'dim' : '',
                           selected === p.id ? 'hit' : '',
                           conflicts.has(`${p.id}|${slot}`) ? 'conflict' : '',
@@ -117,7 +175,7 @@ export function Board({
       </div>
       <div className="board-legend">
         <span>Rayado rojo: lugar y hora del incidente</span>
-        <span>Círculo azul: prueba</span>
+        <span>{isForgeryRound(pub) ? 'Contorno azul: lo que dice una prueba (sin revisar puede ser falsa)' : 'Contorno azul: prueba'}</span>
         <span>Aro rojo: un testimonio contradice esa coartada</span>
       </div>
     </section>
@@ -134,16 +192,39 @@ export function TraceCard({ pub, index, fresh }: { pub: PublicView; index: numbe
   return (
     <article className={`paper trace-card ${fresh ? 'new-evidence' : ''}`} aria-label={`Prueba ${index + 1}`}>
       <div className="spread">
-        <div className="label">Prueba {index + 1} de 2</div>
+        <div className="row" style={{ gap: 'var(--s-2)' }}>
+          <EvidenceBag />
+          <div className="label" style={{ margin: 0 }}>
+            Prueba {index + 1} de 2
+          </div>
+        </div>
         {fresh && (
           <Stamp tone="blue" animate>
             Nueva
           </Stamp>
         )}
+        {!fresh && t.status && <TraceStatusTag t={t} />}
       </div>
+      {fresh && t.status && (
+        <p style={{ marginTop: 4 }}>
+          <TraceStatusTag t={t} />
+        </p>
+      )}
       <p className="doc-text">{t.text}</p>
       <p className="conclusion">
-        Hecho comprobado: la persona culpable estuvo en {place} {hour}.
+        {t.status === 'sin_peritar' ? (
+          <>
+            La prueba dice que la persona culpable estuvo en {place} {hour}.
+          </>
+        ) : t.status === 'falsa' ? (
+          <>
+            Era falsa (decía {zoneName(pub, t.forgedZone)}). Hecho comprobado: la persona culpable estuvo en {place} {hour}.
+          </>
+        ) : (
+          <>
+            Hecho comprobado: la persona culpable estuvo en {place} {hour}.
+          </>
+        )}
       </p>
       <p className="small" style={{ marginTop: 6 }}>
         {fits.length > 0 ? (
@@ -280,12 +361,15 @@ export function PrivateFile({ pub, priv, startOpen = false }: { pub: PublicView;
   const zone = (id: string) => zoneName(pub, id);
   return (
     <article className="paper tabbed reveal-in" data-tab="Expediente confidencial" aria-label="Tu expediente confidencial">
-      <div className="spread" style={{ alignItems: 'flex-start' }}>
+      <div className="spread" style={{ alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
         <div>
           <div className="label">Tu papel</div>
-          <Stamp tone={tone} animate>
-            {ROLE_NAME[role]}
-          </Stamp>
+          <div className="row" style={{ gap: 'var(--s-2)' }}>
+            <Suspect tone={tone} mark={role === 'complice' ? 'pair' : undefined} />
+            <Stamp tone={tone} animate>
+              {ROLE_NAME[role]}
+            </Stamp>
+          </div>
         </div>
         <button type="button" className="btn btn-ghost btn-sm" onClick={() => setOpen(false)} aria-label="Ocultar expediente">
           <span style={{ width: 20 }}>
@@ -333,6 +417,12 @@ export function PrivateFile({ pub, priv, startOpen = false }: { pub: PublicView;
           <p className="doc-text">{describeEncargo(priv.encargo, name, zone)}</p>
         </>
       )}
+      {isForgeryRound(pub) &&
+        (role === 'culpable' && pub.phase === 'declare' ? (
+          <ForgeryChooser pub={pub} priv={priv} />
+        ) : role !== 'inocente' ? (
+          <ForgeryNote pub={pub} priv={priv} />
+        ) : null)}
     </article>
   );
 }
@@ -347,7 +437,9 @@ export function CaseHeader({ pub, compact }: { pub: PublicView; compact?: boolea
           {pub.settings.rounds > 0 ? ` de ${pub.settings.rounds}` : ''}: {r.scenario.venue}
         </div>
         <h1 style={{ fontSize: compact ? 'var(--t-2xl)' : undefined }}>{r.scenario.title}</h1>
+        {isForgeryRound(pub) && <ExperimentalTag pub={pub} />}
       </div>
+      {!compact && <CaseScene scenarioId={r.scenario.id} />}
       {!compact && <p className="doc-text" style={{ color: 'var(--on-ink)' }}>{r.scenario.incident}</p>}
       <p className="scene-line">
         <span>El incidente ocurrió en</span>

@@ -9,10 +9,13 @@ import { validateCatalogue } from '../shared/content/validate';
 import type { ScenarioDef } from '../shared/content/types';
 import {
   addPlayer,
+  chooseAvatar,
   createRoom,
   declare,
   endDefense,
+  examine,
   forceAdvance,
+  forge,
   kick,
   leave,
   nextRound,
@@ -183,8 +186,9 @@ export async function createGameServer(config: ServerConfig): Promise<GameServer
         socket.data.playerId = null;
         return res.ok ? { ok: true } : res;
       },
-      'room:settings': (p: { pace?: 'relajado' | 'normal' | 'rapido'; rounds?: 0 | 3 | 5 | 8; encargos?: boolean }) =>
+      'room:settings': (p: { pace?: 'relajado' | 'normal' | 'rapido'; rounds?: 0 | 3 | 5 | 8; encargos?: boolean; variant?: 'prueba_falsa' | null }) =>
         inRoom((code, me) => manager.act(code, (room, now) => updateSettings(room, me, p, now))),
+      'room:avatar': (p: { avatar: string }) => inRoom((code, me) => manager.act(code, (room, now) => chooseAvatar(room, me, p.avatar, now))),
       'room:kick': (p: { playerId: string }) =>
         inRoom((code, me) => {
           const res = manager.act(code, (room, now) => kick(room, me, p.playerId, now));
@@ -204,6 +208,9 @@ export async function createGameServer(config: ServerConfig): Promise<GameServer
       'game:ready': (p: { ready: boolean }) => inRoom((code, me) => manager.act(code, (room, now) => setReady(room, me, p.ready, now))),
       'game:vote': (p: { target: string }) => inRoom((code, me) => manager.act(code, (room, now) => vote(room, me, p.target, now))),
       'game:point': (p: { target: string | null }) => inRoom((code, me) => manager.act(code, (room, now) => point(room, me, p.target, now))),
+      'game:forge': (p: { forgery: { slot: number; zone: string } | null }) =>
+        inRoom((code, me) => manager.act(code, (room, now) => forge(room, me, p.forgery, now))),
+      'game:examine': (p: { index: number | null }) => inRoom((code, me) => manager.act(code, (room, now) => examine(room, me, p.index, now))),
       'game:endDefense': () => inRoom((code, me) => manager.act(code, (room, now) => endDefense(room, me, now))),
       'game:advance': () => inRoom((code, me) => manager.act(code, (room, now) => forceAdvance(room, me, now))),
       'game:next': () =>

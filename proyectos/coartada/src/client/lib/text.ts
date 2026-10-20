@@ -20,6 +20,7 @@ export const ERRORS: Record<ErrorCode, string> = {
   room_full: 'La sala está llena (10 personas).',
   limit_reached: 'Ya has publicado tus 3 testimonios de esta ronda.',
   unknown_player: 'Esa persona ya no está en la sala.',
+  avatar_taken: 'Ese personaje acaba de elegirlo otra persona. Elige otro.',
 };
 
 export function errorText(code: string | undefined): string {

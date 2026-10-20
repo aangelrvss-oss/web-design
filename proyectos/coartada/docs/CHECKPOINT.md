@@ -10,13 +10,35 @@ Jugable de principio a fin en local: modo online con un móvil por persona (serv
 
 | Cambio | Detalle |
 |---|---|
-| Última defensa (regla nueva) | Durante la investigación cada participante puede señalar en secreto a una persona (puede cambiarla o quitarla, nunca a sí misma). Al terminar la investigación, la persona más señalada tiene 15 s (12 en Rápido, 20 en Relajado) para defenderse en voz alta. Empate: sorteo determinista con la semilla de la ronda entre las empatadas, anunciado como sorteo. Nadie señalado o defensor desconectado: se pasa directamente a la votación. La terminan antes quien se defiende o quien dirige. Los señalamientos nunca se muestran durante la ronda; llegan a los dispositivos con los datos del veredicto, pero la interfaz de la v1.1 no los enseña (el veredicto muestra el recuento de votos por persona, no quién votó a quién). |
-| Tiempos por tamaño de grupo | Una sola función, `timingsFor(ritmo, personas)`: investigación ×0,85 con 4–5, ×1 con 6–7, ×1,2 con 8–10 (y +10 s de votación). Máximo por ronda en ritmo normal sin veredicto: 6,8 / 7,5 / 8,6 min. |
+| Última defensa (regla nueva) | Durante la investigación cada participante puede señalar en secreto a una persona (puede cambiarla o quitarla, nunca a sí misma). Al terminar la investigación, la persona más señalada tiene 25 s (15 en Rápido, 30 en Relajado; hasta la v1.1 eran 15, 12 y 20) para defenderse en voz alta. Empate: sorteo determinista con la semilla de la ronda entre las empatadas, anunciado como sorteo. Nadie señalado o defensor desconectado: se pasa directamente a la votación. La terminan antes quien se defiende o quien dirige. Los señalamientos nunca se muestran durante la ronda; llegan a los dispositivos con los datos del veredicto, pero la interfaz de la v1.1 no los enseña (el veredicto muestra el recuento de votos por persona, no quién votó a quién). |
+| Tiempos por tamaño de grupo | Una sola función, `timingsFor(ritmo, personas)`: investigación ×0,85 con 4–5, ×1 con 6–7, ×1,2 con 8–10 (y +10 s de votación). Máximo por ronda en ritmo normal sin veredicto: 6,8 / 7,5 / 8,6 min con la defensa de 15 s de la v1.1; 7,0 / 7,7 / 8,8 min con la de 25 s actual. |
 | Tres estados de testimonio | *Coincide*, *Contradice* y *Sin contraste* (si la coartada de la otra persona es automática). Una coartada automática ya no puede «contradecir» ni dar el punto por destapar una mentira. |
 | Puntuación | **Valores sin cambios** (2 / 4 / 3 / 1 / 1 / 1). Solo se aclararon textos: el +1 de voto es de la primera votación; el +1 por destapar una mentira exige un testimonio verdadero que contradiga una coartada falsa (una vez por ronda); el objetivo secreto no cambia quién gana. |
 | Corrección editorial | Glosario único en la app, la guía y la documentación: ronda, partida, coartada, recuerdo, prueba, testimonio, objetivo secreto (antes «encargo»), «la persona culpable». 551 textos inventariados con comprobación automática (`npm run texts`, `docs/TEXT_INVENTORY.md`). |
 | Guía | Reescrita: la ronda de ejemplo se presenta como ejemplo y la genera el motor real (un test comprueba cada dato), con los modos separados, la privacidad, la coartada automática, los empates, los puntos, el reinicio entre rondas y los objetivos que obligan a mentir. |
 | Sin añadir | Ni pruebas, ni papeles, ni horas nuevos (lo pedía el encargo). |
+
+## Escenas por caso y auditoría de equilibrio (sin cambios de reglas)
+
+- **Una escena propia por caso.** 25 SVG dibujados a mano en el estilo de los personajes. Reemplazan a las 6 escenas compartidas, que quedan como respaldo. Detalle en `docs/ESCENAS.md`.
+  - **Verificado** por pruebas unitarias (`tests/ambience.test.ts`), por `npm run e2e:scenes` (escena correcta en rondas reales, móvil de 320 a 390 px, respaldo con el archivo bloqueado, axe) y por revisión visual de las 25.
+  - **Pendiente:** móviles físicos.
+- **Ilustraciones por caso con Higgsfield.**
+  - Hechas con la escena del desván como referencia de estilo, en formato 16:9 y WebP de 1440 y 720 px.
+  - Las 25 están integradas, con dos respaldos: primero la SVG del caso y después la escena genérica.
+  - **Verificado:**
+    - pruebas unitarias;
+    - `npm run e2e:scenes`: escena correcta en rondas reales a 320–390 px y los dos respaldos;
+    - partidas E2E de 4 y 6 jugadores, sin problemas graves de accesibilidad;
+    - modo un solo móvil y demo.
+  - **Pendiente:** móviles físicos.
+  - Detalle en `docs/ESCENAS-higgsfield.md`.
+- **Huellas del motor.** `tests/engine-golden.test.ts` fija con huellas el reparto, la noche, los recuerdos, las pruebas, los objetivos y la puntuación de los 25 casos. Se grabaron antes de tocar nada y siguen idénticas. **Verificado.**
+- **Auditoría de equilibrio con intervalos.** `npm run balance` juega unas 430.000 rondas con bots y semillas fijas, y compara variantes simuladas fuera del motor. Conclusiones en `docs/EQUILIBRIO-y-variantes.md` y datos en `docs/EQUILIBRIO-datos.md`.
+  - Ninguna variante implementada.
+  - Recomendación: probar primero el Informante desde 6 personas; descartar el chivatazo libre.
+  - **Pendiente:** partidas con personas.
+- **Documentación corregida.** `RULES.md` daba duraciones de la defensa antigua (15 s). `docs/balance-sim*.txt` regenerados: los porcentajes no cambian y solo cambian las duraciones.
 
 ## Mantenimiento de la v1.1 (sin cambios de reglas)
 
@@ -24,7 +46,7 @@ Jugable de principio a fin en local: modo online con un móvil por persona (serv
 - **Barra de acciones a 320–360 px:** «Pedir prueba 2», «Pedir terminar», «Retirar petición» y, en el modo de un solo móvil, «Terminar investigación» se salían de la pantalla. «Retirar petición» se salía ya a 360 px, un ancho muy común en Android. El fallo se reprodujo con E2E y se corrigió: por debajo de 380 px la etiqueta puede ocupar dos líneas dentro del mismo botón de 52 px. Los E2E `match`, `local` y `crowd` lo comprueban ahora. **Verificado** (Chromium emulado).
 - **Grupos de 9–10 personas:** `npm run e2e:crowd` ejecuta el peor caso: 10 personas, hasta 10 fichas en una celda, nombres largos y 27 testimonios. Recorre todas las pantallas de la ronda a 390, 360 y 320 px. Resultado: sin solapes, sin fichas fuera de su celda, sin textos cortados y sin desbordamiento. Las listas de votación y de testimonios piden desplazarse bastante, pero se leen. **Parcialmente verificado**: solo en navegador emulado, no en móviles físicos.
 - **Documentación corregida:** decía que el veredicto muestra quién señaló a quién. La interfaz solo muestra el recuento de votos por persona.
-- **Prueba con personas preparada:** `docs/playtest-v1.1.md`. Incluye el apartado E (multijugador con móviles físicos en la Wi-Fi) y E.10 (con una URL HTTPS de Render). **Pendiente** de realizar.
+- **Primera prueba con amigos:** guía práctica y plantilla en `docs/PLAYTEST-amigos.md` (auditoría previa: `docs/AUDITORIA-playtest.md`). Protocolo técnico detallado: `docs/playtest-v1.1.md`. Incluye el apartado E (multijugador con móviles físicos en la Wi-Fi) y E.10 (con una URL HTTPS de Render). **Pendiente** de realizar.
 - **Reconexión tras un reinicio del servidor** (16-10-2026, solo cliente: `src/client/net/store.ts`).
   - **Problema:** al apagarse de forma ordenada (SIGTERM, que es lo que hace Render al reiniciar o desplegar), el servidor cierra él mismo los sockets. Socket.IO no reintenta tras un «io server disconnect», así que el móvil se quedaba indefinidamente en la ronda muerta con «Sin conexión. Reintentando…». Tras una caída brusca sí se reconectaba, pero la URL seguía apuntando a la sala muerta, y la portada se abría en modo «unirse» con ese código, sin ofrecer «Crear sala».
   - **Arreglo:** ante una desconexión iniciada por el servidor, el cliente vuelve a conectar él mismo (después, el *backoff* normal). Al reanudar, si la sala ya no existe, borra la sesión, la ronda y la sala de la URL y muestra «Esa sala ya no existe (se cerró o el servidor se reinició). Crea una sala nueva o únete a otra con su código.» No intenta recuperar salas ni puntos.
@@ -119,7 +141,7 @@ Interpretación: la estructura de información no es trivial ni imposible y ning
 - **«Compartir enlace» no funciona por HTTP en la red local.** El navegador solo permite compartir y copiar en páginas seguras (HTTPS o localhost). El botón no hace nada ni muestra ningún aviso. Alternativa: el QR o el código. Defecto menor, confirmado el 16-10-2026 en Chromium accediendo por IP. Sin corregir (sería un cambio de interfaz).
 - **Quien sale con «Salir de la sala» no puede recuperar su sitio.** Si vuelve, entra como persona nueva y con 0 puntos. Es coherente con las reglas, pero queda pendiente de decisión.
 
-- **La defensa puede no cambiar nada.** Con 15 s y sin poder modificar ya declaraciones ni testimonios, puede quedarse en un trámite. Hay que observar si las mesas la usan o la saltan.
+- **La defensa puede no cambiar nada.** Con 25 s y sin poder modificar ya declaraciones ni testimonios, puede quedarse en un trámite. Hay que observar si las mesas la usan o la saltan.
 - **Señalar en secreto es un paso extra** durante la investigación, la fase más cargada. Hay que ver si se entiende sin explicación y si la gente olvida hacerlo (en ese caso no hay defensa, lo que es válido pero quita el momento).
 - **En el modo de un solo móvil la defensa la elige el grupo en voz alta**, no por votos secretos (no hay forma de señalar en secreto con un solo teléfono sin otra ronda de relevos). Está documentado en RULES §12.
 - **Grupos de 6 o más** podrían favorecer a la persona culpable (simulación independiente).

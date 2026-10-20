@@ -40,14 +40,14 @@ Este documento sirve para responder, con observación y no con opiniones sueltas
 
 > «Vamos a probar un juego de móvil. Queremos ver cómo funciona, no cómo jugáis vosotros: si algo no se entiende, es culpa del juego. Entrad con el QR o el enlace y poned vuestro nombre. A partir de ahí, haced lo que os pida la pantalla. Yo casi no voy a ayudar; si os atascáis, preguntad en voz alta y lo apunto.»
 
-**No** expliques las reglas, los papeles ni la defensa, y **no** leas la guía en voz alta. Quien quiera puede abrir «Cómo se juega» en el menú; anota cuándo y quién lo hace.
+**No** expliques las reglas, los papeles ni la defensa, y **no** leas la guía en voz alta. Quien quiera puede abrir la «Guía rápida» (botón «?» o menú); anota cuándo y quién lo hace.
 
 ### Reglas de intervención
 
 | Situación | Qué hacer |
 |---|---|
 | Pregunta sobre **controles** («¿dónde toco para…?») | Si nadie de la mesa responde en unos 20 s, señala la zona de la pantalla sin explicar la regla. Anótalo como ayuda. |
-| Pregunta sobre **reglas** («¿puedo mentir en…?», «¿qué pasa si empatamos?») | Responde: «Mira lo que dice la pantalla o el menú "Cómo se juega"». Anota la duda textual. |
+| Pregunta sobre **reglas** («¿puedo mentir en…?», «¿qué pasa si empatamos?») | Responde: «Mira lo que dice la pantalla o la “Guía rápida” (botón “?”)». Anota la duda textual. |
 | Pregunta **estratégica** («¿a quién votarías?») | No respondas. |
 | **Bloqueo** (nadie sabe cómo seguir durante más de 60 s) o fallo técnico | Ayuda lo justo para seguir y anótalo como bloqueo, con la hora y la pantalla. Si es técnico, haz una captura. |
 | Alguien desvela su papel o su expediente | No intervengas: es parte del juego social. Anótalo. |
@@ -60,10 +60,10 @@ Para cada punto, anota **hechos observables** (lo que se dice y se hace, y cuán
 
 | # | Área | Señales a registrar |
 |---|---|---|
-| 1 | **Comprensión** | Dudas por fase (declaración, investigación, defensa, votación, veredicto). Quién abre «Cómo se juega» y cuándo. Personas que miran el móvil de otra para saber qué hacer. Si en el veredicto se entiende por qué se ganó o se perdió. |
+| 1 | **Comprensión** | Dudas por fase (declaración, investigación, defensa, votación, veredicto). Quién abre la «Guía rápida» y cuándo. Personas que miran el móvil de otra para saber qué hacer. Si en el veredicto se entiende por qué se ganó o se perdió. |
 | 2 | **Coartadas y pruebas** | Si alguien menciona una prueba al acusar («la prueba dice que estuvo en…»). Si se usan los testimonios para descartar a alguien. Si hay acusaciones basadas solo en «me da mala espina». Cuántos testimonios se publican (el contador está en la app). |
 | 3 | **Interacción social** | Si hablan todos o solo 2–3 personas. Contradicciones públicas («¡yo estuve allí y no te vi!»). Alianzas, negociaciones y acusaciones directas. Silencios largos. Si la persona culpable miente activamente o se queda callada. |
-| 4 | **Última defensa** | Si señalan sin ayuda (el panel «Última defensa» de la investigación). Cuántas personas señalan (la app muestra «X de Y ya han señalado»). Si quien defiende habla de verdad los 15 s, lo despacha en 2 o pulsa «He terminado mi defensa» de inmediato. Reacciones durante la defensa. Comentarios del tipo «ahora no lo tengo claro» o «ahora sí». En el veredicto, la app muestra cuántos votos recibió cada persona, pero **no** quién señaló ni quién votó a quién. Para saber si la defensa cambió algo, anota a quién acusaba cada persona en voz alta justo antes de la defensa y compáralo con el recuento de votos y con la pregunta final 4. |
+| 4 | **Última defensa** | Si señalan sin ayuda (el panel «Última defensa» de la investigación). Cuántas personas señalan (la app muestra «X de Y ya han señalado»). Si quien defiende habla de verdad los 25 s, lo despacha en 2 o pulsa «He terminado mi defensa» de inmediato. Reacciones durante la defensa. Comentarios del tipo «ahora no lo tengo claro» o «ahora sí». En el veredicto, la app muestra cuántos votos recibió cada persona, pero **no** quién señaló ni quién votó a quién. Para saber si la defensa cambió algo, anota a quién acusaba cada persona en voz alta justo antes de la defensa y compáralo con el recuento de votos y con la pregunta final 4. |
 | 5 | **Equilibrio** | Ganador de cada ronda. Si la persona culpable ganó por engañar o porque el grupo no tenía información. Si el grupo ganó por deducción o por casualidad (empates o votos muy repartidos). Qué hizo el cómplice, con 6 o más personas: ¿ayudó, se notó? |
 | 6 | **Ritmo** | Duración de cada fase y de la ronda. Momentos en que alguien espera sin hacer nada (mirando al techo, con otra app). Si el tiempo se acaba con la gente aún hablando, o si piden terminar antes por aburrimiento. |
 | 7 | **Revancha** | Lo que pasa al terminar: ¿alguien dice «otra»? ¿Se levantan? ¿Comentan la ronda entre ellos sin que se les pregunte? |
@@ -277,10 +277,10 @@ La auditoría de red automática ya comprobó, en navegadores emulados contra es
 | C2 | Repartir papeles | Cada cual abre su expediente confidencial en privado |
 | C3 | Declarar y sellar | Tres horas, un sitio por hora; «Sellar declaración»; se ve quién ha sellado, no qué |
 | C4 | Revelar el tablero | Todas las coartadas aparecen a la vez cuando sellan todos o se acaba el tiempo |
-| C5 | Publicar testimonios | Hasta 3 por persona; cada uno sale como *Coincide*, *Contradice* o *Sin contraste* |
+| C5 | Publicar testimonios | Hasta 3 por persona, con el botón «Testificar» o tocando la ficha de alguien en el tablero (persona y hora ya elegidas; se publica solo con «Publicar testimonio»); cada uno sale como *Coincide*, *Contradice* o *Sin contraste* |
 | C6 | Pruebas | La prueba 1 sale al empezar la investigación; la 2, cuando todos la piden o acaba la primera parte |
-| C7 | Señalar en secreto | Panel «Última defensa» → «Señalar a alguien»; se puede cambiar o quitar |
-| C8 | Última defensa | Le toca a la persona más señalada (empate: sorteo; nadie señalado: no hay defensa); 15 s; puede terminarla ella o quien dirige |
+| C7 | Señalar en secreto | Panel «Señala a quien crees culpable» (o el aviso de la barra inferior): tocar a una persona; se puede cambiar o quitar |
+| C8 | Última defensa | Le toca a la persona más señalada (empate: sorteo; nadie señalado: no hay defensa); 25 s en ritmo normal; puede terminarla ella o quien dirige |
 | C9 | Votar y desempatar | Voto secreto; si hay empate, desempate solo entre las empatadas; si se repite, nadie es acusado |
 | C10 | Resultado y puntos | Puntos según RULES §6; comprobar a mano una línea de puntos de alguien |
 | C11 | Nueva ronda | Caso, papeles y recuerdos nuevos; solo se conservan los puntos |
@@ -294,7 +294,7 @@ La auditoría de red automática ya comprobó, en navegadores emulados contra es
 | D3 | Quien dirige pierde la conexión | Pasados 20 s, otra persona pasa a dirigir y la partida sigue | Comportamiento esperado |
 | D4 | Alguien pulsa «Salir de la sala» a mitad de ronda | Sigue en la ronda como desconectado (coartada automática, sin voto) y se le quita al acabarla. **No puede recuperar su sitio**: si vuelve a entrar, lo hace como persona nueva, mira la ronda y empieza la siguiente con 0 puntos | Esperado según las reglas; **pendiente de decisión** si se quiere que pueda volver con sus puntos |
 | D5 | Dos acciones casi a la vez (todos sellan o piden la prueba 2 a la vez; quien dirige termina la fase mientras alguien actúa; doble pulsación al votar o en «Siguiente ronda») | Una sola transición de fase; la acción repetida se rechaza con «Eso ya está hecho.» o «Esa acción ya no está disponible en esta fase.» | Comportamiento esperado |
-| D6 | Alguien tarda demasiado | Al acabar el tiempo: coartada automática marcada, la fase avanza, el voto no emitido no cuenta y, si nadie vota, nadie es acusado. La defensa termina sola a los 15 s | Comportamiento esperado |
+| D6 | Alguien tarda demasiado | Al acabar el tiempo: coartada automática marcada, la fase avanza, el voto no emitido no cuenta y, si nadie vota, nadie es acusado. La defensa termina sola a los 25 s (ritmo normal) | Comportamiento esperado |
 | D7 | Termina la última ronda e intentan seguir | En el último veredicto, quien dirige ve «Ver clasificación final». En la clasificación, votar o empezar se rechaza y solo queda «Nueva partida», que vuelve a la sala con los puntos a cero. (A mitad de partida, «Ir a la sala» vuelve a la sala **conservando** los puntos.) | Comportamiento esperado |
 | D8 | «Compartir enlace» o «Invitar a más gente» por HTTP en la red local | **No hace nada y no muestra ningún aviso** (el navegador bloquea compartir y copiar en páginas no seguras). Alternativa: el QR o el código | **Defecto confirmado**, menor. No se corrige en esta fase (sería un cambio de interfaz) |
 | D9 | El servidor se reinicia a mitad de ronda (despliegue, reinicio del plan gratuito de Render, caída) | Mientras está caído: aviso «Sin conexión. Reintentando…» y el móvil reintenta solo. Cuando vuelve: cada móvil regresa a la portada con «Esa sala ya no existe (se cerró o el servidor se reinició). Crea una sala nueva o únete a otra con su código.» La sala, la ronda y los puntos se pierden (viven en memoria); quien dirige crea otra sala y el resto se une | Comportamiento esperado (arreglado el 16-10-2026: antes el móvil se quedaba en la ronda muerta tras un reinicio ordenado). Si ocurre, anotadlo con la hora |

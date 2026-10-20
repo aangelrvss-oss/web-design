@@ -3,6 +3,8 @@ services:
   - type: web
     name: coartada
     runtime: node
+    # Without it a Blueprint creates a paid instance.
+    plan: free
     rootDir: proyectos/coartada
     buildCommand: npm ci && npm run build
     startCommand: node dist/server.mjs

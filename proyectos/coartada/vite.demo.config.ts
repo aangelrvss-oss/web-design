@@ -10,6 +10,8 @@ export default defineConfig({
   plugins: [react()],
   // The demo is offline-only: keep the network client out of the bundle.
   resolve: { alias: { 'socket.io-client': fileURLToPath(new URL('./src/client/net/no-socket.ts', import.meta.url)) } },
+  // Only the 720 px case illustrations go into the single file (src/client/ui/ambience.tsx).
+  define: { 'import.meta.env.VITE_SCENE_PHOTOS': JSON.stringify('small') },
   build: {
     outDir: fileURLToPath(new URL('./dist/demo-build', import.meta.url)),
     emptyOutDir: true,

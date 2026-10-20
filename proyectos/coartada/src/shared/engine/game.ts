@@ -2,6 +2,7 @@
 // pass-and-play mode) call these functions and own the clock. Every action validates
 // phase, membership and permissions and returns a typed error instead of throwing.
 
+import { AVATARS, isAvatar, type AvatarId } from '../characters';
 import { createRng } from '../rng';
 import type { ScenarioDef } from '../content/types';
 import {
@@ -13,6 +14,7 @@ import {
   timingsFor,
   SCORE_POINTS,
   SLOT_COUNT,
+  type Forgery,
   type Outcome,
   type PlayerId,
   type PlayerRec,
@@ -24,6 +26,7 @@ import {
 } from '../types';
 import { generateRound } from './generate';
 import { evaluateEncargo, testimonyStatus } from './encargos';
+import { drawForgeryOpportunity, forgeryAllowed, resolveExamination, validForgery } from './prueba-falsa';
 
 export type ActionError =
   | 'not_host'
@@ -35,7 +38,8 @@ export type ActionError =
   | 'too_many_players'
   | 'room_full'
   | 'limit_reached'
-  | 'unknown_player';
+  | 'unknown_player'
+  | 'avatar_taken';
 
 export type Result<T = object> = ({ ok: true } & T) | { ok: false; error: ActionError };
 
@@ -51,6 +55,12 @@ export interface EngineDeps {
 
 /** How long a disconnected host keeps the role before it moves on. */
 export const HOST_GRACE_MS = 20_000;
+/**
+ * A player who is momentarily disconnected when a round starts (phone locked or app in the
+ * background while the group talks over the verdict) still gets a seat in it, exactly like a
+ * participant who disconnects mid-round. Someone gone for longer than this is left out.
+ */
+export const SEAT_GRACE_MS = 15 * 60_000;
 /** Do not repeat a scenario within this many rounds in the same room (bounded by catalogue size). */
 export const SCENARIO_COOLDOWN = 12;
 
@@ -85,6 +95,31 @@ function uniqueName(room: RoomState, name: string): string {
   return name;
 }
 
+/** A free character for a newcomer: picked from the free ones by their id, so it varies by
+ *  player but never depends on anything secret (roles don't exist yet when it happens). */
+function freeAvatar(room: RoomState, playerId: PlayerId): AvatarId | null {
+  const used = new Set(room.players.map((p) => p.avatar));
+  const free = AVATARS.filter((a) => !used.has(a));
+  if (!free.length) return null;
+  let h = 0;
+  for (const ch of playerId) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return free[h % free.length];
+}
+
+/** Pick the character to be drawn as. Only in the lobby; a character belongs to one player of
+ *  the room at a time (anyone still in it, even offline) and is free again when they're removed. */
+export function chooseAvatar(room: RoomState, id: PlayerId, avatar: string, now: number): Result {
+  const p = findPlayer(room, id);
+  if (!p || p.left) return fail('unknown_player');
+  if (room.phase !== 'lobby') return fail('wrong_phase');
+  if (!isAvatar(avatar)) return fail('invalid');
+  if (p.avatar === avatar) return ok();
+  if (room.players.some((q) => q.id !== id && q.avatar === avatar)) return fail('avatar_taken');
+  p.avatar = avatar;
+  touch(room, now);
+  return ok();
+}
+
 function freeColor(room: RoomState): number {
   const used = new Set(room.players.map((p) => p.color));
   for (let c = 0; c < MAX_PLAYERS; c++) if (!used.has(c)) return c;
@@ -94,8 +129,9 @@ function freeColor(room: RoomState): number {
 export function createRoom(code: string, hostName: string, now: number, deps: EngineDeps): Result<{ room: RoomState; player: PlayerRec }> {
   const name = cleanName(hostName);
   if (!name) return fail('invalid');
+  const id = deps.makeId();
   const player: PlayerRec = {
-    id: deps.makeId(),
+    id,
     name,
     color: 0,
     token: deps.makeToken(),
@@ -104,6 +140,7 @@ export function createRoom(code: string, hostName: string, now: number, deps: En
     lastSeen: now,
     left: false,
     score: 0,
+    avatar: null,
   };
   const room: RoomState = {
     code,
@@ -120,6 +157,7 @@ export function createRoom(code: string, hostName: string, now: number, deps: En
     recentScenarios: [],
     nextTestimonyId: 1,
   };
+  player.avatar = freeAvatar(room, id);
   return ok({ room, player });
 }
 
@@ -128,8 +166,9 @@ export function addPlayer(room: RoomState, rawName: string, now: number, deps: E
   if (!name) return fail('invalid');
   const present = room.players.filter((p) => !p.left);
   if (present.length >= MAX_PLAYERS) return fail('room_full');
+  const id = deps.makeId();
   const player: PlayerRec = {
-    id: deps.makeId(),
+    id,
     name: uniqueName(room, name),
     color: freeColor(room),
     token: deps.makeToken(),
@@ -138,6 +177,7 @@ export function addPlayer(room: RoomState, rawName: string, now: number, deps: E
     lastSeen: now,
     left: false,
     score: 0,
+    avatar: freeAvatar(room, id),
   };
   room.players.push(player);
   touch(room, now);
@@ -199,6 +239,9 @@ export function ensureHost(room: RoomState, now: number, graceMs = HOST_GRACE_MS
 export function updateSettings(room: RoomState, by: PlayerId, patch: Partial<Settings>, now: number): Result {
   if (by !== room.hostId) return fail('not_host');
   if (roundActive(room)) return fail('wrong_phase');
+  // Back in the room mid-match, the match can't be made shorter than what was already played:
+  // the room would be left with a finished match and no way on (or with a round past the end).
+  if (room.phase === 'lobby' && patch.rounds !== undefined && patch.rounds > 0 && room.roundsPlayed >= patch.rounds) return fail('invalid');
   room.settings = { ...room.settings, ...patch };
   touch(room, now);
   return ok();
@@ -216,17 +259,25 @@ export function roundActive(room: RoomState): boolean {
   );
 }
 
-export function eligiblePlayers(room: RoomState): PlayerRec[] {
-  return room.players.filter((p) => p.connected && !p.left);
+export function eligiblePlayers(room: RoomState, now: number): PlayerRec[] {
+  return room.players.filter((p) => !p.left && (p.connected || now - p.lastSeen < SEAT_GRACE_MS));
+}
+
+/** The match has played all its rounds (never with «sin fin»): only the final standings remain. */
+function matchOver(room: RoomState): boolean {
+  return room.settings.rounds > 0 && room.roundsPlayed >= room.settings.rounds;
 }
 
 export function startRound(room: RoomState, by: PlayerId, now: number, deps: EngineDeps, seedOverride?: string): Result {
   if (by !== room.hostId) return fail('not_host');
   if (room.phase !== 'lobby' && room.phase !== 'result') return fail('wrong_phase');
-  if (room.phase === 'result' && room.settings.rounds > 0 && room.roundsPlayed >= room.settings.rounds) return fail('wrong_phase');
+  // From the verdict or from the room alike: no round past the end of the match.
+  if (matchOver(room)) return fail('wrong_phase');
   purgeLeft(room);
-  const players = eligiblePlayers(room);
-  if (players.length < MIN_PLAYERS) return fail('not_enough_players');
+  const players = eligiblePlayers(room, now);
+  // Starting still needs MIN_PLAYERS people actually here: momentarily absent players get a seat,
+  // but they can't make up the minimum (a round of mostly empty seats is no game).
+  if (players.filter((p) => p.connected).length < MIN_PLAYERS) return fail('not_enough_players');
   if (players.length > MAX_PLAYERS) return fail('too_many_players');
 
   const seed = seedOverride ?? deps.makeSeed();
@@ -249,6 +300,17 @@ export function startRound(room: RoomState, by: PlayerId, now: number, deps: Eng
     defense: null,
     outcome: null,
     startedAt: now,
+    // The round keeps its own copy: what it is played with never depends on later settings.
+    variant: room.settings.variant ?? null,
+    ...(room.settings.variant === 'prueba_falsa'
+      ? {
+          forgeryChance: room.settings.forgeryChance ?? 100,
+          forgeryAllowed: drawForgeryOpportunity(setup.seed, room.settings.forgeryChance ?? 100),
+          forgery: null,
+          examineMarks: {},
+          examination: null,
+        }
+      : {}),
   };
   room.recentScenarios = [scenario.id, ...room.recentScenarios].slice(0, SCENARIO_COOLDOWN);
   setPhase(room, 'declare', now, timingsFor(room.settings.pace, ids.length).declare);
@@ -348,6 +410,39 @@ export function point(room: RoomState, id: PlayerId, target: PlayerId | null, no
   return ok();
 }
 
+/**
+ * Prueba falsificable (experimental, docs/PRUEBA-FALSA.md): the culprit picks the one forgery of the
+ * round, changes it or clears it (null), only while the declaration lasts.
+ */
+export function forge(room: RoomState, id: PlayerId, forgery: Forgery | null, now: number): Result {
+  if (room.phase !== 'declare') return fail('wrong_phase');
+  const r = requireRound(room, id);
+  if (!r.ok) return r;
+  const { round } = r;
+  if (round.variant !== 'prueba_falsa' || round.setup.roles[id] !== 'culpable') return fail('invalid');
+  // Without the opportunity this round, the only valid choice is not forging.
+  if (forgery && !forgeryAllowed(round)) return fail('invalid');
+  if (forgery && !validForgery(round, forgery)) return fail('invalid');
+  round.forgery = forgery ? { slot: forgery.slot, zone: forgery.zone } : null;
+  touch(room, now);
+  return ok();
+}
+
+/** Prueba falsificable: mark (or clear) which published piece of evidence you want examined. */
+export function examine(room: RoomState, id: PlayerId, index: number | null, now: number): Result {
+  if (room.phase !== 'investigate') return fail('wrong_phase');
+  const r = requireRound(room, id);
+  if (!r.ok) return r;
+  const { round } = r;
+  if (round.variant !== 'prueba_falsa') return fail('invalid');
+  const marks = (round.examineMarks ??= {});
+  if (index === null) delete marks[id];
+  else if (Number.isInteger(index) && index >= 0 && index < round.tracesRevealed) marks[id] = index;
+  else return fail('invalid');
+  touch(room, now);
+  return ok();
+}
+
 /** The defender (or the host) ends the last defense early. */
 export function endDefense(room: RoomState, id: PlayerId, now: number): Result {
   if (room.phase !== 'defense') return fail('wrong_phase');
@@ -390,7 +485,7 @@ export function forceAdvance(room: RoomState, by: PlayerId, now: number): Result
 export function nextRound(room: RoomState, by: PlayerId, now: number, deps: EngineDeps): Result {
   if (by !== room.hostId) return fail('not_host');
   if (room.phase !== 'result') return fail('wrong_phase');
-  if (room.settings.rounds > 0 && room.roundsPlayed >= room.settings.rounds) {
+  if (matchOver(room)) {
     setPhase(room, 'final', now, null);
     purgeLeft(room);
     return ok();
@@ -402,6 +497,8 @@ export function nextRound(room: RoomState, by: PlayerId, now: number, deps: Engi
 export function toLobby(room: RoomState, by: PlayerId, now: number): Result {
   if (by !== room.hostId) return fail('not_host');
   if (room.phase !== 'result' && room.phase !== 'final' && room.phase !== 'lobby') return fail('wrong_phase');
+  // After the last round the way on is the final standings («Nueva partida» from there resets).
+  if (room.phase === 'result' && matchOver(room)) return fail('wrong_phase');
   if (room.phase === 'final') {
     for (const p of room.players) p.score = 0;
     room.roundsPlayed = 0;
@@ -514,6 +611,8 @@ function timeout(room: RoomState, now: number): void {
  */
 function beginDefense(room: RoomState, now: number): void {
   const round = room.round!;
+  // Prueba falsificable: the examination is settled the moment the investigation ends.
+  if (round.variant === 'prueba_falsa') resolveExamination(round);
   const t = timingsFor(room.settings.pace, round.participants.length);
   const counts: Record<PlayerId, number> = {};
   for (const [by, target] of Object.entries(round.pointers)) {

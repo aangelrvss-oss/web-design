@@ -5,7 +5,9 @@ import type { PrivateView, PublicView } from '../../shared/engine/views';
 import { errorText, playerName } from '../lib/text';
 import { store } from '../net/store';
 import { Board } from '../ui/game';
-import { ActionBar, Pin, TopBar, useAction, useCountdown } from '../ui/kit';
+import { NotesButton } from './Notes';
+import { ExaminationResult, isForgeryRound } from '../ui/pruebaFalsa';
+import { ActionBar, FINAL_SECS, Pin, TopBar, useAction, useCountdown } from '../ui/kit';
 
 export function Defense({ pub, priv, onMenu, shared }: { pub: PublicView; priv: PrivateView | null; onMenu: () => void; shared?: boolean }) {
   const round = pub.round!;
@@ -24,7 +26,7 @@ export function Defense({ pub, priv, onMenu, shared }: { pub: PublicView; priv: 
 
   return (
     <main className="screen">
-      <TopBar title="Última defensa" phase="defense" step="Después: votación secreta." endsAt={pub.phaseEndsAt} onMenu={onMenu} />
+      <TopBar title="Última defensa" phase="defense" step="Después: votación secreta." endsAt={pub.phaseEndsAt} onMenu={onMenu} bigClock={false} />
       <section className="paper center stack" style={{ alignItems: 'center', padding: 'var(--s-5) var(--s-4)' }} aria-live="polite">
         {defender && <Pin player={defender} size="xl" />}
         <div className="defense-name">{name}</div>
@@ -35,21 +37,27 @@ export function Defense({ pub, priv, onMenu, shared }: { pub: PublicView; priv: 
               ? `Empate a ${d.pointerCount} señalamientos entre ${d.tiedCount} personas: la app ha sorteado quién se defiende.`
               : `La persona más señalada: ${d.pointerCount} ${d.pointerCount === 1 ? 'señalamiento' : 'señalamientos'}.`}
         </p>
-        <div className="defense-clock" role="timer" aria-label={`Quedan ${secs} segundos de defensa`}>
-          {secs}
+        {/* Fixed-height slot, so the stamp of the last seconds doesn't push the text below. */}
+        <div style={{ minHeight: '4.8rem', display: 'grid', placeItems: 'center' }}>
+          <div key={secs <= FINAL_SECS ? secs : 'clock'} className={`defense-clock ${secs <= FINAL_SECS ? 'final' : ''}`} role="timer" aria-label={`Quedan ${secs} segundos de defensa`}>
+            {secs}
+          </div>
         </div>
-        <p style={{ fontWeight: 650, maxWidth: '34ch' }}>
+        <p className="defense-cue">{isMe ? 'Te han señalado: te toca defenderte' : shared ? `Escuchad a ${name}` : `Escucha a ${name}`}</p>
+        <p style={{ maxWidth: '36ch' }}>
           {isMe
-            ? 'Te toca: explica en voz alta por qué te deberían creer.'
+            ? 'Explica en voz alta dónde estuviste y por qué te deberían creer. Cuando acabes, pulsa «He terminado mi defensa».'
             : shared
-              ? `Escuchad a ${name}.`
-              : `Escucha a ${name}.`}
+              ? 'Después, votación secreta: cada persona podrá acusar a quien quiera, no solo a quien se defiende.'
+              : 'Después, votación secreta: podrás acusar a quien quieras, no solo a quien se defiende.'}
         </p>
         <p className="small muted" style={{ maxWidth: '40ch' }}>
           Nadie puede cambiar ya su declaración ni sus testimonios. Defenderse no revela el papel de nadie.
         </p>
       </section>
 
+      {isForgeryRound(pub) && <ExaminationResult pub={pub} />}
+      {!shared && priv?.inRound && <NotesButton pub={pub} me={priv.playerId} />}
       <button className="btn btn-ghost btn-block" onClick={() => setShowBoard((v) => !v)} aria-expanded={showBoard}>
         {showBoard ? 'Ocultar tablero' : 'Ver tablero y pruebas'}
       </button>

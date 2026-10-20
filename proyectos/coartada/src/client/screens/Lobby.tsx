@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
-import { MAX_PLAYERS, MIN_PLAYERS, timingsFor, type Pace } from '../../shared/types';
+import { FORGERY_CHANCES, MAX_PLAYERS, MIN_PLAYERS, timingsFor, type Pace } from '../../shared/types';
 import type { PublicView } from '../../shared/engine/views';
 import { errorText, PACE_TEXT, plural } from '../lib/text';
 import { store } from '../net/store';
 import { ActionBar, Icon, Pin, Segmented, Switch, toast, TopBar, useAction } from '../ui/kit';
+import { CharacterPicker } from './CharacterPicker';
 
 /** Maximum round length with full timers (verdict and runoff excluded), rounded. */
 function roundMinutes(pace: Pace, players: number): string {
@@ -75,6 +76,8 @@ export function Lobby({ pub, me, onMenu }: { pub: PublicView; me: string; onMenu
         </div>
       </section>
 
+      <CharacterPicker pub={pub} me={me} />
+
       <section aria-label="Personas en la sala">
         <div className="spread">
           <h3>En la sala</h3>
@@ -142,6 +145,29 @@ export function Lobby({ pub, me, onMenu }: { pub: PublicView; me: string; onMenu
           disabled={!isHost || busy}
           onChange={(encargos) => setSettings({ encargos })}
         />
+        <Switch
+          label="Prueba falsificable · experimental"
+          hint="Reglas en prueba: la persona culpable puede falsificar una de las dos pruebas y el grupo puede pedir que se revise una. No cambia los puntos. Solo para partidas de prueba."
+          checked={pub.settings.variant === 'prueba_falsa'}
+          disabled={!isHost || busy}
+          onChange={(on) => setSettings({ variant: on ? 'prueba_falsa' : null })}
+        />
+        {pub.settings.variant === 'prueba_falsa' && (
+          <div className="field">
+            <span className="label on-ink">Oportunidad de falsificar (experimental)</span>
+            <Segmented
+              label="Oportunidad de falsificar"
+              value={pub.settings.forgeryChance ?? 100}
+              disabled={!isHost || busy}
+              onChange={(forgeryChance) => setSettings({ forgeryChance })}
+              options={FORGERY_CHANCES.map((v) => ({ value: v, label: `${v} %` }))}
+            />
+            <p className="small muted" style={{ marginTop: 6 }}>
+              Probabilidad de que la persona culpable pueda falsificar en cada ronda; si la tiene, decide si la usa. Son condiciones de prueba para
+              comparar con grupos reales, ninguna es mejor de antemano. Nadie más sabe si la tuvo hasta el veredicto.
+            </p>
+          </div>
+        )}
       </section>
 
       <ActionBar

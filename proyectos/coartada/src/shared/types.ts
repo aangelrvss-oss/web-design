@@ -1,3 +1,4 @@
+import type { AvatarId } from './characters';
 // Shared game types. The server owns the full RoomState; clients only ever receive
 // PublicView (identical for everyone) plus their own PrivateView.
 
@@ -19,15 +20,26 @@ export interface Settings {
   rounds: 0 | 3 | 5 | 8;
   /** Secret side missions (+1 point each). */
   encargos: boolean;
+  /** Experimental rules for test games (docs/PRUEBA-FALSA.md). Off (null) by default. */
+  variant: Variant | null;
+  /** Prueba falsificable only: chance (%) that the culprit gets the opportunity to forge in a
+   *  round. A test condition for balance experiments; 100 is the rule as first prototyped. */
+  forgeryChance: ForgeryChance;
 }
 
-export const DEFAULT_SETTINGS: Settings = { pace: 'normal', rounds: 5, encargos: false };
+export type ForgeryChance = 100 | 50 | 25;
+export const FORGERY_CHANCES: readonly ForgeryChance[] = [100, 50, 25];
+
+/** Experimental rule sets. There is one: «Prueba falsificable». */
+export type Variant = 'prueba_falsa';
+
+export const DEFAULT_SETTINGS: Settings = { pace: 'normal', rounds: 5, encargos: false, variant: null, forgeryChance: 100 };
 
 /** Seconds per timed step for 6–7 players (the reference group size). */
 export const PACE_TIMINGS: Record<Pace, StepTimings> = {
-  relajado: { declare: 180, investigate1: 150, investigate2: 180, defense: 20, vote: 60, runoff: 40 },
-  normal: { declare: 120, investigate1: 120, investigate2: 150, defense: 15, vote: 45, runoff: 30 },
-  rapido: { declare: 75, investigate1: 75, investigate2: 105, defense: 12, vote: 30, runoff: 25 },
+  relajado: { declare: 180, investigate1: 150, investigate2: 180, defense: 30, vote: 60, runoff: 40 },
+  normal: { declare: 120, investigate1: 120, investigate2: 150, defense: 25, vote: 45, runoff: 30 },
+  rapido: { declare: 75, investigate1: 75, investigate2: 105, defense: 15, vote: 30, runoff: 25 },
 };
 
 export interface StepTimings {
@@ -183,6 +195,33 @@ export interface RoundState {
   defense: DefenseInfo | null;
   outcome: Outcome | null;
   startedAt: number;
+  /** Experimental rules, copied from the settings when the round starts (null: a normal round). */
+  variant: Variant | null;
+  /** Prueba falsificable only: the chance this round was played with (copied when it started). */
+  forgeryChance?: ForgeryChance;
+  /** Prueba falsificable only: whether the culprit got the opportunity to forge, drawn once when
+   *  the round started (secret: the culprit knows; everyone else, at the verdict). */
+  forgeryAllowed?: boolean;
+  /** Prueba falsificable only: the culprit's forgery (secret until the verdict). */
+  forgery?: Forgery | null;
+  /** Prueba falsificable only: which revealed piece of evidence each participant wants examined. */
+  examineMarks?: Record<PlayerId, number>;
+  /** Prueba falsificable only: set when the investigation ends. */
+  examination?: Examination | null;
+}
+
+/** «The evidence of hour `slot` will say `zone`» instead of where the culprit really was. */
+export interface Forgery {
+  slot: number;
+  zone: string;
+}
+
+export interface Examination {
+  /** The examined piece of evidence (index in reveal order), or null when nobody asked. */
+  index: number | null;
+  /** Two pieces had the same marks and a seeded draw chose. */
+  tied: boolean;
+  result: 'autentica' | 'falsa' | null;
 }
 
 export interface DefenseInfo {
@@ -207,6 +246,8 @@ export interface PlayerRec {
   /** Explicitly left; kept until the current round ends so the round stays consistent. */
   left: boolean;
   score: number;
+  /** The character this player is drawn as (cosmetic). Unique in the room; null only if none was free. */
+  avatar: AvatarId | null;
 }
 
 export interface RoundRecord {

@@ -1,6 +1,7 @@
 // Wire protocol. Every client→server payload is validated with these schemas on the
 // server before it reaches the engine; anything else is rejected with `invalid`.
 import { z } from 'zod';
+import { AVATARS } from './characters';
 import { MAX_PLAYERS, NAME_MAX, SLOT_COUNT } from './types';
 import type { PrivateView, PublicView } from './engine/views';
 
@@ -26,15 +27,25 @@ export const ClientMessages = {
       pace: z.enum(['relajado', 'normal', 'rapido']).optional(),
       rounds: z.union([z.literal(0), z.literal(3), z.literal(5), z.literal(8)]).optional(),
       encargos: z.boolean().optional(),
+      // Experimental rules (docs/PRUEBA-FALSA.md); null turns them off.
+      variant: z.enum(['prueba_falsa']).nullable().optional(),
+      // Prueba falsificable: chance (%) that the culprit gets the opportunity to forge.
+      forgeryChance: z.union([z.literal(100), z.literal(50), z.literal(25)]).optional(),
     })
     .strict(),
   'room:kick': z.object({ playerId: id }).strict(),
+  'room:avatar': z.object({ avatar: z.enum(AVATARS) }).strict(),
   'game:start': z.object({}).strict(),
   'game:declare': z.object({ zones: z.array(zoneId).length(SLOT_COUNT), lock: z.boolean() }).strict(),
   'game:testify': z.object({ subject: id, slot: z.number().int().min(0).max(SLOT_COUNT - 1) }).strict(),
   'game:ready': z.object({ ready: z.boolean() }).strict(),
   'game:vote': z.object({ target: id }).strict(),
   'game:point': z.object({ target: id.nullable() }).strict(),
+  // Prueba falsificable only (the engine rejects them in a normal round).
+  'game:forge': z
+    .object({ forgery: z.object({ slot: z.number().int().min(0).max(SLOT_COUNT - 1), zone: zoneId }).strict().nullable() })
+    .strict(),
+  'game:examine': z.object({ index: z.number().int().min(0).max(SLOT_COUNT - 2).nullable() }).strict(),
   'game:endDefense': z.object({}).strict(),
   'game:advance': z.object({}).strict(),
   'game:next': z.object({}).strict(),
@@ -60,7 +71,8 @@ export type ErrorCode =
   | 'too_many_players'
   | 'room_full'
   | 'limit_reached'
-  | 'unknown_player';
+  | 'unknown_player'
+  | 'avatar_taken';
 
 export type Ack =
   | { ok: true; code?: string; playerId?: string; token?: string }

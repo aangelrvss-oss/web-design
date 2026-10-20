@@ -1,24 +1,45 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { MAX_TESTIMONIES, timingsFor } from '../../shared/types';
 import type { PrivateView, PublicView } from '../../shared/engine/views';
 import { atHour, errorText, playerName, zoneName } from '../lib/text';
+import { useEvidenceNotice } from '../lib/evidence';
+import { getPrefs } from '../lib/prefs';
 import { sfx } from '../lib/sound';
 import { store } from '../net/store';
 import { Board, CaseHeader, PrivateFile, TestimonyList, TraceCard } from '../ui/game';
-import { ActionBar, Icon, Pin, Sheet, toast, TopBar, useAction } from '../ui/kit';
+import { EvidenceBag, Lineup } from '../ui/illustrations';
+import { ExaminePanel, isForgeryRound } from '../ui/pruebaFalsa';
+import { NoteLine, NotesPanel } from './Notes';
+import { ActionBar, Icon, Pin, Sheet, toast, TopBar, URGENT_SECS, useAction, useCountdown } from '../ui/kit';
 
 export interface LocalInvestigateProps {
   speakers: string[];
   speakerPriv: PrivateView | null;
   onSpeaker: (id: string) => void;
   onClose: () => void;
+  /** Hand the phone to one person so they can re-read their own file. */
+  onFile?: () => void;
 }
 
 export function Investigate({ pub, priv, onMenu, local }: { pub: PublicView; priv: PrivateView | null; onMenu: () => void; local?: LocalInvestigateProps }) {
   const round = pub.round!;
   const [selected, setSelected] = useState<string | null>(null);
+  // The hour of the pin that was tapped (null when chosen from the list of names under the board).
+  const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
   const [testifyOpen, setTestifyOpen] = useState(false);
+  // Person and hour already filled in when the testimony starts from a pin; nothing is published
+  // until «Publicar testimonio» is pressed in the sheet.
+  const [preset, setPreset] = useState<{ subject: string; slot: number | null } | null>(null);
+  const openTestify = (p: { subject: string; slot: number | null } | null) => {
+    setPreset(p);
+    setTestifyOpen(true);
+  };
+  const closeTestify = () => {
+    setTestifyOpen(false);
+    setPreset(null);
+  };
   const [fileOpen, setFileOpen] = useState(false);
+  const [fileTab, setFileTab] = useState<'file' | 'notes'>('notes');
   const [suspectOpen, setSuspectOpen] = useState(false);
   const { busy, run } = useAction();
   const me = priv?.playerId ?? null;
@@ -29,22 +50,32 @@ export function Investigate({ pub, priv, onMenu, local }: { pub: PublicView; pri
   const secondStep = round.traces.length >= 2;
   const defenseSecs = timingsFor(pub.settings.pace, round.participants.length).defense;
 
-  // Remember which traces were already seen so only new ones animate.
-  const seenTraces = useRef(round.traces.length);
-  const [freshTrace, setFreshTrace] = useState<number | null>(null);
+  // New evidence: announced once per phone, from the room's state (lib/evidence.ts).
+  const notice = useEvidenceNotice(pub);
   const [flip] = useState(round.traces.length === 1 && round.testimonies.length === 0);
+  const newest = notice.indices.length ? notice.indices[notice.indices.length - 1] : null;
   useEffect(() => {
-    if (round.traces.length > seenTraces.current) {
-      setFreshTrace(round.traces.length - 1);
-      sfx.paper();
-      seenTraces.current = round.traces.length;
-    }
-  }, [round.traces.length]);
+    // The first one comes with the flip of the board, which has its own sound.
+    if (newest !== null && newest > 0) sfx.paper();
+  }, [newest]);
   useEffect(() => {
     if (flip) sfx.reveal();
   }, [flip]);
+  const lookAtEvidence = () => {
+    const reduce = getPrefs().reduceMotion || matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.querySelector('.board .cell.fresh-trace')?.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' });
+    notice.look();
+  };
 
   const toggleReady = () => void run(() => store.send('game:ready', { ready: !ready }), undefined, errorText);
+
+  const point = useAction();
+  const pointAt = (target: string | null) => point.run(() => store.send('game:point', { target }), undefined, errorText);
+  const goToPointing = () => {
+    const reduce = getPrefs().reduceMotion || matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.getElementById('point-panel')?.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' });
+    document.querySelector<HTMLButtonElement>('#point-panel .point-option')?.focus({ preventScroll: true });
+  };
 
   return (
     <main className="screen">
@@ -54,6 +85,7 @@ export function Investigate({ pub, priv, onMenu, local }: { pub: PublicView; pri
         step={secondStep ? 'Prueba 2 de 2. Después: última defensa y votación.' : 'Prueba 1 de 2. Testificad y comparad coartadas.'}
         endsAt={pub.phaseEndsAt}
         onMenu={onMenu}
+        notice={notice.banner ? <NewEvidenceNotice pub={pub} indices={notice.indices} onLook={lookAtEvidence} onClose={notice.dismiss} /> : undefined}
       />
       <CaseHeader pub={pub} compact />
       <div className="stack">
@@ -61,49 +93,67 @@ export function Investigate({ pub, priv, onMenu, local }: { pub: PublicView; pri
           .map((_, i) => i)
           .reverse()
           .map((i) => (
-            <TraceCard key={i} pub={pub} index={i} fresh={freshTrace === i} />
+            <TraceCard key={i} pub={pub} index={i} fresh={notice.indices.includes(i)} />
           ))}
       </div>
-      <Board pub={pub} selected={selected} onSelect={setSelected} flip={flip} />
-      {selected && <SelectedSummary pub={pub} id={selected} />}
-      {inRound && priv && (
-        <section className="paper tabbed" data-tab="Última defensa" aria-label="Tu sospechoso para la última defensa">
-          <div className="suspect-card">
-            {priv.pointer ? (
-              (() => {
-                const p = pub.players.find((x) => x.id === priv.pointer);
-                return p ? <Pin player={p} size="lg" /> : null;
-              })()
-            ) : (
-              <span className="pin lg" style={{ ['--c' as string]: 'var(--rule)', color: 'var(--pencil)' }} aria-hidden>
-                ?
-              </span>
-            )}
-            <div className="grow">
-              <div style={{ fontWeight: 700 }}>
-                {priv.pointer ? `Señalas a ${playerName(pub, priv.pointer)}` : 'Aún no señalas a nadie'}
-              </div>
-              <div className="small muted">
-                En secreto. Al terminar la investigación, la persona más señalada tendrá {defenseSecs} s para defenderse. {round.pointedCount} de{' '}
-                {round.participants.length} ya han señalado.
-              </div>
-            </div>
-          </div>
-          <button className="btn btn-ghost btn-sm btn-block" style={{ marginTop: 10 }} onClick={() => setSuspectOpen(true)}>
-            {priv.pointer ? 'Cambiar a quién señalo' : 'Señalar a alguien'}
-          </button>
+      {inRound && priv && isForgeryRound(pub) && <ExaminePanel pub={pub} priv={priv} />}
+      {local?.onFile && (
+        <button type="button" className="btn btn-ghost btn-block" onClick={local.onFile}>
+          <span style={{ width: 22 }}>
+            <Icon name="folder" />
+          </span>
+          Cuaderno y expediente (en privado)
+        </button>
+      )}
+      {local && isForgeryRound(pub) && (
+        <section className="paper tabbed" data-tab="Revisar prueba" aria-label="Revisión de pruebas con un solo móvil">
+          <p className="small">
+            Una de las pruebas puede ser falsa. Al terminar la investigación, el móvil pasará por cada persona para marcar en secreto qué prueba
+            queréis revisar. Nadie verá las marcas: solo el resultado de la revisión.
+          </p>
         </section>
       )}
+      <Board
+        pub={pub}
+        selected={selected}
+        selectedSlot={selectedSlot}
+        onSelect={(id, slot) => {
+          setSelected(id);
+          setSelectedSlot(id && slot !== undefined ? slot : null);
+        }}
+        flip={flip}
+        freshTraces={notice.indices}
+      />
+      {selected && (
+        <SelectedSummary
+          pub={pub}
+          id={selected}
+          slot={selectedSlot}
+          pointing={inRound && priv && selected !== priv.playerId ? { current: priv.pointer, onPoint: () => void pointAt(selected) } : undefined}
+          note={inRound && priv && selected !== priv.playerId ? priv.playerId : undefined}
+          testify={
+            (inRound && priv && selected !== priv.playerId) || local
+              ? { left: priv?.inRound ? priv.testimoniesLeft : null, onTestify: () => openTestify({ subject: selected, slot: selectedSlot }) }
+              : undefined
+          }
+        />
+      )}
+      {inRound && priv && <PointPanel pub={pub} priv={priv} defenseSecs={defenseSecs} />}
       <TestimonyList pub={pub} focus={selected} />
 
       {inRound && (
-        <ActionBar hint={`${readyCount} de ${active.length} piden ${secondStep ? 'terminar la investigación' : 'la prueba 2'}`}>
-          <button className="btn btn-paper" onClick={() => setFileOpen(true)} aria-label="Ver mi expediente" style={{ flex: 'none', padding: '0 14px' }}>
+        <ActionBar
+          hint={<ReadyHint pub={pub} pointed={!!priv?.pointer} ready={readyCount} active={active.length} onPoint={goToPointing} />}
+        >
+          <button className="btn btn-paper file-btn" onClick={() => setFileOpen(true)} aria-label="Tu cuaderno y tu expediente">
             <span style={{ width: 22 }}>
               <Icon name="folder" />
             </span>
+            <span className="file-btn-caption" aria-hidden>
+              Cuaderno
+            </span>
           </button>
-          <button className="btn btn-paper" onClick={() => setTestifyOpen(true)} disabled={priv!.testimoniesLeft === 0} aria-label={`Testificar, te quedan ${priv!.testimoniesLeft}`}>
+          <button className="btn btn-paper" onClick={() => openTestify(null)} disabled={priv!.testimoniesLeft === 0} aria-label={`Testificar, te quedan ${priv!.testimoniesLeft}`}>
             Testificar
             <span className="tag" style={{ borderColor: 'var(--kraft-2)', color: 'var(--pencil)' }}>
               {priv!.testimoniesLeft}
@@ -118,7 +168,7 @@ export function Investigate({ pub, priv, onMenu, local }: { pub: PublicView; pri
       {local && (
         <>
           <ActionBar hint="Hablad en voz alta. Pasad a lo siguiente cuando el grupo quiera.">
-            <button className="btn btn-paper" onClick={() => setTestifyOpen(true)}>
+            <button className="btn btn-paper" onClick={() => openTestify(null)}>
               Testificar
             </button>
             <button
@@ -129,29 +179,38 @@ export function Investigate({ pub, priv, onMenu, local }: { pub: PublicView; pri
               {secondStep ? 'Terminar investigación' : 'Sacar la prueba 2'}
             </button>
           </ActionBar>
-          <Sheet open={testifyOpen && !local.speakerPriv} onClose={() => setTestifyOpen(false)} label="¿Quién testifica?">
+          <Sheet open={testifyOpen && !local.speakerPriv} onClose={closeTestify} label="¿Quién testifica?">
             <h2>¿Quién testifica?</h2>
+            {preset && (
+              <p className="small" style={{ marginTop: 6 }}>
+                Sobre {playerName(pub, preset.subject)}
+                {preset.slot !== null ? ` ${atHour(round.scenario.slots[preset.slot])}` : ''}. Elige quién da el testimonio.
+              </p>
+            )}
             <div className="row wrap" style={{ marginTop: 12 }}>
-              {local.speakers.map((id) => {
-                const p = pub.players.find((x) => x.id === id);
-                return p ? (
-                  <button key={id} className="chip-player" onClick={() => local.onSpeaker(id)}>
-                    <Pin player={p} />
-                    {p.name}
-                  </button>
-                ) : null;
-              })}
+              {local.speakers
+                .filter((id) => id !== preset?.subject)
+                .map((id) => {
+                  const p = pub.players.find((x) => x.id === id);
+                  return p ? (
+                    <button key={id} className="chip-player" onClick={() => local.onSpeaker(id)}>
+                      <Pin player={p} />
+                      {p.name}
+                    </button>
+                  ) : null;
+                })}
             </div>
           </Sheet>
           {local.speakerPriv && (
             <TestifySheet
               open={testifyOpen}
               onClose={() => {
-                setTestifyOpen(false);
+                closeTestify();
                 local.onClose();
               }}
               pub={pub}
               priv={local.speakerPriv}
+              preset={preset}
             />
           )}
           <SuspectSheet
@@ -159,8 +218,6 @@ export function Investigate({ pub, priv, onMenu, local }: { pub: PublicView; pri
             onClose={() => setSuspectOpen(false)}
             pub={pub}
             candidates={round.participants}
-            current={null}
-            shared
             seconds={defenseSecs}
             onPick={(target) =>
               void run(
@@ -181,85 +238,218 @@ export function Investigate({ pub, priv, onMenu, local }: { pub: PublicView; pri
 
       {inRound && priv && (
         <>
-          <Sheet open={fileOpen} onClose={() => setFileOpen(false)} label="Tu expediente">
-            <PrivateFile pub={pub} priv={priv} startOpen />
+          <Sheet open={fileOpen} onClose={() => setFileOpen(false)} label="Tu cuaderno y tu expediente">
+            <div className="sheet-tabs" role="tablist" aria-label="Cuaderno y expediente">
+              <button type="button" role="tab" id="tab-notes" aria-selected={fileTab === 'notes'} aria-controls="panel-notes" onClick={() => setFileTab('notes')}>
+                Mi cuaderno
+              </button>
+              <button type="button" role="tab" id="tab-file" aria-selected={fileTab === 'file'} aria-controls="panel-file" onClick={() => setFileTab('file')}>
+                Expediente
+              </button>
+            </div>
+            <div role="tabpanel" id={fileTab === 'file' ? 'panel-file' : 'panel-notes'} aria-labelledby={fileTab === 'file' ? 'tab-file' : 'tab-notes'}>
+              {fileTab === 'file' ? <PrivateFile pub={pub} priv={priv} startOpen /> : <NotesPanel pub={pub} me={priv.playerId} />}
+            </div>
           </Sheet>
-          <TestifySheet open={testifyOpen} onClose={() => setTestifyOpen(false)} pub={pub} priv={priv} />
-          <SuspectSheet
-            open={suspectOpen}
-            onClose={() => setSuspectOpen(false)}
-            pub={pub}
-            candidates={round.participants.filter((id) => id !== priv.playerId)}
-            current={priv.pointer}
-            seconds={defenseSecs}
-            onPick={(target) =>
-              void run(
-                () => store.send('game:point', { target }),
-                () => {
-                  setSuspectOpen(false);
-                  toast(target ? `Señalas a ${playerName(pub, target)}.` : 'Ya no señalas a nadie.');
-                },
-                errorText,
-              )
-            }
-          />
+          <TestifySheet open={testifyOpen} onClose={closeTestify} pub={pub} priv={priv} preset={preset} />
         </>
       )}
     </main>
   );
 }
 
-/** Pick who should get the last defense. Online: your secret pick. Single phone: the group decides aloud. */
-function SuspectSheet({
-  open,
-  onClose,
-  pub,
-  candidates,
-  current,
-  onPick,
-  shared,
-  seconds,
-}: {
-  open: boolean;
-  onClose: () => void;
-  pub: PublicView;
-  candidates: string[];
-  current: string | null;
-  onPick: (target: string | null) => void;
-  shared?: boolean;
-  seconds: number;
-}) {
+/** Seconds left while `on` (null otherwise), so only the parts that need it tick every second. */
+function useSecsLeft(endsAt: number | null, on: boolean): number | null {
+  const { left } = useCountdown(on ? endsAt : null);
+  return on && endsAt ? Math.ceil(left / 1000) : null;
+}
+
+/** Pointing ends with the investigation: in its last seconds, whoever hasn't pointed is called. */
+function usePointCall(pub: PublicView, pointed: boolean): number | null {
+  const secs = useSecsLeft(pub.phaseEndsAt, !pointed && pub.round!.traces.length >= 2);
+  return secs !== null && secs <= URGENT_SECS ? secs : null;
+}
+
+/** Bottom-bar line: how many ask to move on and, while you haven't pointed, the way to the panel. */
+function ReadyHint({ pub, pointed, ready, active, onPoint }: { pub: PublicView; pointed: boolean; ready: number; active: number; onPoint: () => void }) {
+  const call = usePointCall(pub, pointed);
+  const secondStep = pub.round!.traces.length >= 2;
+  if (pointed) return <>{`${ready} de ${active} piden ${secondStep ? 'terminar la investigación' : 'la prueba 2'}`}</>;
+  if (call !== null)
+    return (
+      <button type="button" className="hint-link urgent" onClick={onPoint}>
+        <Icon name="target" />
+        <span>Quedan {call} s: señala a quien crees culpable</span>
+      </button>
+    );
+  return (
+    <span className="hint-row">
+      <span className="hint-count">
+        {ready} de {active} lo piden
+      </span>
+      <button type="button" className="hint-link" onClick={onPoint}>
+        <Icon name="target" />
+        <span>Aún no señalas · Señalar</span>
+      </button>
+    </span>
+  );
+}
+
+/** Pointing for the last defense, in the open: who you can point at, who you point at now (as
+ *  the server has it), and what happens next. Optional, secret, changeable until the end. */
+function PointPanel({ pub, priv, defenseSecs }: { pub: PublicView; priv: PrivateView; defenseSecs: number }) {
+  const round = pub.round!;
+  const secsLeft = usePointCall(pub, !!priv.pointer);
+  const { busy, run } = useAction();
+  const current = priv.pointer;
+  const pick = (target: string | null) => void run(() => store.send('game:point', { target }), undefined, errorText);
+  const candidates = round.participants.filter((id) => id !== priv.playerId);
+  return (
+    <section id="point-panel" className={`paper tabbed point-panel ${secsLeft !== null ? 'urgent' : ''}`} data-tab="Última defensa" aria-labelledby="point-title">
+      <div className="point-head">
+        <Lineup />
+        <div>
+          <h2 id="point-title" className="point-title">
+            Señala a quien crees culpable
+          </h2>
+          <p className="small">Toca a una persona. Es secreto y puedes cambiarlo hasta que acabe la investigación.</p>
+        </div>
+      </div>
+      {secsLeft !== null && <p className="point-urgent">Quedan {secsLeft} s de investigación y aún no has señalado.</p>}
+      <div className="point-options" role="group" aria-label="A quién señalas">
+        {candidates.map((id) => {
+          const p = pub.players.find((x) => x.id === id);
+          if (!p) return null;
+          return (
+            <button key={id} type="button" className="point-option" aria-pressed={current === id} disabled={busy} onClick={() => current !== id && pick(id)}>
+              <Pin player={p} />
+              <span className="point-name">{p.name}</span>
+              {current === id && (
+                <span className="point-check" aria-hidden>
+                  <Icon name="check" />
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      <p className={`point-status ${current ? 'done' : ''}`} role="status">
+        {current ? (
+          <>
+            <span className="point-status-icon" aria-hidden>
+              <Icon name="check" />
+            </span>
+            <span>
+              <b>Registrado:</b> señalas a {playerName(pub, current)}.
+            </span>
+          </>
+        ) : (
+          <span>Aún no has señalado a nadie. Es opcional, pero si nadie señala no hay defensa.</span>
+        )}
+      </p>
+      <p className="small muted">
+        Al acabar la investigación, la persona más señalada tendrá {defenseSecs} s para defenderse en voz alta (si hay empate, decide un sorteo).
+        Después, votación secreta. {round.pointedCount} de {round.participants.length} ya han señalado.
+      </p>
+      {current && (
+        <button type="button" className="btn btn-ghost btn-sm" style={{ marginTop: 8 }} disabled={busy} onClick={() => pick(null)}>
+          No señalar a nadie
+        </button>
+      )}
+    </section>
+  );
+}
+
+/** The banner for evidence that has just come out (one piece, or two that came together). */
+function NewEvidenceNotice({ pub, indices, onLook, onClose }: { pub: PublicView; indices: number[]; onLook: () => void; onClose: () => void }) {
+  const round = pub.round!;
+  const fact = (i: number) => `${zoneName(pub, round.traces[i].zone)} ${atHour(round.scenario.slots[round.traces[i].slot])}`;
+  return (
+    <div className="evidence-notice" role="status">
+      <EvidenceBag />
+      <div className="grow" style={{ minWidth: 0 }}>
+        <div className="evidence-notice-title">
+          {indices.length > 1 ? 'Nuevas pruebas' : 'Nueva prueba'}{' '}
+          {indices.map((i) => (
+            <span key={i} className="trace-chip">
+              P{i + 1}
+            </span>
+          ))}
+        </div>
+        <div className="small">
+          {isForgeryRound(pub)
+            ? `${indices.length > 1 ? 'Dicen' : 'Dice'} que la persona culpable estuvo en ${indices.map(fact).join(' y en ')}. Sin revisar: puede ser falsa.`
+            : indices.length > 1
+              ? `La persona culpable estuvo en ${indices.map(fact).join(' y en ')}.`
+              : `La persona culpable estuvo en ${fact(indices[0])}.`}
+        </div>
+      </div>
+      <button type="button" className="btn btn-sm btn-ballpoint" onClick={onLook}>
+        Ver
+      </button>
+      <button type="button" className="notice-close" aria-label={indices.length > 1 ? 'Cerrar el aviso de las nuevas pruebas' : 'Cerrar el aviso de la nueva prueba'} onClick={onClose}>
+        <Icon name="cross" />
+      </button>
+    </div>
+  );
+}
+
+/** Single phone: the group picks aloud who gets the last defense when the investigation ends. */
+function SuspectSheet({ open, onClose, pub, candidates, onPick, seconds }: { open: boolean; onClose: () => void; pub: PublicView; candidates: string[]; onPick: (target: string | null) => void; seconds: number }) {
   return (
     <Sheet open={open} onClose={onClose} label="Señalar para la última defensa">
       <div className="stack">
-        <h2>{shared ? '¿A quién señaláis?' : '¿A quién señalas?'}</h2>
-        <p className="small">
-          {shared
-            ? `Decidid en voz alta a quién queréis oír antes de votar. Tendrá ${seconds} s para defenderse; después, votación secreta.`
-            : `Tu elección es secreta y puedes cambiarla hasta que termine la investigación. La persona más señalada tendrá ${seconds} s para defenderse. Si hay empate, la app sortea entre los empatados; si nadie señala, se vota directamente.`}
-        </p>
-        <div className="row wrap">
+        <div className="point-head">
+          <Lineup />
+          <h2 className="point-title">Señalad a quien creéis culpable</h2>
+        </div>
+        <p className="small">Decidid en voz alta a quién queréis oír antes de votar. Tendrá {seconds} s para defenderse; después, votación secreta.</p>
+        <div className="point-options">
           {candidates.map((id) => {
             const p = pub.players.find((x) => x.id === id);
             if (!p) return null;
             return (
-              <button key={id} type="button" className="chip-player" aria-pressed={current === id} onClick={() => onPick(id)}>
+              <button key={id} type="button" className="point-option" onClick={() => onPick(id)}>
                 <Pin player={p} />
-                {p.name}
+                <span className="point-name">{p.name}</span>
               </button>
             );
           })}
         </div>
         <button type="button" className="btn btn-ghost btn-block" onClick={() => onPick(null)}>
-          {shared ? 'A nadie: votar ya' : 'No señalar a nadie'}
+          A nadie: votar ya
         </button>
       </div>
     </Sheet>
   );
 }
 
-function SelectedSummary({ pub, id }: { pub: PublicView; id: string }) {
+/** What someone says, and what you can do about them: point at them (secret) or testify about
+ *  them (public). Tapping a pin only opens this; nothing is sent from here without a second step. */
+function SelectedSummary({
+  pub,
+  id,
+  slot,
+  pointing,
+  testify,
+  note,
+}: {
+  pub: PublicView;
+  id: string;
+  slot: number | null;
+  pointing?: { current: string | null; onPoint: () => void };
+  /** `left` is null when unknown (single phone: whoever testifies is chosen next). */
+  testify?: { left: number | null; onTestify: () => void };
+  /** Your id, to show your private note on this person (online players only). */
+  note?: string;
+}) {
   const round = pub.round!;
+  const ref = useRef<HTMLElement>(null);
+  // It opens under the board: bring it into view (just enough) when someone is picked.
+  useEffect(() => {
+    const reduce = getPrefs().reduceMotion || matchMedia('(prefers-reduced-motion: reduce)').matches;
+    ref.current?.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+  }, [id, slot]);
   const decl = round.declarations![id];
   const p = pub.players.find((x) => x.id === id);
   if (!decl || !p) return null;
@@ -268,7 +458,7 @@ function SelectedSummary({ pub, id }: { pub: PublicView; id: string }) {
   const bad = about.filter((t) => t.status === 'contradice').length;
   const traceHits = round.traces.filter((t) => decl.zones[t.slot] === t.zone).length;
   return (
-    <section className="paper" aria-live="polite">
+    <section ref={ref} className="paper summary" aria-live="polite">
       <div className="row">
         <Pin player={p} size="lg" />
         <div className="grow">
@@ -286,11 +476,59 @@ function SelectedSummary({ pub, id }: { pub: PublicView; id: string }) {
         </span>
         {decl.auto && <span className="tag">Coartada automática</span>}
       </div>
+      {(pointing || testify) && (
+        <div className="summary-actions">
+          {pointing &&
+            (pointing.current === id ? (
+              <p className="summary-done">
+                <Icon name="check" />
+                <span>Ya señalas a {p.name} para la última defensa.</span>
+              </p>
+            ) : (
+              <button type="button" className="summary-action" onClick={pointing.onPoint}>
+                <span className="summary-action-icon" aria-hidden>
+                  <Icon name="target" />
+                </span>
+                <span className="grow">
+                  <span className="action-tag secret">Secreto</span>
+                  <b>Señalar a {p.name} para la última defensa</b>
+                  <span className="small">Nadie verá a quién señalas.</span>
+                </span>
+              </button>
+            ))}
+          {testify && (
+            <button type="button" className="summary-action" disabled={testify.left === 0} onClick={testify.onTestify}>
+              <span className="summary-action-icon" aria-hidden>
+                <Icon name="mic" />
+              </span>
+              <span className="grow">
+                <span className="action-tag public">Público</span>
+                <b>{slot !== null ? `Testificar: «Estuve con ${p.name} ${atHour(round.scenario.slots[slot])}»` : `Testificar sobre ${p.name}`}</b>
+                <span className="small">{testify.left === 0 ? 'Ya no te quedan testimonios.' : 'Lo verá todo el mundo. Lo revisas antes de publicarlo.'}</span>
+              </span>
+            </button>
+          )}
+        </div>
+      )}
+      {note && <NoteLine pub={pub} me={note} id={id} slot={slot} />}
     </section>
   );
 }
 
-function TestifySheet({ open, onClose, pub, priv }: { open: boolean; onClose: () => void; pub: PublicView; priv: PrivateView }) {
+function TestifySheet({
+  open,
+  onClose,
+  pub,
+  priv,
+  preset,
+}: {
+  open: boolean;
+  onClose: () => void;
+  pub: PublicView;
+  priv: PrivateView;
+  /** Person and hour to start with (from a pin on the board); still only a draft until published. */
+  preset?: { subject: string; slot: number | null } | null;
+}) {
   const round = pub.round!;
   const [subject, setSubject] = useState<string | null>(null);
   const [slot, setSlot] = useState<number | null>(null);
@@ -299,12 +537,14 @@ function TestifySheet({ open, onClose, pub, priv }: { open: boolean; onClose: ()
   const already = new Set(round.testimonies.filter((t) => t.by === priv.playerId).map((t) => `${t.subject}|${t.slot}`));
   const others = round.participants.filter((id) => id !== priv.playerId);
 
-  useEffect(() => {
-    if (!open) {
-      setSubject(null);
-      setSlot(null);
-    }
-  }, [open]);
+  // Before paint, so the sheet never shows a frame without the person and hour it was opened with.
+  useLayoutEffect(() => {
+    const subj = open && preset && preset.subject !== priv.playerId ? preset.subject : null;
+    setSubject(subj);
+    // An hour already used for this person can't be published twice: leave the hour to choose.
+    setSlot(subj && preset?.slot != null && !already.has(`${subj}|${preset.slot}`) ? preset.slot : null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, preset]);
 
   const publish = () =>
     void run(

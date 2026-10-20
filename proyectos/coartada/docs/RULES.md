@@ -1,6 +1,6 @@
 # COARTADA: rules specification (v1.1)
 
-This is the binding specification. The engine (`src/shared/engine/`) implements exactly this; every number here is a constant in `src/shared/types.ts`. Player-facing text is Spanish; terms are given in Spanish with English glosses. The in-game rules (`src/client/screens/Rules.tsx`) and the guide (`src/client/screens/Guide.tsx`) say the same in plain Spanish.
+This is the binding specification. The engine (`src/shared/engine/`) implements exactly this; every number here is a constant in `src/shared/types.ts`. Player-facing text is Spanish; terms are given in Spanish with English glosses. The in-game quick guide (`src/client/screens/QuickGuide.tsx`, the «?» button; its numbers come from those constants) and the illustrated guide (`src/client/screens/Guide.tsx`) say the same in plain Spanish.
 
 ## 0. Glossary (the words the interface uses)
 
@@ -34,6 +34,8 @@ An absurd incident happened and one participant is the culprit. Everyone secretl
 
 - 4–10 participants per round (recommended 5–8). A room holds at most 10 members.
 - Roles are dealt uniformly at random by a seeded generator; each round is independent.
+- **Characters (cosmetic).** Each member is drawn as one of 12 characters (`src/shared/characters.ts`): a free one is assigned on joining and can be changed in the lobby only (`room:avatar`); the server refuses one already held by another member (`avatar_taken`), including an offline one; it is freed when the member leaves or is removed. In single-phone mode each person's character is chosen on the setup screen (tap the portrait next to the name); the same one-per-person rule applies, and it stays for the whole match. Characters have no effect on roles (dealt without looking at them), scoring or victory, and the name shown everywhere is always the player's own.
+- **Private notebook («Mi cuaderno»).** During a round each player can keep notes: suspicion and reasons per person, their own observations and contradictions (which can be corrected or deleted), and evidence or hours to check again with a reason. It opens from «Cuaderno» during the investigation and «Mi cuaderno» in the defense and the vote; it lasts the whole round, across phases, and a new match starts blank. Notes stay on that device only (localStorage; in single-phone mode, in memory only), never go through the connection, give no points, change no rule and add no information. In single-phone mode the notebook opens only behind the same «Soy X» hand-off as the private file.
 - **Inocente** wins if the culprit is accused. **Culpable** wins if anyone else, or nobody, is accused. **Cómplice** (6+ players) wins with the culprit. Culprit and accomplice know each other's identity and nothing else about each other.
 
 ## 3. Information
@@ -73,11 +75,11 @@ All deadlines are absolute server timestamps; clients only display them. The hos
 | Investigación 1 / 2 (6–7 players) | 75 / 105 | 120 / 150 | 150 / 180 |
 | … 4–5 players (×0.85) | 65 / 90 | 100 / 130 | 130 / 155 |
 | … 8–10 players (×1.2) | 90 / 125 | 145 / 180 | 180 / 215 |
-| Última defensa | 12 | 15 | 20 |
+| Última defensa | 15 | 25 | 30 |
 | Votación (8–10 players: +10) | 30 | 45 | 60 |
 | Desempate | 25 | 30 | 40 |
 
-Maximum round length with every timer used (verdict and runoff excluded), normal pace: 6.8 min (4–5), 7.5 min (6–7), 8.6 min (8–10). A table that finishes early plays faster.
+Maximum round length with every timer used (verdict and runoff excluded), normal pace: 7.0 min (4–5), 7.7 min (6–7), 8.8 min (8–10). A table that finishes early plays faster.
 
 ### 4.1 Declaración
 
@@ -108,7 +110,7 @@ All coartadas appear at once on the board (places × hours, one pin per person).
   - **Tie for most** → a draw among the tied, seeded with the round seed (`sorteo`): reproducible, reveals nothing, never blocks.
   - **Nobody pointed** → no defense, straight to the vote (`nadie_senalado`).
   - **Chosen person disconnected or gone** → no defense, straight to the vote (`desconectado`).
-- The defense lasts the pace's defense time (15 s on normal). The defender speaks aloud. Nothing can be changed: declarations, testimonies, pointers, requests and votes are all rejected during it.
+- The defense lasts the pace's defense time (25 s on normal). The defender speaks aloud. Nothing can be changed: declarations, testimonies, pointers, requests and votes are all rejected during it.
 - It ends when the timer runs out, when the defender presses "He terminado mi defensa", when the host ends the phase, or when the defender disconnects. Then the vote starts with its own timer.
 - What is public: who defends, how many pointers they received, and whether a draw decided. Who pointed at whom is never shown during the round; it is sent to every device with the verdict data, but the v1.1 interface does not display it (the verdict screen shows the vote count per person). The defense reveals no role.
 - Single-phone mode: there is no secret pointing; the group decides aloud whom to hear (or nobody) and the app records that choice.
@@ -170,7 +172,8 @@ Edge cases (each covered by a test in `tests/audit-cases.test.ts` or `tests/rule
 | Leave on purpose mid-round | Treated as permanently disconnected for the rest of the round; removed when it ends. |
 | Join mid-round | Watches the public board without a private card; plays from the next round. |
 | Host disconnects | Keeps the role for 20 s; then it passes to the longest-connected present player. Timers keep running meanwhile. |
-| Fewer than 4 connected | The current round continues to its end; a new one cannot start. |
+| Disconnected when a round starts | Still dealt in, like a disconnect mid-round, if seen in the last 15 min (`SEAT_GRACE_MS`): a phone locked during the verdict gets its file on return. |
+| Fewer than 4 connected | The current round continues to its end; a new one cannot start. Absent players are dealt in but never count towards the 4. Between rounds the host sees who is offline and can remove them. |
 | Empty room | Deleted 15 min after the last person disconnects; any room idle for 6 h is deleted. |
 
 ## 9. Secret objectives (optional, off by default)
@@ -214,7 +217,7 @@ Evidence 1: El jardín a las 23:00. Evidence 2: El jardín a las 22:00.
 2. **Reveal.** At 00:00 all five pins are in La barra libre; the scene is empty.
 3. **Evidence 1** fits Ana, Bruno, Carla and Eva. Testimonies: Bruno "estuve con Carla en La barra libre a las 00:00" → *coincide* (and is true); Ana "estuve con Eva en La barra libre a las 00:00" → *coincide* (and is false). Eva doesn't remember Ana there, which proves nothing by itself.
 4. **Evidence 2** fits only Ana and Eva.
-5. **Pointing.** Bruno, Carla, Dani and Eva point at Ana; Ana points at Eva → Ana defends for 15 s.
+5. **Pointing.** Bruno, Carla, Dani and Eva point at Ana; Ana points at Eva → Ana defends for 25 s (normal pace).
 6. **Vote.** Bruno → Ana, Carla → Eva, Dani → Ana, Eva → Ana, Ana → Eva. Ana 3, Eva 2 → **Ana accused: CULPABLE**.
 7. **Points.** Bruno +3, Dani +3, Eva +3, Carla +2, Ana 0.
 
@@ -222,7 +225,11 @@ Counterfactuals: if Dani had voted Eva, Eva (innocent) would be accused: Ana +4,
 
 ## 12. Single-phone mode (pass-and-play)
 
-Same rules, one device, no network. Differences: secret steps (declaration, vote, runoff) happen one person at a time behind "Pasa el móvil a X / Soy X" and "Ocultar y pasar" screens, **without timers**; each person reads their file privately during their turn. Investigation and defense are timed and shared. Testimonies are entered by first choosing who speaks; memories are never shown on the shared screen. "Sacar la prueba 2" and "Terminar investigación" are pressed by whoever holds the phone; at "Terminar investigación" the group chooses aloud whom to hear in the last defense, or nobody.
+Same rules, one device, no network. Differences: secret steps (declaration, vote, runoff) happen one person at a time behind "Pasa el móvil a X / Soy X" and "Ocultar y pasar" screens, **without timers**; each person reads their file privately during their turn. Investigation and defense are timed and shared. Testimonies are entered by first choosing who speaks; memories are never shown on the shared screen. "Sacar la prueba 2" and "Terminar investigación" are pressed by whoever holds the phone; at "Terminar investigación" the group chooses aloud whom to hear in the last defense, or nobody. During the investigation, "Cuaderno y expediente (en privado)" lets one person open their own notebook and re-read their file behind the same hand-off screen (the clock keeps running).
+
+## 12b. Experimental rules (off by default)
+
+A room's host can turn on **«Prueba falsificable»** in the lobby, for test games only: the culprit may forge one of the two pieces of evidence and the table may have one of them checked («revisar»). A second experimental setting, «Oportunidad de falsificar» (100 % by default, 50 % or 25 %), is the chance that the culprit gets that opportunity in a round: drawn once when the round starts, known only to the culprit until the verdict, and never a forgery made for them. Nothing else changes (roles, timers, testimonies, scoring, winning). It is off by default (in single-phone mode too, where it is a switch on the setup screen) and its exact rules are in `docs/PRUEBA-FALSA.md`. In single-phone mode the examination marks are collected one person at a time when the investigation ends, with the clock stopped and no count shown (section 4b of that document). Everything above describes the normal game.
 
 ## 13. Safety and tone
 

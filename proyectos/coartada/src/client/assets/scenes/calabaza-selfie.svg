@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 120"><rect width="320" height="120" fill="#e4d7b8"/>
+<path d="M10 40l40-28 40 28z" fill="#efe8d8" stroke="#2b2721" stroke-width="2"/>
+<path d="M18 40l12-22M34 40l12-28M52 40l8-26M68 40l4-20" stroke="#a52a22" stroke-width="5"/>
+<path d="M10 40l40-28 40 28z" fill="none" stroke="#2b2721" stroke-width="2"/>
+<path d="M14 40v72M86 40v72" stroke="#2b2721" stroke-width="2.4"/>
+<path d="M100 10q60 18 120 0" fill="none" stroke="#2b2721" stroke-width="1.2"/>
+<g stroke="#2b2721" stroke-width="1.2" stroke-linejoin="round"><path d="M114 13l5 10 4-9z" fill="#a52a22"/><path d="M138 17l4 10 6-9z" fill="#efe8d8"/><path d="M164 18l4 10 5-10z" fill="#a52a22"/><path d="M190 16l3 10 6-9z" fill="#efe8d8"/></g>
+<rect x="104" y="102" width="122" height="10" fill="#7a7068" stroke="#2b2721" stroke-width="2"/>
+<path d="M120 102c-22-6-26-52 6-64 10-4 20-2 28 0 10-4 22-4 32 0 32 12 28 58 6 64z" fill="#d97f2f" stroke="#2b2721" stroke-width="2.4" stroke-linejoin="round"/>
+<path d="M154 38c-10 16-10 46 0 64M176 38c10 16 10 46 0 64" fill="none" stroke="#2b2721" stroke-width="1.6"/>
+<path d="M162 38c0-8 4-14 10-16" fill="none" stroke="#5a6b36" stroke-width="4" stroke-linecap="round"/>
+<g fill="#5a3a1c">
+<path d="M144 56c4-4 10-4 14 0-4 3-10 3-14 0z"/>
+<path d="M172 57l12 0" stroke="#5a3a1c" stroke-width="3" stroke-linecap="round"/>
+<path d="M150 76c8 8 22 8 30 0-6 12-24 12-30 0z"/>
+<path d="M182 64c6-2 14 0 16 6l-4 2c0-4-4-6-8-6l2 8-6 2z"/>
+</g>
+<path d="M120 54c-6-4-6-10 0-12" fill="none" stroke="#2b2721" stroke-width="1.4"/>
+<path d="M106 34c20-22 108-22 120 4s-8 66-60 66-80-40-60-70z" fill="none" stroke="#a52a22" stroke-width="2.4" stroke-linecap="round"/>
+<g transform="translate(254 72)"><circle r="20" fill="#efe8d8" stroke="#2b2721" stroke-width="2.4"/><path d="M-14 0a14 14 0 0 1 28 0" fill="none" stroke="#2b2721" stroke-width="1.4"/><path d="M0 0l9-9" stroke="#a52a22" stroke-width="2.4" stroke-linecap="round"/><circle r="2" fill="#2b2721"/><rect x="-12" y="5" width="24" height="9" fill="#2b2721"/><text y="12.6" font-family="'Courier New',monospace" font-size="8.4" font-weight="700" text-anchor="middle" fill="#e0483c">412kg</text><path d="M-8 20l-4 20h24l-4-20" fill="#2b2721"/></g>
+<g transform="translate(292 30)"><circle r="10" fill="#a52a22" stroke="#2b2721" stroke-width="1.6"/><circle r="5" fill="#efe8d8" stroke="#2b2721" stroke-width="1.2"/><path d="M-6 8l-4 16 6-4 2 6 2-16M6 8l4 16-6-4" fill="#a52a22" stroke="#2b2721" stroke-width="1.2" stroke-linejoin="round"/></g>
+<path d="M0 112h320" stroke="#2b2721" stroke-width="2.2"/>
+<rect x="1" y="1" width="318" height="118" fill="none" stroke="#c9b07e" stroke-width="2"/></svg>

@@ -221,5 +221,5 @@ export class Store {
 export const store = new Store();
 
 export function useStore(): Snapshot {
-  return useSyncExternalStore(store.subscribe, store.get);
+  return useSyncExternalStore(store.subscribe, store.get, store.get);
 }

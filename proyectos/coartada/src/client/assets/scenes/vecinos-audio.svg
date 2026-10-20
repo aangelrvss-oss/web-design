@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 120"><rect width="320" height="120" fill="#e4d7b8"/>
+<rect x="12" y="10" width="66" height="102" fill="#2b2721"/>
+<rect x="18" y="16" width="25" height="90" fill="#3e372e" stroke="#efe8d8" stroke-width="1.2"/><rect x="47" y="16" width="25" height="90" fill="#3e372e" stroke="#efe8d8" stroke-width="1.2"/>
+<path d="M43 58v10M47 58v10" stroke="#efe8d8" stroke-width="2"/>
+<rect x="34" y="2" width="22" height="7" fill="#efe8d8" stroke="#2b2721" stroke-width="1.4"/><path d="M42 7l3-3 3 3" fill="none" stroke="#a52a22" stroke-width="1.6"/>
+<g fill="#efe8d8" stroke="#2b2721" stroke-width="1.6"><rect x="88" y="18" width="16" height="10"/><rect x="106" y="18" width="16" height="10"/><rect x="88" y="30" width="16" height="10"/><rect x="106" y="30" width="16" height="10"/><rect x="88" y="42" width="16" height="10"/><rect x="106" y="42" width="16" height="10"/></g>
+<path d="M92 23h8M110 23h8M92 35h8M110 35h8M92 47h8M110 47h8" stroke="#2b2721" stroke-width="1.2"/>
+<g fill="none" stroke="#2b2721" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M92 112V86h18v-6M92 92h18v20M122 112V86h18v-6M122 92h18v20"/></g>
+<rect x="160" y="8" width="70" height="108" rx="9" fill="#2b2721"/>
+<rect x="165" y="18" width="60" height="88" rx="2" fill="#efe8d8"/>
+<path d="M165 30h60" stroke="#2b2721" stroke-width="1.2"/><circle cx="173" cy="24" r="3.4" fill="#2b2721"/><path d="M180 24h26" stroke="#2b2721" stroke-width="2"/>
+<path d="M170 54h52v24h-48l-6 6z" fill="#d8e3cf" stroke="#2b2721" stroke-width="1.6" stroke-linejoin="round"/>
+<path d="M176 60v12l9-6z" fill="#2b2721"/>
+<path d="M190 62v8M193 60v12M196 58v16M199 63v6M202 60v12M205 64v4" stroke="#2b2721" stroke-width="1.8" stroke-linecap="round"/>
+<text x="219" y="75" font-family="Arial,Helvetica,sans-serif" font-size="6.4" font-weight="700" text-anchor="end" fill="#2b2721">6:00</text>
+<path d="M200 82l3 3 5-6M205 85l2 1 5-7" fill="none" stroke="#2e5b88" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="184" y="98" font-family="Arial,Helvetica,sans-serif" font-size="7" font-weight="700" fill="#2e5b88">31</text>
+<g font-family="Georgia,'Times New Roman',serif" font-weight="700" fill="#2b2721"><text x="244" y="50" font-size="16">Z</text><text x="258" y="36" font-size="22">Z</text><text x="278" y="22" font-size="28">Z</text></g>
+<path d="M154 46c-8-30 70-44 82-12s-4 76-40 80-38-36-42-68z" fill="none" stroke="#a52a22" stroke-width="2.4" stroke-linecap="round"/>
+<g fill="none" stroke="#2b2721" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M260 112V90h18v-6M260 96h18v16M290 112V90h18v-6M290 96h18v16"/></g>
+<path d="M0 112h320" stroke="#2b2721" stroke-width="2.2"/>
+<rect x="1" y="1" width="318" height="118" fill="none" stroke="#c9b07e" stroke-width="2"/></svg>

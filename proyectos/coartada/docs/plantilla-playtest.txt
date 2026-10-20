@@ -1,0 +1,28 @@
+COARTADA · PRUEBA · fecha: ____
+Modo: multijugador [ ]  un móvil [ ]
+Personas: __  (conocían el juego: __)
+Facilita: juega [ ] no juega [ ]
+
+— RONDA __ —
+Bloque: 1 normal [ ] 2 normal [ ] 3 variante 100 [ ] 4 variante __ %
+Ritmo: ____  Duración (min): __
+Culpable (asiento): __  Cómplice: __
+Defensa: __  Acusado: __  ¿Acertaron?: sí [ ] no [ ]
+Testimonios publicados: __  Cuaderno usado: sí [ ] no [ ]
+Variante · revisada: P1 [ ] P2 [ ] ninguna [ ]
+           resultado: falsa [ ] auténtica [ ]
+           (veredicto) oportunidad: sí [ ] no [ ]  falsificó: sí [ ] no [ ]
+Incidencias (T/I/R/E/P · quién · pantalla · qué):
+-
+-
+Frase textual:
+-
+
+— AL TERMINAR LA PARTIDA —
+¿Atascos? (pantalla):
+¿Saben por qué ganó quien ganó?: sí [ ] a medias [ ] no [ ]
+Injusto / imposible de deducir:
+Lo mejor:
+Lo que sobra o se hace largo:
+Variante: ¿cambió algún voto la revisión?:
+¿Parar y corregir antes de seguir? (apartado 7): sí [ ] no [ ]  motivo:

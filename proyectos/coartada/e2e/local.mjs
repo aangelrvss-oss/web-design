@@ -39,7 +39,8 @@ for (let k = 0; k < names.length; k++) {
   const who = await page.getByRole('heading', { level: 2 }).innerText(); // "Para X"
   const name = who.replace('Para ', '').trim();
   await page.getByRole('button', { name: `Soy ${name}` }).click();
-  await page.getByRole('button', { name: 'Abrir tu expediente confidencial' }).click();
+  // One shared phone: «Soy X» already revealed it, so the file opens straight away.
+  if (await page.getByRole('button', { name: 'Abrir tu expediente confidencial' }).count()) errors.push('declare: the file asks to be opened again after «Soy X»');
   const role = (await page.locator('.stamp').first().innerText()).trim().toLowerCase();
   if (role === 'culpable') culprit = name;
   const blocks = page.locator('.hour-block');
@@ -57,13 +58,41 @@ if (!culprit) errors.push('no culprit seen');
 await page.getByText('Investigación').first().waitFor();
 
 // A testimony "as" someone, chosen on the shared screen.
-await page.getByRole('button', { name: 'Testificar' }).click();
+await page.getByRole('button', { name: 'Testificar', exact: true }).click();
 await page.getByRole('dialog', { name: '¿Quién testifica?' }).locator('.chip-player').first().click();
 const sheet = page.getByRole('dialog', { name: 'Testificar' });
 await sheet.locator('.chip-player').first().click();
 await sheet.locator('.choice').first().click();
 await sheet.getByRole('button', { name: 'Publicar testimonio' }).click();
 await page.locator('.testimony').first().waitFor();
+
+// From a pin on the board (last hour, so it can't repeat the testimony above): the shared phone
+// still asks who testifies (never the person it is about), then opens the sheet with that person
+// and hour filled in; it is published only with «Publicar testimonio».
+{
+  const lastHour = (await page.locator('.board-grid .hcell').last().innerText()).trim();
+  const idx = await page.evaluate((h) => [...document.querySelectorAll('.board-grid [role="cell"]')].findIndex((c) => c.getAttribute('aria-label').includes(h) && c.querySelector('button')), lastHour);
+  const cell = page.locator('.board-grid [role="cell"]').nth(idx);
+  const pin = cell.locator('button').first();
+  const subject = await pin.getAttribute('aria-label');
+  const hour = (await cell.getAttribute('aria-label')).match(/(a las? \d\d:\d\d)/)[1];
+  const before = await page.locator('.testimony').count();
+  await pin.click();
+  await page.getByRole('button', { name: new RegExp(`^(?=.*Testificar: «Estuve con ${subject} ${hour}»)(?=.*Público)`) }).click();
+  const who = page.getByRole('dialog', { name: '¿Quién testifica?' });
+  await who.getByText(`Sobre ${subject} ${hour}.`, { exact: false }).waitFor();
+  if (await who.getByRole('button', { name: subject, exact: true }).count()) errors.push(`local: ${subject} could testify about themselves`);
+  await who.locator('.chip-player').first().click();
+  const s2 = page.getByRole('dialog', { name: 'Testificar' });
+  await s2.waitFor();
+  if ((await s2.getByRole('button', { name: subject, exact: true }).getAttribute('aria-pressed')) !== 'true') errors.push('local: the pin did not preselect the person');
+  if (!(await s2.locator('.choice[aria-pressed="true"]').innerText()).startsWith(hour.replace(/^a las? /, ''))) errors.push('local: the pin did not preselect the hour');
+  if ((await page.locator('.testimony').count()) !== before) errors.push('local: something was published before «Publicar testimonio»');
+  await s2.getByRole('button', { name: 'Publicar testimonio' }).click();
+  await page.locator('.testimony', { hasText: `Estuve con ${subject} en ` }).first().waitFor();
+  if ((await page.locator('.testimony').count()) !== before + 1) errors.push('local: the pin testimony was not published once');
+  console.log(`· local: testimony about ${subject} ${hour} from a pin, after choosing who testifies`);
+}
 await page.screenshot({ path: `${OUT}/22-local-investigate.png`, fullPage: true });
 
 // On a 320 px phone the action buttons must stay on screen and uncut.

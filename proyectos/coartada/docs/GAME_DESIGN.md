@@ -6,7 +6,7 @@
 
 ## 1. The game in one paragraph
 
-Coartada is a 4–10 player social-deduction party game for friends in the same room, each on their own phone. An absurd incident happened at a venue (the wedding cake has a bite out of it; the landlord's cat now has a mohawk) and one of the players did it. Everyone secretly declares where they were at three hours; all alibis flip onto a shared board at the same instant. Players testify ("I was with Marta at 23:00") and the board instantly marks whether that matches Marta's alibi. Two pieces of forensic evidence appear during the discussion. They are always true and say where the culprit *really* was at the other two hours. Before the vote, the person the table secretly pointed at most gets 15 seconds for a last defense; then a secret vote decides. One round takes about 7–9 minutes at most on Normal pace (often less: every step ends early when everyone has acted).
+Coartada is a 4–10 player social-deduction party game for friends in the same room, each on their own phone. An absurd incident happened at a venue (the wedding cake has a bite out of it; the landlord's cat now has a mohawk) and one of the players did it. Everyone secretly declares where they were at three hours; all alibis flip onto a shared board at the same instant. Players testify ("I was with Marta at 23:00") and the board instantly marks whether that matches Marta's alibi. Two pieces of forensic evidence appear during the discussion. They are always true and say where the culprit *really* was at the other two hours. Before the vote, the person the table secretly pointed at most gets 25 seconds (on Normal) for a last defense; then a secret vote decides. One round takes about 7–9 minutes at most on Normal pace (often less: every step ends early when everyone has acted).
 
 **The 60-second pitch** (what the host says out loud): *"One of us did something stupid. We all secretly say where we were at three times, and then we flip them all at once. If you say you were with someone, the board tells us whether their story matches. Then the evidence comes out: it never lies, and it says where the culprit really was at the other times. Whoever lied to dodge it is in trouble. Whoever we suspect most gets fifteen seconds to defend themselves, and then we vote."*
 
@@ -91,11 +91,11 @@ Normal pace, by group size (v1.1; full table for every pace in RULES §4.0):
 | Read the case + declare | ≤ 2:00 | ≤ 2:00 | ≤ 2:00 |
 | Discussion with evidence 1 | ≤ 1:40 | ≤ 2:00 | ≤ 2:25 |
 | Discussion with evidence 2 | ≤ 2:10 | ≤ 2:30 | ≤ 3:00 |
-| Last defense | ≤ 0:15 | ≤ 0:15 | ≤ 0:15 |
+| Last defense | ≤ 0:25 | ≤ 0:25 | ≤ 0:25 |
 | Vote (+ runoff) | ≤ 0:45 (+0:30) | ≤ 0:45 (+0:30) | ≤ 0:55 (+0:30) |
 | Verdict | ~1:00 | ~1:00 | ~1:00 |
 
-Timed maximum before the verdict: 6.8 / 7.5 / 8.6 minutes. Every step ends early once all connected players have acted, so a sharp table plays faster. Nobody is ever eliminated or waiting on a single player's turn.
+Timed maximum before the verdict: 7.0 / 7.7 / 8.8 minutes (with the 25 s defense; 6.8 / 7.5 / 8.6 with the 15 s of v1.1). Every step ends early once all connected players have acted, so a sharp table plays faster. Nobody is ever eliminated or waiting on a single player's turn.
 
 ## 10. Visual identity and audio
 
@@ -109,12 +109,12 @@ Timed maximum before the verdict: 6.8 / 7.5 / 8.6 minutes. Every step ends early
 
 - Balance numbers come from scripted bots (RULES/CHECKPOINT); real tables will differ. Not yet playtested with people.
 - With 9–10 players the board gets crowded (up to 10 pins in a cell) and the bots' catch rate drops to ~41–49%.
-- Secret objectives (formerly "encargos") are off by default; their effect on balance has not been simulated.
+- Secret objectives (formerly "encargos") are off by default. Bots that ignore them complete some almost for free ("someone corroborates you" ~89%) and others almost never ("contradict X" ~3%); whether people chasing them on purpose changes balance needs real games (docs/EQUILIBRIO-y-variantes.md).
 - The last defense is a social beat; the bots cannot model whether it changes votes. Its value is a playtest question.
 
 ## 12. v1.1 changes (summary)
 
-- **Last defense.** During the investigation each participant may secretly point at one suspect (changeable, can be cleared, never at oneself). When the investigation ends, the most-pointed person gets 15 s (12 on Fast, 20 on Relaxed) to speak; a tie is broken by a seeded draw over the tied ids that the screen announces as a draw; nobody pointed or defender disconnected → straight to the vote. Pointers stay secret: they reach the devices only with the verdict data, and the v1.1 interface does not display them. The defender or the host can end it early; it never blocks.
+- **Last defense.** During the investigation each participant may secretly point at one suspect (changeable, can be cleared, never at oneself). When the investigation ends, the most-pointed person gets 25 s (15 on Fast, 30 on Relaxed) to speak; a tie is broken by a seeded draw over the tied ids that the screen announces as a draw; nobody pointed or defender disconnected → straight to the vote. Pointers stay secret: they reach the devices only with the verdict data, and the v1.1 interface does not display them. The defender or the host can end it early; it never blocks.
 - **Timings by group size.** One function, `timingsFor(pace, players)`, scales investigation time ×0.85 for 4–5 players, ×1 for 6–7 and ×1.2 (and +10 s of vote) for 8–10.
 - **Three testimony states.** *Coincide*, *Contradice* and *Sin contraste* (when the subject's alibi was automatic because they did not seal in time). An automatic alibi never "contradicts" anyone, so it can't produce points for exposing a lie.
 - **Wording.** Glossary fixed across the app, the guide and the docs: ronda, partida, coartada, recuerdo, prueba, testimonio, objetivo secreto, «la persona culpable».

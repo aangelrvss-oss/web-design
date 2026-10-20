@@ -4,10 +4,13 @@ import { atHour, errorText, plural } from '../lib/text';
 import { sfx } from '../lib/sound';
 import { store } from '../net/store';
 import { CaseHeader, PrivateFile } from '../ui/game';
-import { ActionBar, Pin, Stamp, TopBar, useAction } from '../ui/kit';
+import { shortNames } from '../lib/colors';
+import { ActionBar, Stamp, Token, TopBar, useAction } from '../ui/kit';
 
-export function Declare({ pub, priv, onMenu }: { pub: PublicView; priv: PrivateView; onMenu: () => void }) {
+/** `fileOpen`: the file is already open (one shared phone: «Soy X» was the step that revealed it). */
+export function Declare({ pub, priv, onMenu, fileOpen = false }: { pub: PublicView; priv: PrivateView; onMenu: () => void; fileOpen?: boolean }) {
   const round = pub.round!;
+  const short = shortNames(round.participants.map((id) => ({ id, name: pub.players.find((p) => p.id === id)?.name ?? '?' })));
   const { slots, zones } = round.scenario;
   const isCulprit = priv.role === 'culpable';
   // No pre-filled answers: everybody taps three times, so nobody can tell the culprit
@@ -39,12 +42,16 @@ export function Declare({ pub, priv, onMenu }: { pub: PublicView; priv: PrivateV
     );
 
   const statusPins = (
-    <div className="row wrap" role="group" aria-label="Quién ha sellado su declaración">
+    <div className="row wrap token-row" role="group" aria-label="Quién ha sellado su declaración">
       {round.participants.map((id) => {
         const p = pub.players.find((x) => x.id === id);
         if (!p) return null;
         const done = round.locked.includes(id);
-        return <Pin key={id} player={p} className={done ? '' : 'dim'} badge={done ? '✓' : undefined} />;
+        return (
+          <span key={id} role="img" aria-label={`${p.name}: ${done ? 'ha sellado' : 'aún no ha sellado'}`}>
+            <Token player={p} label={short[id]} pinClass={done ? '' : 'dim'} badge={done ? '✓' : undefined} />
+          </span>
+        );
       })}
     </div>
   );
@@ -53,7 +60,7 @@ export function Declare({ pub, priv, onMenu }: { pub: PublicView; priv: PrivateV
     <main className="screen">
       <TopBar title="Declaración" phase="declare" step="Lee tu expediente, elige un sitio para cada hora y sella." endsAt={pub.phaseEndsAt} onMenu={onMenu} />
       <CaseHeader pub={pub} />
-      <PrivateFile pub={pub} priv={priv} />
+      <PrivateFile pub={pub} priv={priv} startOpen={fileOpen} />
 
       {!locked ? (
         <section className="paper tabbed" data-tab="Tu declaración" aria-label="Tu declaración">
@@ -114,10 +121,13 @@ export function Declare({ pub, priv, onMenu }: { pub: PublicView; priv: PrivateV
       <section className="stack" aria-label="Estado">
         <div className="label on-ink">{pending === 0 ? 'Todas las declaraciones, selladas' : `Faltan ${plural(pending, 'declaración', 'declaraciones')} por sellar`}</div>
         {statusPins}
-        <p className="small muted">
-          Si se acaba el tiempo sin sellar: si ya habías elegido las tres horas, se sella tal cual; si no, la app pone una coartada automática y
-          la marca como «automática».
-        </p>
+        {/* Only where declaring has a clock (one phone each); with one shared phone it has none. */}
+        {pub.phaseEndsAt !== null && (
+          <p className="small muted">
+            Si se acaba el tiempo sin sellar: si ya habías elegido las tres horas, se sella tal cual; si no, la app pone una coartada automática
+            y la marca como «automática».
+          </p>
+        )}
       </section>
 
       <ActionBar

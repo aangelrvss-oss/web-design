@@ -77,3 +77,92 @@ export function caseSummary(pub: PublicView): { story: string[]; mentions: Menti
   }
   return { story, mentions };
 }
+
+export type FactKind = 'evidence' | 'lie' | 'defense' | 'testimony' | 'vote';
+
+export interface Fact {
+  kind: FactKind;
+  text: string;
+  /** People the fact is about, to show their portraits. */
+  people: string[];
+}
+
+/**
+ * The round's checked facts, for the case file at the verdict: only what the reveal data says
+ * (evidence, lies, the defense, testimonies, votes), no motives and no "because". The jokey
+ * chronicle above (caseSummary) is labelled as such on screen.
+ */
+export function roundFacts(pub: PublicView): Fact[] {
+  const r = pub.round!;
+  const rv = r.reveal!;
+  const o = rv.outcome;
+  const name = (id: string | null) => playerName(pub, id);
+  const culprit = Object.keys(rv.roles).find((p) => rv.roles[p] === 'culpable')!;
+  const accomplice = Object.keys(rv.roles).find((p) => rv.roles[p] === 'complice') ?? null;
+  const hour = (s: number) => atHour(r.scenario.slots[s]);
+  const facts: Fact[] = [];
+
+  rv.traces.forEach((t, i) => {
+    const fits = r.participants.filter((id) => r.declarations?.[id]?.zones[t.slot] === t.zone);
+    const culpritFits = fits.includes(culprit);
+    facts.push({
+      kind: 'evidence',
+      text: `Prueba ${i + 1}: la persona culpable estuvo en ${zoneName(pub, t.zone)} ${hour(t.slot)}. ${
+        fits.length === 0 ? 'Ninguna coartada encajaba' : `${fits.length === 1 ? 'Encajaba la coartada de' : 'Encajaban las de'} ${listJoin(fits.map(name))}`
+      }${culpritFits ? '' : `; ${name(culprit)} había declarado otro sitio a esa hora`}.`,
+      people: fits,
+    });
+  });
+
+  const lies = o.lies[culprit] ?? [];
+  facts.push({
+    kind: 'lie',
+    text: `${name(culprit)} mintió ${lies.length === 1 ? 'en 1 hora' : `en ${lies.length} horas`}: ${lies.map(hour).join(' y ')}.`,
+    people: [culprit],
+  });
+
+  const d = r.defense;
+  if (d) {
+    const text =
+      d.reason === 'senalado'
+        ? `${name(d.defender)} fue la persona más señalada (${d.pointerCount}) y tuvo la última defensa.`
+        : d.reason === 'sorteo'
+          ? `Empate a ${d.pointerCount} señalamientos entre ${d.tiedCount} personas: el sorteo dio la última defensa a ${name(d.defender)}.`
+          : d.reason === 'nadie_senalado'
+            ? 'Nadie señaló a nadie: no hubo última defensa.'
+            : `${name(d.defender)} era la más señalada, pero no estaba conectada: no hubo última defensa.`;
+    facts.push({ kind: 'defense', text, people: d.defender ? [d.defender] : [] });
+  }
+
+  const ts = r.testimonies;
+  if (ts.length === 0) facts.push({ kind: 'testimony', text: 'Nadie publicó ningún testimonio.', people: [] });
+  else {
+    const contra = ts.filter((t) => t.status === 'contradice').length;
+    facts.push({
+      kind: 'testimony',
+      text: `${ts.length === 1 ? 'Se publicó 1 testimonio' : `Se publicaron ${ts.length} testimonios`}; ${
+        contra === 0 ? 'ninguno contradecía una coartada' : contra === 1 ? '1 contradecía una coartada' : `${contra} contradecían alguna coartada`
+      }.`,
+      people: [],
+    });
+    for (const t of ts.filter((x) => o.exposing.includes(x.id)))
+      facts.push({ kind: 'testimony', text: `${name(t.by)} desmontó con un testimonio cierto la coartada de ${name(t.subject)} ${hour(t.slot)}.`, people: [t.by, t.subject] });
+    if (accomplice)
+      for (const t of ts.filter((x) => x.by === accomplice && x.subject === culprit))
+        facts.push({ kind: 'testimony', text: `${name(accomplice)}, cómplice, dio un testimonio sobre ${name(culprit)} ${hour(t.slot)}.`, people: [accomplice, culprit] });
+  }
+
+  const voters = Object.keys(rv.votes).length;
+  const missing = r.participants.length - voters;
+  if (o.runoffTally) {
+    facts.push({ kind: 'vote', text: `Hubo empate en la votación: desempate entre ${listJoin(Object.keys(o.runoffTally).map(name))}.`, people: Object.keys(o.runoffTally) });
+  }
+  facts.push({
+    kind: 'vote',
+    text: o.accused
+      ? `${name(o.accused)} recibió ${(o.runoffTally ?? o.tally)[o.accused]} ${(o.runoffTally ?? o.tally)[o.accused] === 1 ? 'voto' : 'votos'} y fue la persona acusada${missing > 0 ? `; ${missing === 1 ? '1 persona no votó' : `${missing} personas no votaron`} a tiempo` : ''}.`
+      : `Nadie fue acusado${missing > 0 ? `; ${missing === 1 ? '1 persona no votó' : `${missing} personas no votaron`} a tiempo` : ''}.`,
+    people: o.accused ? [o.accused] : [],
+  });
+  return facts;
+}

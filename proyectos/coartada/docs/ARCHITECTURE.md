@@ -26,6 +26,7 @@ proyectos/coartada/
     engine/game.ts         authoritative state machine: actions, timers, votes, scoring
     engine/encargos.ts     secret objectives: dealing, evaluation, text; testimonyStatus()
     engine/views.ts        THE privacy boundary: publicView() / privateView()
+    engine/prueba-falsa.ts experimental «Prueba falsificable» (off by default; docs/PRUEBA-FALSA.md)
     content/types.ts       scenario schema
     content/scenarios/     one file per case (25)
     content/validate.ts    shape checks (incl. HH:MM chronological hours) + generated-round invariants
@@ -38,7 +39,8 @@ proyectos/coartada/
     net/store.ts           socket client, session, reconnection, snapshot store
     screens/               Home, Lobby, Declare, Investigate, Defense, Vote, Result/Final, Local, Rules, Guide
     ui/kit.tsx, ui/game.tsx  design-system components; board, private file, evidence
-    lib/                   copy (Spanish), summaries, sound, prefs, colors
+    ui/pruebaFalsa.tsx     the experimental «Prueba falsificable» UI (only mounted in those rounds)
+    lib/                   copy (Spanish), summaries, sound, vibration (haptics), prefs, private notes, colors
     styles/app.css         tokens + components
   tests/                   vitest suites
   e2e/                     Playwright: multi-device match, single-phone match, axe-core accessibility audit
@@ -110,6 +112,20 @@ The server sends each socket `{pub, priv}` where `priv` is computed for the play
 
 `screens/Local.tsx` runs the same `engine/game.ts` in the browser and routes the screens' `send()` calls to it as "whoever holds the phone". Secret steps are gated by hand-off screens; no network is used. The online privacy model is unaffected: online rounds are generated on the server with a random seed that the client never sees before the verdict.
 
+On the shared investigation screen the testimony sheet gets a stripped private view (declared alibi and testimonies left; no role, truth, memories, partner, objective or forgery). "Ver un expediente en privado" re-reads one person's file behind a hand-off. With «Prueba falsificable» on, `Local.tsx` handles `game:forge` and, when the investigation ends (button or clock), stops the clock and collects each person's `examine()` behind hand-offs with no count shown, then calls `forceAdvance` so `beginDefense` resolves the examination as online (`docs/PRUEBA-FALSA.md` §4b).
+
+The setup screen gives each row a character through the engine's own `chooseAvatar` (one per person), after clearing the automatic ones. The private notebook (`lib/notes.ts`) is keyed by room, round, case and player like online, but for the single-phone room it is kept in memory only and cleared when a match starts or ends; it opens only behind the «Soy X» hand-off.
+
+`lib/haptics.ts`: an optional short vibration (`navigator.vibrate`, Android Chrome) when the last defense ends and in the last seconds of a vote you haven't cast. One per moment (keyed by room, round and phase), switchable in the menu (`prefs.vibrate`, on by default), a no-op where unsupported; the screen always shows the same moment. The vote's timing and timeout are untouched.
+
+## Character portraits
+
+The twelve portraits are WebP files in `src/client/assets/characters/` (a 128 px head for pins and a half-length card for the lobby picker), cut from the approved character sheet. Vite serves them from `/assets` in the app (allowed by the CSP's `img-src 'self'`) and inlines them in the standalone demo. Total ≈ 180 KB.
+
+## Case scenes
+
+Each of the 25 cases has its own ink scene, `src/client/assets/scenes/{id}.svg` (320 × 120, 2–3.3 KB, 68 KB in total), mapped explicitly in `CASE_SCENE` (`src/client/ui/ambience.tsx`) and shown as a decorative `<img alt="">` in the case header. The app serves each one as a separate file from `/assets`, fetched only when that case is played; the demo inlines them. Once an illustration is imported for a case (`scripts/import-scene.mjs` → `{id}.webp` at 1440 × 810 plus `{id}-720.webp`, served with `srcset`), it is shown instead of the drawing in its own 16:9 frame (taller than the drawings' 8:3 strip); a file that fails to load falls through to the drawing, then to the generic inline scene (`docs/ESCENAS-higgsfield.md`). The six generic inline scenes stay as the last fallback (`onError`, or a new case without a file). Scenes are visual only: nothing in `src/shared` imports them. Matrix and visual review: `docs/ESCENAS.md`.
+
 ## Testing
 
 | Suite | What it covers |
@@ -120,7 +136,18 @@ The server sends each socket `{pub, priv}` where `priv` is computed for the play
 | `tests/audit-cases.test.ts` | the 16 rule situations of the v1.1 audit (catch/escape with and without accomplice, abstentions, double tie, automatic alibis, coincide ≠ truth, objectives on/off, new round reset, final standings, leaving in any phase) plus no double vote around the defense |
 | `tests/guide-example.test.ts` | regenerates the guide's example round from its seed and checks every fact the guide states |
 | `tests/server.test.ts` | real Socket.IO server + independent clients: full 5-player match with rematch and a leak audit of every payload; token reconnection (bad token, another player's id); malformed/oversized/unauthorized messages; rate limiting; host disconnect handover; disconnect during vote; late joiners as spectators; kick; leave; room cleanup; fresh room after a finished one; HTTP health/method checks |
-| `e2e/match.mjs` | 4–10 real Chromium sessions (all but one at 390×844 touch, 1 desktop 1280×860): join by code and by link, reload, full round through the UI including secret pointing and the last defense, WebSocket-frame privacy audit (pointers never leave the server before the verdict), rematch, closing a tab and rejoining mid-round, offline/online recovery, no horizontal overflow at 320 px, axe-core audit of 7 screens, screenshots |
+| `e2e/match.mjs` | 4–10 real Chromium sessions (all but one at 390×844 touch, 1 desktop 1280×860): join by code and by link, reload, full round through the UI including secret pointing and the last defense, WebSocket-frame privacy audit (pointers never leave the server before the verdict; a private note written on one phone is in no frame sent or received and on no other screen), rematch, closing a tab and rejoining mid-round, offline/online recovery, no horizontal overflow at 320 px, axe-core audit of 7 screens, screenshots |
+| `e2e/un-movil.mjs` | single-phone mode end to end (app and demo file): a 5-round match + new match at 320/360/390 px with privacy checks at every hand-off and shared screen, roles and scores checked against the final standings; «Prueba falsificable» with 6 players, both examination outcomes |
 | `e2e/local.mjs` | single-phone mode: 4 players, hand-offs, testimony, pointing and defense, votes, verdict, next round; with `DEMO=1` against the standalone file, also the guide (axe-core audit, no overflow) |
-| `scripts/simulate.ts` | 7,200 seeded rounds per mode through the engine with scripted bots, incl. pointing and defense; `INDEPENDENT=1` makes each bot decide alone (balance indicator, not human data) |
+| `tests/characters.test.ts`, `tests/short-names.test.ts` | characters: one per member, refused when taken (also simultaneous requests), lobby only, kept offline and across rounds, freed on leaving or kick, unrelated to roles; short names under portraits are unique and readable |
+| `tests/round-facts.test.ts`, `tests/ambience.test.ts` | the verdict's case file states only facts from the reveal data (nothing secret is public before it); every case has its own scene file (none shared, none missing, none unused, self-contained SVG), the decorative image is silent, a case without a file falls back to its generic scene, and nothing in `src/shared` imports the scenes |
+| `tests/engine-golden.test.ts` | golden fingerprints of the rules: every case's dealt night, roles, memories, evidence and objectives for 4–10 players, the resolution and scoring of 36 scripted rounds, the score table; visual or tooling work must never move them |
+| `tests/sim-core.test.ts` | the balance simulator: reproducible by seed, never blocks, a variant round is the same base round plus information, a verified tip is always true |
+| `tests/quick-guide.test.ts`, `tests/ring.test.ts` | the quick guide states the engine's own points, timers and limits and never explains play modes; the evidence loop's geometry (snug around its group, inside its cell) |
+| `e2e/rounds.mjs` | round 1 → 2 with two phones offline during the verdict: the host sees them listed as offline; everyone plays the same round 2 (4–6 browsers; with 4, the start is refused until 4 are connected) |
+| `e2e/evidence.mjs` | the evidence loop encloses all and only the pins of its cell, fitted to the group (0–6 pins, 4–10 players, 320–800 px) |
+| `e2e/ux.mjs` | real game on «Rápido» (4–10 browsers, one at 320 px with reduced motion; `LONG=1` for long names): «Nueva prueba» notice in sync and only once (also with a locked phone, an offline phone, a reload and the quick guide), pointing found and registered, testifying from a pin without accidental publication, big countdown from 15 s without layout shift in declaration, investigation, vote and a forced runoff, defense clock, touch targets, axe-core audits |
+| `scripts/simulate.ts` | 7,200 seeded rounds per mode through the engine with scripted bots (`scripts/sim/core.ts`), incl. pointing and defense; `INDEPENDENT=1` makes each bot decide alone (balance indicator, not human data) |
+| `scripts/balance.ts` | balance audit (`npm run balance`): 95% intervals, culprit strategies, points by role, objectives, information ablations and the experimental variants (Informante, Chivatazo) simulated outside the engine and compared round by round on the same seeds → `docs/EQUILIBRIO-datos.md` |
+| `e2e/scenes.mjs` | the build serves 25 distinct scene files byte-identical to the sources; in real rounds the declaration screen shows the scene of the case being played, loaded and decorative, at 320–390 px without horizontal scroll; with the scene file blocked the generic scene is drawn; axe-core audit |
 | `scripts/text-inventory.ts` | `npm run texts`: inventory of every visible string → `docs/TEXT_INVENTORY.md`, fails on forbidden terms and typographic errors |

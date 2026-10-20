@@ -56,9 +56,17 @@ describe('timings are centralized by pace and group size', () => {
         expect(t.investigate1 % 5).toBe(0);
       }
     }
-    expect(timingsFor('normal', 6).defense).toBe(15);
-    expect(timingsFor('rapido', 6).defense).toBe(12);
-    expect(timingsFor('relajado', 6).defense).toBe(20);
+    expect(timingsFor('normal', 6).defense).toBe(25);
+    expect(timingsFor('rapido', 6).defense).toBe(15);
+    expect(timingsFor('relajado', 6).defense).toBe(30);
+  });
+
+  it('the longer defense (15/25/30 s) left every other step as it was', () => {
+    expect(PACE_TIMINGS).toEqual({
+      relajado: { declare: 180, investigate1: 150, investigate2: 180, defense: 30, vote: 60, runoff: 40 },
+      normal: { declare: 120, investigate1: 120, investigate2: 150, defense: 25, vote: 45, runoff: 30 },
+      rapido: { declare: 75, investigate1: 75, investigate2: 105, defense: 15, vote: 30, runoff: 25 },
+    });
   });
 
   it('round length grows moderately with group size (normal pace, full timers)', () => {

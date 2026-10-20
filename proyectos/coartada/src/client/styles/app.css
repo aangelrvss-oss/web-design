@@ -246,6 +246,23 @@ p {
 .phase-step {
   font-size: var(--t-xs);
   color: var(--on-ink-dim);
+  margin-top: 2px;
+}
+
+/* Narrow phones: three buttons + timer leave little room for the phase name. */
+@media (max-width: 360px) {
+  .topbar-row {
+    gap: var(--s-1);
+  }
+
+  .topbar-row .icon-btn {
+    min-width: 40px;
+    padding: 0 6px;
+  }
+
+  .topbar-row .phase-name {
+    font-size: var(--t-md);
+  }
 }
 
 .icon-btn {
@@ -310,6 +327,75 @@ p {
   color: #ff8a7e;
 }
 
+/* Last 15 s: the countdown takes the title's place in the same 44 px row (nothing moves,
+   nothing is covered) and grows; the last 5 s become a red stamp pressed in each second. */
+.countdown {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+  height: 44px;
+  color: #ff8a7e;
+}
+
+.countdown-num {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-stretch: 80%;
+  font-variant-numeric: tabular-nums;
+  font-size: 2.6rem;
+  line-height: 1;
+  min-width: 1.25em;
+  text-align: center;
+  animation: countdown-in 380ms var(--ease) both;
+}
+
+.countdown-label {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.15;
+  font-size: var(--t-xs);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.countdown-phase {
+  color: var(--on-ink-dim);
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.countdown.final .countdown-num {
+  background: var(--stamp);
+  color: var(--paper);
+  border-radius: 8px;
+  padding: 2px 8px 0;
+  box-shadow: 0 0 0 3px rgba(194, 54, 44, 0.35);
+  transform: rotate(-3deg);
+  animation: tick-press 420ms var(--ease) both;
+}
+
+@keyframes countdown-in {
+  from {
+    transform: scale(0.6);
+  }
+}
+
+@keyframes tick-press {
+  from {
+    transform: rotate(-3deg) scale(1.4);
+  }
+  to {
+    transform: rotate(-3deg) scale(1);
+  }
+}
+
 /* ───────────── buttons ───────────── */
 
 .btn {
@@ -362,6 +448,12 @@ p {
 .paper .btn-ghost {
   border-color: var(--rule);
   color: var(--graphite);
+}
+
+.btn-ballpoint {
+  background: var(--ballpoint);
+  color: var(--paper);
+  box-shadow: 0 2px 0 #1f3f60;
 }
 
 .btn-block {
@@ -631,6 +723,75 @@ hr.rule {
   position: relative;
   transition: opacity 160ms, transform 160ms;
 }
+
+/* Portrait pins: the character inside a ring of the player's colour. */
+.pin.portrait {
+  padding: 2px;
+  background: var(--c);
+}
+
+.pin.portrait > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.pin.portrait.dim {
+  /* "not yet": the ring stays, the portrait fades to grey */
+  background: var(--c);
+  box-shadow: none;
+}
+
+.pin.portrait.dim > img {
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+
+.pin.portrait.off > img {
+  filter: grayscale(1);
+}
+
+/* A small portrait with the player's name under it (board, who has sealed/voted). */
+.token {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  line-height: 1;
+}
+
+.token-name {
+  font-family: var(--font-display);
+  font-stretch: 75%;
+  font-weight: 800;
+  font-size: 0.68rem;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  color: var(--graphite);
+}
+
+.on-ink .token-name,
+.token-row .token-name {
+  color: var(--on-ink);
+}
+
+.token-row {
+  gap: var(--s-2) var(--s-3);
+}
+
+.board-token {
+  background: none;
+  border: 0;
+  padding: 0;
+  line-height: 0;
+  border-radius: 6px;
+}
+
+.board-token .token-name {
+  font-size: 0.66rem;
+}
+
 
 .pin.lg {
   width: 40px;
@@ -963,9 +1124,16 @@ hr.rule {
 }
 
 .board-grid .cell .pin {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   font-size: 0.68rem;
+}
+/* Narrow phones: two people per row in a cell (pin 26 px, names of up to 5 letters). */
+@media (max-width: 380px) {
+  .board-grid .cell .pin {
+    width: 26px;
+    height: 26px;
+  }
 }
 
 .cell.scene {
@@ -989,19 +1157,58 @@ hr.rule {
 }
 
 .cell .trace-ring {
+  /* Placed and sized by TraceRing around the pins of its own cell (lib/ring.ts). */
   position: absolute;
-  inset: 2px;
   pointer-events: none;
   color: var(--ballpoint);
+  overflow: visible;
+  transform-origin: 50% 50%;
 }
 
 .cell .trace-num {
   position: absolute;
-  right: 3px;
-  top: 2px;
   font-size: 0.66rem;
   font-weight: 800;
+  line-height: 1;
+  padding: 1px 2px;
+  border-radius: 3px;
+  background: rgba(216, 195, 151, 0.92);
   color: var(--ballpoint);
+  pointer-events: none;
+}
+
+/* A piece of evidence that has just appeared: the cell is lit like paper under a lamp with a
+   blue edge (kept while the notice is up, so it also shows with reduced motion), after a blue
+   flash, and the loop is pressed in like ink. */
+.cell.fresh-trace {
+  background-color: rgba(250, 246, 236, 0.6);
+  box-shadow: inset 0 0 0 2px rgba(46, 91, 136, 0.55);
+  animation: cell-flash 1.1s ease-out 2;
+}
+
+.cell .trace-ring.fresh {
+  animation: ring-in 650ms var(--ease) both;
+}
+
+.cell .trace-ring.fresh path {
+  stroke-width: 3.4;
+}
+
+@keyframes cell-flash {
+  from {
+    background-color: rgba(120, 165, 210, 0.55);
+  }
+}
+
+@keyframes ring-in {
+  from {
+    opacity: 0;
+    transform: scale(1.5) rotate(-8deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .board-legend {
@@ -1071,6 +1278,114 @@ hr.rule {
 }
 
 /* ───────────── evidence & testimonies ───────────── */
+
+/* "Nueva prueba": a paper slip in ballpoint blue hung under the top bar, over the content (so
+   nothing moves), for a few seconds or until «Ver» / ×. Different from a toast (bottom, ink)
+   and from a phase change (the whole screen changes). */
+.topbar-notice {
+  position: absolute;
+  left: var(--s-4);
+  right: var(--s-4);
+  top: calc(100% - 4px);
+}
+
+.evidence-notice {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) 40px var(--s-2) var(--s-3);
+  background: var(--paper);
+  color: var(--graphite);
+  border: 2px solid var(--ballpoint);
+  border-left-width: 6px;
+  border-radius: var(--r-paper);
+  box-shadow: var(--shadow-paper);
+  animation: notice-drop 520ms var(--ease) both;
+}
+
+.evidence-notice .ill-evidence {
+  flex: none;
+  width: 40px;
+  height: 40px;
+}
+
+.evidence-notice-title {
+  font-family: var(--font-display);
+  font-stretch: 80%;
+  font-weight: 900;
+  font-size: var(--t-lg);
+  line-height: 1.1;
+  color: var(--ballpoint);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.evidence-notice .small {
+  line-height: 1.3;
+}
+
+.trace-chip {
+  display: inline-block;
+  font-family: var(--font-ui);
+  font-size: var(--t-xs);
+  font-weight: 800;
+  letter-spacing: 0;
+  padding: 1px 6px;
+  border-radius: var(--r-pill);
+  background: var(--ballpoint);
+  color: var(--paper);
+  vertical-align: 2px;
+}
+
+.evidence-notice .btn {
+  flex: none;
+}
+
+.notice-close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 0;
+  color: var(--pencil);
+}
+
+.notice-close svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Movement only, no fading: the text keeps full contrast from the first frame. */
+@keyframes notice-drop {
+  from {
+    transform: translateY(-16px) rotate(-1.5deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Narrow phones: no illustration and a smaller title, so the slip stays two or three lines. */
+@media (max-width: 380px) {
+  .evidence-notice .ill-evidence {
+    display: none;
+  }
+  .evidence-notice-title {
+    font-size: var(--t-md);
+  }
+}
+
+.trace-card .ill-evidence {
+  width: 30px;
+  height: 30px;
+  flex: none;
+}
 
 .trace-card {
   border-left: 4px solid var(--ballpoint);
@@ -1479,6 +1794,207 @@ hr.rule {
   }
 }
 
+/* ───────────── quick guide (the "?" overlay; also embedded in the demo guide) ───────────── */
+.qg {
+  color: var(--graphite);
+}
+
+.qg-title {
+  font-size: var(--t-2xl);
+}
+
+.qg-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  position: sticky;
+  top: calc(-1 * var(--s-4));
+  z-index: 1;
+  background: var(--paper);
+  padding: var(--s-2) 0;
+}
+
+.qg-tabs button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 56px;
+  padding: 6px 2px;
+  border: 1.5px solid var(--rule);
+  border-radius: var(--r-control);
+  background: transparent;
+  color: var(--pencil);
+  font: 700 0.72rem/1.1 var(--font-ui);
+  text-align: center;
+}
+
+.qg-tabs button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.qg-tabs button.on {
+  border-color: var(--graphite);
+  background: var(--graphite);
+  color: var(--paper);
+}
+
+.qg-lead {
+  font-size: var(--t-md);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.qg-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-3);
+}
+
+.qg-steps li,
+.qg-points li {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: var(--s-3);
+  align-items: start;
+}
+
+.qg-steps p,
+.qg-points p {
+  margin: 2px 0 0;
+  font-size: var(--t-sm);
+  line-height: 1.45;
+}
+
+.qg-step-icon {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--graphite);
+  display: grid;
+  place-items: center;
+}
+
+.qg-step-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.qg-step-icon b {
+  position: absolute;
+  right: -6px;
+  bottom: -4px;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--stamp);
+  color: #fff7ee;
+  font: 800 0.72rem/20px var(--font-ui);
+  text-align: center;
+}
+
+.qg-step-title {
+  font-family: var(--font-display);
+  font-stretch: 85%;
+  font-weight: 800;
+  font-size: var(--t-lg);
+  line-height: 1.15;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.qg-time {
+  font: 700 0.75rem/1 var(--font-ui);
+  color: var(--ballpoint);
+  border: 1.5px solid currentColor;
+  border-radius: var(--r-pill);
+  padding: 3px 7px;
+}
+
+.qg-roles {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--s-3);
+}
+
+@media (min-width: 560px) {
+  .qg-roles {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.qg-role {
+  border: 1.5px dashed var(--rule);
+  border-radius: var(--r-paper);
+  padding: var(--s-3);
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  column-gap: var(--s-3);
+  align-items: center;
+}
+
+.qg-role p {
+  grid-column: 1 / -1;
+  margin: 6px 0 0;
+  font-size: var(--t-sm);
+  line-height: 1.4;
+}
+
+.qg-role .stamp {
+  justify-self: start;
+}
+
+.qg-suspect {
+  width: 56px;
+  height: 49px;
+}
+
+.qg-note {
+  border-left: 3px solid var(--ballpoint);
+  padding: 6px 0 6px var(--s-3);
+  font-size: var(--t-sm);
+  line-height: 1.45;
+}
+
+.qg-points {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-3);
+}
+
+.qg-chip {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--stamp);
+  border-radius: 6px;
+  color: var(--stamp-ink);
+  font: 900 1.15rem/1 var(--font-display);
+  transform: rotate(-4deg);
+}
+
+.qg-more summary {
+  cursor: pointer;
+  font-weight: 700;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.qg-more ul {
+  margin: 0;
+  padding-left: 1.1em;
+}
+
 /* ───────────── guide ───────────── */
 
 .guide-text {
@@ -1625,10 +2141,14 @@ hr.rule {
   color: var(--stamp);
 }
 
-.suspect-card {
-  display: flex;
-  align-items: center;
-  gap: var(--s-3);
+/* The defense is short, so it keeps its own big clock (no countdown in the top bar); its last
+   seconds get the same pressed-stamp treatment. */
+.defense-clock.final {
+  background: var(--stamp);
+  color: var(--paper);
+  border-radius: 12px;
+  padding: 6px 18px 0;
+  animation: tick-press 420ms var(--ease) both;
 }
 
 .guide-glossary {
@@ -1654,4 +2174,922 @@ hr.rule {
   .guide-glossary dd {
     margin-bottom: 8px;
   }
+}
+
+/* ───────────── pointing for the last defense ───────────── */
+.point-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.ill-lineup {
+  flex: none;
+  width: 84px;
+  height: 42px;
+}
+
+.point-title {
+  font-family: var(--font-display);
+  font-stretch: 80%;
+  font-weight: 900;
+  font-size: var(--t-xl);
+  line-height: 1.05;
+  color: var(--stamp-ink);
+  margin-bottom: 2px;
+}
+
+.point-urgent {
+  margin-top: var(--s-2);
+  font-weight: 800;
+  color: var(--stamp-ink);
+}
+
+.point-panel.urgent {
+  outline: 3px solid var(--stamp);
+  outline-offset: 2px;
+  animation: point-call 1.2s ease-in-out 2;
+}
+
+@keyframes point-call {
+  50% {
+    outline-color: rgba(194, 54, 44, 0.25);
+  }
+}
+
+/* Buttons as wide as each name (never cut: names of up to 16 letters), wrapping into rows. */
+.point-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-top: var(--s-3);
+}
+
+/* Each person is a raised card with a shadow, clearly a button; the chosen one is outlined in
+   stamp red with a check. */
+.point-option {
+  position: relative;
+  flex: 1 1 auto;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+  min-height: 48px;
+  padding: 6px 10px 6px 6px;
+  border: 2px solid var(--kraft-2);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.45);
+  box-shadow: 0 2px 0 var(--kraft-2);
+  color: var(--graphite);
+  font-weight: 700;
+  text-align: left;
+  transition: transform 120ms var(--ease), border-color 160ms, background-color 160ms;
+}
+
+.point-option:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+.point-option:disabled {
+  opacity: 0.7;
+}
+
+.point-option .pin {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  font-size: 0.72rem;
+}
+
+.point-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.point-option[aria-pressed='true'] {
+  border-color: var(--stamp);
+  background: rgba(194, 54, 44, 0.12);
+  box-shadow: 0 2px 0 var(--stamp-ink);
+}
+
+.point-check {
+  position: absolute;
+  top: -9px;
+  right: -7px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--stamp);
+  color: #fff7ee;
+  display: grid;
+  place-items: center;
+  animation: stamp-in 320ms var(--ease) both;
+}
+
+.point-check svg,
+.point-status-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.point-status {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin: var(--s-3) 0 var(--s-2);
+  padding: 8px 10px;
+  border: 1.5px dashed var(--pencil);
+  border-radius: 8px;
+  font-size: var(--t-sm);
+}
+
+.point-status.done {
+  border-style: solid;
+  border-color: var(--ballpoint);
+  background: rgba(46, 91, 136, 0.08);
+  color: var(--ballpoint);
+}
+
+.point-status-icon {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--ballpoint);
+  color: var(--paper);
+  display: grid;
+  place-items: center;
+}
+
+/* Reminder in the bottom bar while you haven't pointed at anyone. */
+.hint-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-height: 28px;
+  padding: 0 4px;
+  background: none;
+  border: 0;
+  color: var(--on-ink);
+  font-weight: 700;
+  font-size: var(--t-sm);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.hint-link > span {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hint-link svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+
+.hint-link.urgent {
+  color: #ff8a7e;
+}
+
+.hint-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  column-gap: var(--s-3);
+}
+
+.hint-count {
+  white-space: nowrap;
+}
+
+.defense-cue {
+  font-family: var(--font-display);
+  font-stretch: 80%;
+  font-weight: 900;
+  font-size: var(--t-xl);
+  line-height: 1.1;
+  color: var(--stamp-ink);
+}
+
+.qg-lineup {
+  width: 150px;
+  height: 75px;
+  margin: 0 auto;
+}
+
+.ill-suspect {
+  flex: none;
+  width: 44px;
+  height: 39px;
+}
+
+/* ───────────── selected person: point (secret) or testify (public) ───────────── */
+.summary-actions {
+  display: grid;
+  gap: var(--s-2);
+  margin-top: var(--s-3);
+}
+
+.summary-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 10px;
+  border: 2px solid var(--kraft-2);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.45);
+  box-shadow: 0 2px 0 var(--kraft-2);
+  color: var(--graphite);
+  text-align: left;
+  font-size: var(--t-sm);
+  line-height: 1.25;
+}
+
+.summary-action:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+.summary-action:disabled {
+  opacity: 0.55;
+}
+
+.summary-action b {
+  display: block;
+  font-weight: 750;
+}
+
+/* Under the sticky top bar and above the bottom bar when scrolled into view. */
+.summary {
+  scroll-margin: 150px 0 130px;
+}
+
+.summary-action .small {
+  display: block;
+  color: var(--pencil);
+}
+
+.summary-action-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+}
+
+.summary-action-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* A small rubber stamp saying who will see it, above the action's title. */
+.action-tag {
+  display: inline-block;
+  margin-bottom: 3px;
+  font-family: var(--font-display);
+  font-stretch: 75%;
+  font-weight: 900;
+  font-size: var(--t-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1px 5px 0;
+  border: 1.5px solid currentColor;
+  border-radius: 4px;
+  transform: rotate(-4deg);
+}
+
+.action-tag.secret {
+  color: var(--stamp-ink);
+}
+
+.action-tag.public {
+  color: var(--ballpoint);
+}
+
+.summary-done {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--t-sm);
+  font-weight: 650;
+  color: var(--ballpoint);
+}
+
+.summary-done svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+
+.trace-chip + .trace-chip {
+  margin-left: 4px;
+}
+
+/* ───────────── character picker (lobby) ───────────── */
+.picker-head {
+  display: flex;
+  gap: var(--s-4);
+  align-items: flex-start;
+}
+
+/* Your character pinned to the file like a photo, with a strip of tape. */
+.picker-polaroid {
+  position: relative;
+  flex: none;
+  width: 92px;
+  padding: 5px 5px 14px;
+  background: #fbf6ea;
+  box-shadow: var(--shadow-paper);
+  transform: rotate(-2.5deg);
+  margin-top: 6px;
+}
+
+.picker-polaroid::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  width: 46px;
+  height: 14px;
+  transform: translateX(-50%) rotate(3deg);
+  background: rgba(216, 195, 151, 0.85);
+}
+
+.picker-polaroid img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 165 / 220;
+  object-fit: cover;
+  object-position: top;
+}
+
+.picker-empty {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 165 / 220;
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--pencil);
+}
+
+.picker-title {
+  font-family: var(--font-display);
+  font-stretch: 80%;
+  font-weight: 900;
+  font-size: var(--t-xl);
+  line-height: 1.05;
+}
+
+.picker-preview {
+  display: grid;
+  gap: 4px;
+  padding: 6px 8px;
+  border: 1.5px dashed var(--pencil);
+  border-radius: 8px;
+}
+
+.picker-name {
+  overflow-wrap: anywhere;
+}
+
+.picker-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--s-2);
+  margin-top: var(--s-3);
+}
+
+.picker-card {
+  position: relative;
+  padding: 0;
+  border: 2px solid var(--kraft-2);
+  border-radius: 6px;
+  background: #fbf6ea;
+  overflow: hidden;
+  min-height: 44px;
+}
+
+.picker-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 165 / 215;
+  object-fit: cover;
+  object-position: top;
+}
+
+.picker-card.mine {
+  border-color: var(--stamp);
+  box-shadow: 0 0 0 2px var(--stamp);
+}
+
+.picker-card.taken img {
+  filter: grayscale(1);
+  opacity: 0.4;
+}
+
+.picker-card:disabled {
+  cursor: not-allowed;
+}
+
+.picker-check {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--stamp);
+  color: #fff7ee;
+  display: grid;
+  place-items: center;
+}
+
+.picker-check svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* Who has it: their own name, whole (it may take two lines). */
+.picker-owner {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 3px 4px;
+  background: rgba(21, 28, 40, 0.86);
+  color: var(--paper);
+  font-family: var(--font-display);
+  font-stretch: 75%;
+  font-size: 0.66rem;
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: center;
+  overflow-wrap: break-word;
+}
+
+/* ───────────── private notes (theory board) ───────────── */
+.file-btn {
+  flex: none;
+  flex-direction: column;
+  gap: 0;
+  padding: 0 12px;
+  line-height: 1;
+}
+
+.file-btn-caption {
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.sheet-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-2);
+  margin-bottom: var(--s-3);
+}
+
+.sheet-tabs button {
+  min-height: 44px;
+  border-radius: var(--r-control);
+  border: 1.5px solid var(--rule);
+  background: transparent;
+  color: var(--graphite);
+  font-weight: 750;
+}
+
+.sheet-tabs button[aria-selected='true'] {
+  background: var(--graphite);
+  border-color: var(--graphite);
+  color: var(--paper);
+}
+
+.action-tag.private {
+  color: var(--graphite);
+}
+
+.notes-h {
+  font-family: var(--font-display);
+  font-stretch: 80%;
+  font-weight: 900;
+  font-size: var(--t-lg);
+}
+
+.notes-person {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1.5px solid var(--rule);
+  border-left-width: 5px;
+}
+
+.notes-person.s1 {
+  border-left-color: var(--ballpoint);
+}
+
+.notes-person.s2 {
+  border-left-color: var(--stamp);
+}
+
+.notes-name {
+  overflow-wrap: anywhere;
+}
+
+.suspicion {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1.5px solid var(--rule);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.suspicion button {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--graphite);
+  font-size: var(--t-sm);
+  font-weight: 700;
+}
+
+.suspicion button + button {
+  border-left: 1.5px solid var(--rule);
+}
+
+.suspicion .suspicion-0[aria-pressed='true'],
+.suspicion .suspicion-0[aria-checked='true'] {
+  background: var(--graphite);
+  color: var(--paper);
+}
+
+.suspicion .suspicion-1[aria-pressed='true'] {
+  background: var(--ballpoint);
+  color: var(--paper);
+}
+
+.suspicion .suspicion-2[aria-pressed='true'],
+.suspicion .suspicion-2[aria-checked='true'] {
+  background: var(--stamp-ink);
+  color: #fff7ee;
+}
+
+.notes-why,
+.notes-general {
+  width: 100%;
+  border: 1.5px solid var(--rule);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--graphite);
+  font: inherit;
+  font-family: var(--font-doc);
+  font-size: var(--t-sm);
+  padding: 8px 10px;
+  min-height: 40px;
+}
+
+.notes-general {
+  resize: vertical;
+  /* lined paper */
+  background-image: repeating-linear-gradient(transparent 0 23px, rgba(46, 91, 136, 0.18) 23px 24px);
+  line-height: 24px;
+}
+
+.notes-review li {
+  border-bottom: 1px dashed var(--rule);
+}
+
+.note-line {
+  display: grid;
+  gap: 6px;
+  margin-top: var(--s-3);
+  padding-top: var(--s-2);
+  border-top: 1px dashed var(--rule);
+}
+
+.note-line .btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.note-tag.s1 {
+  border-color: var(--ballpoint);
+  color: var(--ballpoint);
+}
+
+.note-tag.s2 {
+  border-color: var(--stamp-ink);
+  color: var(--stamp-ink);
+}
+
+.player-row[aria-checked='true'] .tag {
+  color: inherit;
+  border-color: currentColor;
+}
+
+/* ───────────── case file at the verdict ───────────── */
+.casefile-people {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--s-4);
+  margin-bottom: var(--s-3);
+}
+
+.casefile-person {
+  margin: 0;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  max-width: 120px;
+  text-align: center;
+}
+
+.casefile-person figcaption {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+}
+
+.casefile-person b {
+  overflow-wrap: anywhere;
+}
+
+.casefile-person .stamp {
+  font-size: var(--t-md);
+}
+
+.casefile-h {
+  font-family: var(--font-display);
+  font-stretch: 80%;
+  font-weight: 900;
+  font-size: var(--t-lg);
+  margin-bottom: var(--s-2);
+}
+
+.facts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-2);
+}
+
+.fact {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  gap: var(--s-2);
+  align-items: start;
+  font-size: var(--t-sm);
+  line-height: 1.4;
+  padding-bottom: var(--s-2);
+  border-bottom: 1px dashed var(--rule);
+}
+
+.fact-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  color: var(--graphite);
+}
+
+.fact.evidence .fact-icon {
+  color: var(--ballpoint);
+}
+
+.fact.lie .fact-icon {
+  color: var(--stamp-ink);
+}
+
+.fact-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* ───────────── case scene (declaration screen) ───────────── */
+.case-scene {
+  margin: 0;
+  background: var(--paper);
+  padding: 6px 6px 8px;
+  box-shadow: var(--shadow-paper);
+  transform: rotate(-0.8deg);
+  max-width: 420px;
+}
+
+.case-scene svg,
+.case-scene img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.case-scene img {
+  aspect-ratio: 320 / 120;
+  background: #e4d7b8;
+}
+
+/* Illustrations keep their own 16:9 frame (taller than the drawings' 8:3 strip) so nothing of
+   the scene is cut; a file in another ratio is cropped around the centre. */
+.case-scene img.scene-photo {
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: #2b2721;
+}
+
+.case-scene figcaption {
+  margin-top: 6px;
+  font-family: var(--font-doc);
+  font-size: var(--t-sm);
+  color: var(--graphite);
+  text-align: center;
+}
+
+/* ── Reglas experimentales «Prueba falsificable» (ui/pruebaFalsa.tsx; solo en esas rondas) ── */
+.experimental-tag {
+  display: inline-block;
+  margin-top: 6px;
+  white-space: normal;
+}
+.examine-panel .point-option {
+  justify-content: space-between;
+  padding-left: 10px;
+}
+.forgery .choices {
+  margin-top: var(--s-2);
+}
+.forgery-status {
+  margin-top: var(--s-2);
+  font-weight: 650;
+}
+.examination p {
+  margin-top: 6px;
+}
+.forgery-question {
+  margin-top: var(--s-3);
+  font-weight: 700;
+}
+
+/* ───────────── single phone: a character per row of the setup ───────────── */
+.setup-row {
+  gap: var(--s-2);
+}
+
+.setup-avatar {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 50%;
+}
+
+.setup-avatar:focus-visible {
+  outline: 3px solid var(--ballpoint);
+  outline-offset: 2px;
+}
+
+.setup-avatar-edit {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--graphite);
+  color: var(--paper);
+  border: 2px solid var(--paper);
+}
+
+.setup-avatar-edit svg {
+  width: 12px;
+  height: 12px;
+}
+
+.setup-row .input {
+  min-width: 0;
+}
+
+/* ───────────── notebook: index, clues ───────────── */
+.notes-index {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.notes-index .tag {
+  margin-left: 4px;
+}
+
+.notes section[id] {
+  scroll-margin-top: 64px;
+}
+
+.clue-form {
+  gap: var(--s-2);
+  align-items: stretch;
+}
+
+.clue-form .notes-why {
+  min-width: 0;
+  min-height: 44px;
+}
+
+.clue-form .btn {
+  flex: none;
+  min-height: 44px;
+}
+
+.notes-clues {
+  display: grid;
+  gap: var(--s-2);
+}
+
+.notes-clues .clue {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1.5px solid var(--rule);
+  border-left-width: 5px;
+}
+
+.notes-clues .clue.contra {
+  border-left-color: var(--stamp);
+}
+
+.notes-clues .clue > * {
+  max-width: 100%;
+}
+
+.clue-text,
+.notes-item {
+  overflow-wrap: anywhere;
+}
+
+.clue-suggest {
+  justify-content: flex-start;
+  text-align: left;
+  white-space: normal;
+  height: auto;
+  min-height: 44px;
+  padding-block: 8px;
+  font-weight: 600;
+  font-size: var(--t-sm);
+}
+
+.clue-suggest svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.notes .btn-sm {
+  min-height: 44px;
+}
+
+/* ───────────── vote: what to do now ───────────── */
+.vote-reminder {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1.5px dashed var(--on-ink-dim);
+  color: var(--paper);
+  font-size: var(--t-sm);
+  line-height: 1.4;
+}
+
+.vote-hurry {
+  color: #ffb4a6;
+  font-weight: 800;
+}
+
+/* Narrow phones: the evidence status tag goes under the title instead of past the card's edge. */
+.trace-card > .spread {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.trace-card > .spread > .tag {
+  max-width: 100%;
+  white-space: normal;
 }

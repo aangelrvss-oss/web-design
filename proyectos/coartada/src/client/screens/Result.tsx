@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import type { PrivateView, PublicView } from '../../shared/engine/views';
 import { describeEncargo } from '../../shared/engine/encargos';
-import { SCORE_POINTS } from '../../shared/types';
-import { caseSummary } from '../lib/summary';
+import { MIN_PLAYERS, SCORE_POINTS } from '../../shared/types';
+import { caseSummary, roundFacts, type FactKind } from '../lib/summary';
 import { atHour, errorText, playerName, ROLE_NAME, SCORE_TEXT, zoneName } from '../lib/text';
 import { usePrefs } from '../lib/prefs';
 import { sfx } from '../lib/sound';
 import { store } from '../net/store';
-import { ActionBar, Pin, Stamp, TopBar, useAction } from '../ui/kit';
+import { ActionBar, Icon, Pin, Stamp, TopBar, useAction } from '../ui/kit';
+import { ForgeryReveal, isForgeryRound } from '../ui/pruebaFalsa';
 
 type Step = 0 | 1 | 2;
 
@@ -26,6 +27,8 @@ export function Result({ pub, priv, onMenu, shared }: { pub: PublicView; priv: P
   const accomplice = Object.keys(roles).find((p) => roles[p] === 'complice') ?? null;
   const lastRound = pub.settings.rounds > 0 && pub.roundsPlayed >= pub.settings.rounds;
   const { story, mentions } = caseSummary(pub);
+  // Who is offline now (a locked phone, or gone): shown to the host before the next round.
+  const offline = pub.players.filter((p) => !p.left && !p.connected);
 
   // One orchestrated reveal: tally → stamp → the whole truth. Tap to skip.
   useEffect(() => {
@@ -124,7 +127,13 @@ export function Result({ pub, priv, onMenu, shared }: { pub: PublicView; priv: P
 
       {step >= 2 && (
         <>
-          <section className="paper tabbed reveal-in" data-tab="Lo que pasó de verdad">
+          <CaseFile pub={pub} />
+          {isForgeryRound(pub) && <ForgeryReveal pub={pub} />}
+
+          <section className="paper tabbed reveal-in" data-tab="Crónica del caso">
+            <p className="small muted" style={{ marginBottom: 6 }}>
+              Contada con un poco de guasa a partir de los hechos de arriba.
+            </p>
             {story.map((line, i) => (
               <p key={i} className="doc-text" style={{ marginBottom: 6 }}>
                 {line}
@@ -255,10 +264,34 @@ export function Result({ pub, priv, onMenu, shared }: { pub: PublicView; priv: P
         </>
       )}
 
+      {isHost && !shared && step >= 2 && !lastRound && offline.length > 0 && (
+        <section className="paper tabbed" data-tab="Sin conexión" aria-label="Personas sin conexión">
+          <p className="small">
+            Entran en la siguiente ronda aunque ahora tengan el móvil bloqueado. Para empezarla hacen falta al menos {MIN_PLAYERS} personas
+            conectadas. Si alguien se ha ido, quítalo de la partida.
+          </p>
+          <ul className="list-plain" style={{ marginTop: 8 }}>
+            {offline.map((p) => (
+              <li key={p.id} className="row" style={{ padding: '4px 0' }}>
+                <Pin player={p} />
+                <span className="grow" style={{ fontWeight: 650 }}>
+                  {p.name}
+                </span>
+                <button className="btn btn-ghost btn-sm" disabled={busy} onClick={() => void run(() => store.send('room:kick', { playerId: p.id }), undefined, errorText)}>
+                  Quitar
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <ActionBar hint={step < 2 ? 'Toca la pantalla para verlo todo.' : !isHost ? `Esperando a que ${name(pub.hostId)} continúe.` : undefined}>
         {isHost && step >= 2 ? (
           <>
-            {!shared && (
+            {/* Not after the last round: from the room, «Empezar» would add a round past the end
+                («Ronda 4 de 3»). The final standings lead back to the room for a new match. */}
+            {!shared && !lastRound && (
               <button className="btn btn-ghost" style={{ flex: 'none' }} disabled={busy} onClick={() => void run(() => store.send('game:lobby'), undefined, errorText)}>
                 Ir a la sala
               </button>
@@ -274,6 +307,51 @@ export function Result({ pub, priv, onMenu, shared }: { pub: PublicView; priv: P
         ) : null}
       </ActionBar>
     </main>
+  );
+}
+
+const FACT_ICON: Record<FactKind, string> = { evidence: 'search', lie: 'cross', defense: 'target', testimony: 'pen', vote: 'vote' };
+
+/** The closed case: who did it, who was accused, and the round's checked facts (no "because"). */
+function CaseFile({ pub }: { pub: PublicView }) {
+  const r = pub.round!;
+  const rv = r.reveal!;
+  const o = rv.outcome;
+  const culprit = Object.keys(rv.roles).find((p) => rv.roles[p] === 'culpable')!;
+  const accomplice = Object.keys(rv.roles).find((p) => rv.roles[p] === 'complice') ?? null;
+  const facts = roundFacts(pub);
+  const person = (id: string, stamp: string, tone: 'red' | 'blue' | 'ink') => {
+    const p = pub.players.find((x) => x.id === id);
+    if (!p) return null;
+    return (
+      <figure key={`${id}-${stamp}`} className="casefile-person">
+        <Pin player={p} size="xl" />
+        <figcaption>
+          <b>{p.name}</b>
+          <Stamp tone={tone}>{stamp}</Stamp>
+        </figcaption>
+      </figure>
+    );
+  };
+  return (
+    <section className="paper tabbed casefile reveal-in" data-tab="Expediente cerrado" aria-label="Expediente cerrado: hechos de la ronda">
+      <div className="casefile-people">
+        {person(culprit, 'Culpable', 'red')}
+        {accomplice && person(accomplice, 'Cómplice', 'red')}
+        {o.accused && o.accused !== culprit && person(o.accused, 'Acusación', 'ink')}
+      </div>
+      <h3 className="casefile-h">Hechos comprobados</h3>
+      <ol className="facts">
+        {facts.map((f, i) => (
+          <li key={i} className={`fact ${f.kind}`}>
+            <span className="fact-icon" aria-hidden>
+              <Icon name={FACT_ICON[f.kind]} />
+            </span>
+            <span>{f.text}</span>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
 

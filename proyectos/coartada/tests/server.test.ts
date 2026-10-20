@@ -4,6 +4,7 @@ import { io as connect, type Socket } from 'socket.io-client';
 import { SCENARIOS } from '../src/shared/content/scenarios';
 import { createGameServer, type GameServer } from '../src/server/app';
 import type { Ack, StateMessage } from '../src/shared/protocol';
+import { AVATARS } from '../src/shared/characters';
 
 let server: GameServer;
 let url = '';
@@ -234,6 +235,49 @@ describe('multiplayer server', () => {
     close([...cs, again]);
   });
 
+  it('players whose phone dropped during the verdict still play the next round (6 players)', async () => {
+    // Real playtest: after round 1, two of six phones were locked/backgrounded while the group
+    // talked over the verdict. The host started round 2 and those two could never join it.
+    const cs = await room(6);
+    const [host] = cs;
+    await host.call('game:start');
+    await Promise.all(cs.map((c) => c.next((s) => s.pub.phase === 'declare' && !!s.priv?.role)));
+    // Host forces each step: automatic alibis, no pointers, no votes → nobody accused.
+    for (let i = 0; i < 6 && host.last().pub.phase !== 'result'; i++) {
+      await host.call('game:advance');
+      await wait(30);
+    }
+    await host.next((s) => s.pub.phase === 'result');
+    const dropped = [cs[4], cs[5]];
+    for (const c of dropped) c.socket.disconnect();
+    await host.next((s) => dropped.every((d) => s.pub.players.find((p) => p.id === d.id)!.connected === false));
+
+    expect(await host.call('game:next')).toEqual({ ok: true });
+    const r2 = await host.next((s) => s.pub.phase === 'declare' && s.pub.round!.number === 2);
+    expect(r2.pub.round!.participants).toHaveLength(6);
+    for (const d of dropped) expect(r2.pub.round!.participants).toContain(d.id);
+
+    // They come back (unlock the phone): same session, and round 2 is theirs to play.
+    for (const d of dropped) {
+      const back = await client();
+      expect((await back.call('room:resume', { code: d.code, playerId: d.id, token: d.token })).ok).toBe(true);
+      const s = await back.next((x) => x.pub.round?.number === 2 && !!x.priv);
+      expect(s.pub.phase).toBe('declare');
+      expect(s.priv!.inRound).toBe(true);
+      expect(s.priv!.role).not.toBeNull();
+      const z = s.pub.round!.scenario.zones.map((x) => x.id);
+      expect(await back.call('game:declare', { zones: [z[0], z[1], z[2]], lock: true })).toEqual({ ok: true });
+      cs.push(back);
+    }
+    // Everyone still connected sees the same round 2 with the same six participants.
+    for (const c of cs.slice(0, 4)) {
+      const s = await c.next((x) => x.pub.round?.number === 2);
+      expect(s.pub.round!.participants).toEqual(r2.pub.round!.participants);
+      expect(s.priv!.inRound).toBe(true);
+    }
+    close(cs);
+  });
+
   it('rejects malformed, oversized and unauthorized messages without crashing', async () => {
     const cs = await room(4);
     const [host, other] = cs;
@@ -374,5 +418,35 @@ describe('multiplayer server', () => {
   it('serves the health endpoint and refuses unknown methods', async () => {
     expect((await fetch(`${url}/healthz`)).status).toBe(200);
     expect((await fetch(`${url}/`, { method: 'POST' })).status).toBe(405);
+  });
+
+  it('characters: exclusive under simultaneous picks, live for everyone, kept on reconnection, freed on leaving', async () => {
+    const cs = await room(4);
+    const [host, a, b, c] = cs;
+    const taken = () => host.last().pub.players.filter((p) => !p.left).map((p) => p.avatar);
+    const free = AVATARS.find((x) => !taken().includes(x))!;
+    // Two phones tap the same free character at the same moment: exactly one gets it.
+    const [ra, rb] = await Promise.all([a.call('room:avatar', { avatar: free }), b.call('room:avatar', { avatar: free })]);
+    expect([ra.ok, rb.ok].sort()).toEqual([false, true]);
+    expect([ra, rb].find((r) => !r.ok)).toEqual({ ok: false, error: 'avatar_taken' });
+    const winner = ra.ok ? a : b;
+    // Everyone sees it right away.
+    for (const x of cs) await x.next((st) => st.pub.players.find((p) => p.id === winner.id)?.avatar === free);
+    expect(new Set(taken()).size).toBe(4);
+    // Unknown character: rejected by the protocol.
+    expect(await c.call('room:avatar', { avatar: 'pirata' })).toEqual({ ok: false, error: 'invalid' });
+    // Reconnection with the same identity keeps it.
+    const mine = host.last().pub.players.find((p) => p.id === c.id)!.avatar;
+    c.socket.disconnect();
+    await host.next((st) => st.pub.players.find((p) => p.id === c.id)?.connected === false);
+    const c2 = await client();
+    expect((await c2.call('room:resume', { code: c.code, playerId: c.id, token: c.token })).ok).toBe(true);
+    await c2.next((st) => st.pub.players.find((p) => p.id === c.id)?.connected === true);
+    expect(c2.last().pub.players.find((p) => p.id === c.id)!.avatar).toBe(mine);
+    // Leaving for good frees it: someone else can take it.
+    expect((await c2.call('room:leave')).ok).toBe(true);
+    await host.next((st) => !st.pub.players.some((p) => p.id === c.id));
+    expect((await host.call('room:avatar', { avatar: mine })).ok).toBe(true);
+    close([host, a, b, c2]);
   });
 });

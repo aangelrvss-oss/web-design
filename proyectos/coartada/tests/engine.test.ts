@@ -6,6 +6,7 @@ import {
   declare,
   forceAdvance,
   HOST_GRACE_MS,
+  SEAT_GRACE_MS,
   kick,
   leave,
   nextRound,
@@ -382,6 +383,57 @@ describe('match flow', () => {
     expect(room.phase).toBe('lobby');
     expect(room.players.every((p) => p.score === 0)).toBe(true);
     expect(room.history).toEqual([]);
+  });
+
+  it('a player momentarily disconnected when the next round starts still gets a seat in it', () => {
+    const { room, ids, deps } = lobby(6);
+    room.settings.rounds = 0;
+    startRound(room, room.hostId, T0, deps);
+    toVote(room);
+    tick(room, room.phaseEndsAt!);
+    expect(room.phase).toBe('result');
+    const t = room.phaseEndsAt ?? T0;
+    // Two phones lock while the group talks over the verdict.
+    setConnected(room, ids[4], false, t);
+    setConnected(room, ids[5], false, t);
+    expect(nextRound(room, room.hostId, t + 5 * 60_000, deps).ok).toBe(true);
+    expect(room.round!.participants).toEqual(ids);
+    expect(Object.keys(room.round!.setup.roles).sort()).toEqual([...ids].sort());
+    // Gone for longer than the grace period: left out of the round after that.
+    toVote(room);
+    tick(room, room.phaseEndsAt!);
+    setConnected(room, ids[0], true, t + SEAT_GRACE_MS + 1); // any event; ids[4] and ids[5] stay offline
+    expect(nextRound(room, room.hostId, t + SEAT_GRACE_MS + 1, deps).ok).toBe(true);
+    expect(room.round!.participants).toEqual(ids.slice(0, 4));
+    // Someone who pressed «Salir» is never dealt in, even right away.
+    toVote(room);
+    tick(room, room.phaseEndsAt!);
+    leave(room, ids[3], T0);
+    expect(nextRound(room, room.hostId, t + SEAT_GRACE_MS + 2, deps)).toEqual({ ok: false, error: 'not_enough_players' });
+  });
+
+  it('absent players get a seat but never make up the minimum of connected people', () => {
+    const { room, ids, deps } = lobby(4);
+    room.settings.rounds = 0;
+    startRound(room, room.hostId, T0, deps);
+    toVote(room);
+    tick(room, room.phaseEndsAt!);
+    const t = room.phaseEndsAt ?? T0;
+    setConnected(room, ids[2], false, t);
+    setConnected(room, ids[3], false, t);
+    // 2 here + 2 locked phones: not a game yet; the host can try again when they are back.
+    expect(nextRound(room, room.hostId, t + 1000, deps)).toEqual({ ok: false, error: 'not_enough_players' });
+    expect(room.phase).toBe('result');
+    setConnected(room, ids[2], true, t + 20_000);
+    setConnected(room, ids[3], true, t + 21_000);
+    expect(nextRound(room, room.hostId, t + 22_000, deps).ok).toBe(true);
+    expect(room.round!.participants).toEqual(ids);
+    // 5 players, one absent: the 4 here are enough and the absent one still gets a seat.
+    const five = lobby(5);
+    five.room.settings.rounds = 0;
+    setConnected(five.room, five.ids[4], false, T0);
+    expect(startRound(five.room, five.room.hostId, T0 + 1000, five.deps).ok).toBe(true);
+    expect(five.room.round!.participants).toEqual(five.ids);
   });
 
   it('does not repeat scenarios back to back', () => {

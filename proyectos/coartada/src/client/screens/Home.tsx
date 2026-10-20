@@ -3,8 +3,7 @@ import { ROOM_CODE_ALPHABET } from '../../shared/protocol';
 import { errorText } from '../lib/text';
 import { getPrefs, setPrefs } from '../lib/prefs';
 import { roomFromUrl, store, useStore } from '../net/store';
-import { Sheet, toast, useAction } from '../ui/kit';
-import { RulesContent } from './Rules';
+import { openGuide, toast, useAction } from '../ui/kit';
 
 type Mode = 'start' | 'create' | 'join';
 
@@ -14,7 +13,6 @@ export function Home({ onLocal }: { onLocal: () => void }) {
   const [mode, setMode] = useState<Mode>(urlCode ? 'join' : 'start');
   const [name, setName] = useState(getPrefs().lastName);
   const [code, setCode] = useState(urlCode ?? '');
-  const [rules, setRules] = useState(false);
   const { busy, run } = useAction();
 
   const cleanCode = code.toUpperCase().replace(new RegExp(`[^${ROOM_CODE_ALPHABET}]`, 'g'), '').slice(0, 4);
@@ -62,8 +60,8 @@ export function Home({ onLocal }: { onLocal: () => void }) {
             Unirme con un código
           </button>
           <div className="spread" style={{ marginTop: 'var(--s-2)' }}>
-            <button className="link-btn" onClick={() => setRules(true)}>
-              Cómo se juega
+            <button className="link-btn" onClick={openGuide}>
+              Guía rápida
             </button>
             <button className="link-btn" onClick={onLocal}>
               Jugar con un solo móvil
@@ -120,12 +118,6 @@ export function Home({ onLocal }: { onLocal: () => void }) {
         </form>
       )}
 
-      <Sheet open={rules} onClose={() => setRules(false)} label="Cómo se juega">
-        <RulesContent />
-        <button className="btn btn-primary btn-block" style={{ marginTop: 'var(--s-4)' }} onClick={() => setRules(false)}>
-          Entendido
-        </button>
-      </Sheet>
     </main>
   );
 }

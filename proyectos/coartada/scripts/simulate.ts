@@ -8,181 +8,8 @@
 //   npm run simulate              # default 300 rounds per configuration
 //   npm run simulate -- 1000      # more rounds
 
-import { SCENARIOS } from '../src/shared/content/scenarios';
-import { createRng, type Rng } from '../src/shared/rng';
-import {
-  addPlayer,
-  createRoom,
-  declare,
-  point,
-  setReady,
-  startRound,
-  testify,
-  tick,
-  vote,
-  type EngineDeps,
-} from '../src/shared/engine/game';
-import { testimonyMatches } from '../src/shared/engine/encargos';
-import { validateSetup } from '../src/shared/content/validate';
+import { playRound, type CulpritStrategy } from './sim/core';
 import { timingsFor } from '../src/shared/types';
-import type { PlayerId, RoomState } from '../src/shared/types';
-
-type CulpritStrategy = 'minimo' | 'esquiva' | 'total';
-
-let idc = 0;
-const deps: EngineDeps = {
-  scenarios: SCENARIOS,
-  makeId: () => `p${idc++}`,
-  makeToken: () => 'x',
-  makeSeed: () => 'unused',
-};
-
-function playRound(n: number, seed: string, strategy: CulpritStrategy, noise: number) {
-  idc = 0;
-  const rng = createRng(`sim|${seed}`);
-  const now = 1_000_000;
-  const created = createRoom('SIMU', 'Bot 0', now, deps);
-  if (!created.ok) throw new Error('create');
-  const room = created.room;
-  for (let i = 1; i < n; i++) addPlayer(room, `Bot ${i}`, now, deps);
-  const host = room.hostId;
-  const res = startRound(room, host, now, deps, seed);
-  if (!res.ok) throw new Error(res.error);
-  const round = room.round!;
-  const { setup } = round;
-  const ids = round.participants;
-  const T = setup.scene.slot;
-  const culprit = ids.find((p) => setup.roles[p] === 'culpable')!;
-  const accomplice = ids.find((p) => setup.roles[p] === 'complice') ?? null;
-
-  // ── Declarations
-  for (const p of ids) {
-    let zones = setup.truth[p].slice();
-    if (p === culprit) {
-      const nonScene = setup.zones.filter((z) => z !== setup.scene.zone);
-      zones[T] = rng.pick(nonScene);
-      const others = [0, 1, 2].filter((s) => s !== T);
-      if (strategy === 'esquiva') {
-        const s = rng.pick(others);
-        zones[s] = rng.pick(setup.zones.filter((z) => z !== setup.truth[p][s]));
-      } else if (strategy === 'total') {
-        for (const s of others) zones[s] = rng.pick(setup.zones.filter((z) => z !== setup.truth[p][s]));
-      }
-    }
-    declare(room, p, zones, true, now);
-  }
-  if (room.phase !== 'investigate') throw new Error('expected investigate');
-
-  // ── Testimonies: everyone publishes true memories that don't hurt their side.
-  for (const p of rng.shuffle(ids)) {
-    for (const m of setup.memories[p]) {
-      const myDecl = round.declarations[p]!.zones;
-      if (myDecl[m.slot] !== m.zone) continue; // would contradict my own alibi
-      const evil = p === culprit || p === accomplice;
-      if (evil && m.with === culprit && round.declarations[culprit]!.zones[m.slot] !== m.zone) continue;
-      testify(room, p, m.with, m.slot, now);
-    }
-    if (p === accomplice && round.declarations[accomplice]!.zones[T] === round.declarations[culprit]!.zones[T]) {
-      testify(room, p, culprit, T, now);
-    }
-  }
-
-  // ── Deduction: every voter scores each hypothesis "X is the culprit" by how many lies
-  // it needs. Innocent declarations are assumed honest unless the hypothesis requires a
-  // liar, in which case that liar must be the (single) accomplice.
-  const traces = setup.traces;
-  const hasAccomplice = !!accomplice;
-  const decl = (p: PlayerId) => round.declarations[p]!.zones;
-  const cost = (x: PlayerId, viewer: PlayerId): number => {
-    let c = 0;
-    // A culprit is expected to lie, so their own mismatches are cheap…
-    for (const t of traces) if (decl(x)[t.slot] !== t.zone) c += 0.5;
-    const needAccomplice: PlayerId[][] = [];
-    for (const t of round.testimonies) {
-      const match = testimonyMatches(round, t);
-      if (t.by === x) continue; // the culprit may say anything
-      // An honest speaker really was in t.zone at t.slot with t.subject.
-      if (t.subject === x) {
-        if (t.slot === T) needAccomplice.push([t.by]); // nobody was with the culprit at the crime
-        const tr = traces.find((q) => q.slot === t.slot);
-        if (tr && tr.zone !== t.zone) needAccomplice.push([t.by]);
-      } else if (!match) {
-        needAccomplice.push([t.by, t.subject]);
-      }
-    }
-    // The viewer's own memories are certain.
-    if (setup.roles[viewer] === 'inocente') {
-      for (const m of setup.memories[viewer]) {
-        if (m.with !== x) continue;
-        if (m.slot === T) return Infinity;
-        const tr = traces.find((q) => q.slot === m.slot);
-        if (tr && tr.zone !== m.zone) return Infinity;
-      }
-    }
-    if (needAccomplice.length > 0) {
-      if (!hasAccomplice) return Infinity;
-      const pool = ids.filter((p) => p !== x && p !== viewer || (p === viewer && setup.roles[viewer] !== 'inocente' && p !== x));
-      const feasible = pool.some((a) => needAccomplice.every((set) => set.includes(a)));
-      if (!feasible) return Infinity;
-      // …while each extra lie we must pin on an accomplice is a stretch.
-      c += 1 + 0.5 * (needAccomplice.length - 1);
-    }
-    return c;
-  };
-
-  let logicCandidates = 0;
-  // Discussion makes the table share one tie-break ("we all find Marta shifty"), not 6 coin flips.
-  const sharedNoise: Record<PlayerId, number> = Object.fromEntries(ids.map((p) => [p, rng.next() * noise]));
-  const pick: Record<PlayerId, PlayerId> = {};
-  for (const voter of ids) {
-    const evil = voter === culprit || voter === accomplice;
-    const options = ids.filter((p) => p !== voter && !(evil && (p === culprit || p === accomplice)));
-    // INDEPENDENT=1: every bot breaks ties on its own (no table consensus) → more ties.
-    const scored = options.map((p) => ({ p, c: cost(p, voter) + (process.env.INDEPENDENT ? rng.next() * 2 : sharedNoise[p]) }));
-    scored.sort((a, b) => a.c - b.c);
-    if (voter === ids.find((q) => setup.roles[q] === 'inocente')) {
-      const best = Math.min(...options.map((p) => cost(p, voter)));
-      logicCandidates = options.filter((p) => cost(p, voter) === best).length;
-    }
-    pick[voter] = scored[0].p;
-  }
-
-  // ── Last defense: everyone points at their current top suspect.
-  for (const voter of ids) point(room, voter, pick[voter], now);
-  for (const p of ids) setReady(room, p, true, now);
-  for (const p of ids) setReady(room, p, true, now);
-  const phaseAfterInvestigation = room.phase as string;
-  if (phaseAfterInvestigation !== 'defense' && phaseAfterInvestigation !== 'vote') throw new Error(`stuck in ${room.phase}`);
-  const defense = round.defense!;
-  // Bots don't change their minds after a defense (humans may): it ends by timer.
-  if (phaseAfterInvestigation === 'defense') tick(room, room.phaseEndsAt!);
-  if ((room.phase as string) !== 'vote') throw new Error(`expected vote, got ${room.phase}`);
-  for (const voter of ids) vote(room, voter, pick[voter], now);
-  if ((room.phase as string) === 'runoff') {
-    const cands = round.runoff!.candidates;
-    for (const voter of ids) {
-      const evil = voter === culprit || voter === accomplice;
-      const options = cands.filter((p) => p !== voter && !(evil && (p === culprit || p === accomplice)));
-      const pick = options.length ? options[Math.floor(rng.next() * options.length)] : cands.find((c) => c !== voter)!;
-      vote(room, voter, pick, now);
-    }
-  }
-  if ((room.phase as string) !== 'result') throw new Error(`expected result, got ${room.phase}`);
-  const both = (zones: string[]) => setup.traces.every((t) => zones[t.slot] === t.zone);
-  return {
-    caught: round.outcome!.culpritCaught,
-    logicCandidates,
-    runoff: !!round.runoff,
-    nobodyAccused: round.outcome!.accused === null,
-    hasAccomplice: !!accomplice,
-    defenseHeld: defense.reason === 'senalado' || defense.reason === 'sorteo',
-    defenseTie: defense.reason === 'sorteo',
-    defenderIsCulprit: defense.defender === culprit,
-    compatibleTruth: ids.filter((p) => both(setup.truth[p])).length,
-    compatibleDeclared: ids.filter((p) => both(round.declarations[p]!.zones)).length,
-    invalid: validateSetup(setup, ids).length > 0,
-  };
-}
 
 function main() {
   const rounds = Number(process.argv[2] ?? 300);
@@ -201,7 +28,7 @@ function main() {
       for (let i = 0; i < rounds; i++) {
         let r;
         try {
-          r = playRound(n, `${n}-${strategy}-${i}`, strategy, 0.5);
+          r = playRound({ n, seed: `${n}-${strategy}-${i}`, strategy, noise: 0.5, independent: !!process.env.INDEPENDENT });
         } catch (err) {
           stuck++;
           console.error(`  ronda bloqueada o inválida (${n}, ${strategy}, ${i}): ${(err as Error).message}`);
@@ -239,4 +66,3 @@ function main() {
 
 main();
 
-export type { Rng, RoomState };

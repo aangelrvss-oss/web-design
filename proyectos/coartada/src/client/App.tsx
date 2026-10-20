@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { errorText, PHASE_NAME } from './lib/text';
 import { setPrefs, usePrefs } from './lib/prefs';
+import { clearNotes } from './lib/notes';
+import { useDefenseEndCue } from './lib/haptics';
 import { sfx } from './lib/sound';
 import { store, useStore } from './net/store';
 import { Home } from './screens/Home';
@@ -10,10 +12,10 @@ import { Investigate } from './screens/Investigate';
 import { Vote } from './screens/Vote';
 import { Defense } from './screens/Defense';
 import { Final, Result } from './screens/Result';
-import { RulesContent } from './screens/Rules';
+import { GuideHost } from './screens/QuickGuide';
 import { LocalGame } from './screens/Local';
 import { CaseHeader } from './ui/game';
-import { Sheet, Switch, ToastHost, TopBar, toast, useAction } from './ui/kit';
+import { openGuide, Sheet, Switch, ToastHost, TopBar, toast, useAction } from './ui/kit';
 
 export function App() {
   const snap = useStore();
@@ -35,7 +37,25 @@ export function App() {
     window.scrollTo({ top: 0 });
   }, [snap.pub?.phase, snap.pub?.round?.number]);
 
-  if (local) return <LocalGame onExit={() => setLocal(false)} />;
+  useDefenseEndCue(snap.mode === 'online' ? snap.pub : null);
+
+  // A new match (from the final standings back to the room) starts with a blank notebook.
+  const prevPhase = useRef<{ code: string; phase: string } | null>(null);
+  useEffect(() => {
+    const pub = snap.pub;
+    if (snap.mode !== 'online' || !pub) return;
+    const prev = prevPhase.current;
+    if (prev && prev.code === pub.code && prev.phase === 'final' && pub.phase !== 'final') clearNotes(pub.code);
+    prevPhase.current = { code: pub.code, phase: pub.phase };
+  }, [snap.mode, snap.pub]);
+
+  if (local)
+    return (
+      <>
+        <LocalGame onExit={() => setLocal(false)} />
+        <GuideHost />
+      </>
+    );
 
   let body: React.ReactNode;
   const { pub, priv, me } = snap;
@@ -84,6 +104,7 @@ export function App() {
       {pub && me && <GameMenu open={menu} onClose={() => setMenu(false)} />}
       <ConnBanner />
       <ToastHost />
+      <GuideHost />
     </>
   );
 }
@@ -91,7 +112,13 @@ export function App() {
 function Watching({ pub, onMenu }: { pub: NonNullable<ReturnType<typeof useStore>['pub']>; onMenu: () => void }) {
   return (
     <main className="screen no-bar">
-      <TopBar title={PHASE_NAME[pub.phase]} step="Estás viendo esta ronda; jugarás en la siguiente." endsAt={pub.phaseEndsAt} onMenu={onMenu} />
+      <TopBar
+        title={PHASE_NAME[pub.phase]}
+        step="Estás viendo esta ronda; jugarás en la siguiente."
+        endsAt={pub.phaseEndsAt}
+        onMenu={onMenu}
+        bigClock={pub.phase !== 'defense'}
+      />
       <CaseHeader pub={pub} />
       <p className="muted">El resto está sellando su declaración. Cuando se revelen las coartadas, verás el tablero.</p>
     </main>
@@ -112,7 +139,6 @@ function ConnBanner() {
 function GameMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const snap = useStore();
   const prefs = usePrefs();
-  const [rules, setRules] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [confirmSkip, setConfirmSkip] = useState(false);
   const { busy, run } = useAction();
@@ -124,76 +150,78 @@ function GameMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
     if (!open) {
       setConfirmLeave(false);
       setConfirmSkip(false);
-      setRules(false);
     }
   }, [open]);
 
   return (
     <Sheet open={open} onClose={onClose} tone="ink" label="Menú">
-      {rules ? (
-        <div className="paper">
-          <RulesContent />
-          <button className="btn btn-primary btn-block" style={{ marginTop: 16 }} onClick={() => setRules(false)}>
-            Volver al menú
-          </button>
+      <div className="stack">
+        <div className="spread">
+          <h2>Menú</h2>
+          {snap.mode === 'online' && <span className="code-chip">Sala {pub.code}</span>}
         </div>
-      ) : (
-        <div className="stack">
-          <div className="spread">
-            <h2>Menú</h2>
-            {snap.mode === 'online' && <span className="code-chip">Sala {pub.code}</span>}
+        <button
+          className="btn btn-ghost btn-block"
+          onClick={() => {
+            onClose();
+            openGuide();
+          }}
+        >
+          Guía rápida
+        </button>
+        <Switch label="Sonido" hint="Solo suena en momentos que vive todo el mundo a la vez." checked={prefs.sound} onChange={(sound) => setPrefs({ sound })} />
+        <Switch label="Reducir animaciones" checked={prefs.reduceMotion} onChange={(reduceMotion) => setPrefs({ reduceMotion })} />
+        <Switch
+          label="Vibración"
+          hint="Un toque breve cuando quedan pocos segundos para votar y al acabar la última defensa. Solo en móviles que lo admiten; la pantalla siempre lo avisa también."
+          checked={prefs.vibrate}
+          onChange={(vibrate) => setPrefs({ vibrate })}
+        />
+        {isHost && roundLive && (
+          <div className="stack" style={{ gap: 6 }}>
+            {!confirmSkip ? (
+              <button className="btn btn-ghost btn-block" onClick={() => setConfirmSkip(true)}>
+                Terminar esta fase
+              </button>
+            ) : (
+              <button
+                className="btn btn-primary btn-block"
+                disabled={busy}
+                onClick={() =>
+                  void run(
+                    () => store.send('game:advance'),
+                    () => {
+                      toast('Fase terminada.');
+                      onClose();
+                    },
+                    errorText,
+                  )
+                }
+              >
+                Sí, terminar esta fase ya
+              </button>
+            )}
+            <p className="small muted">
+              Equivale a que se acabe el tiempo de la fase actual. En la declaración, quien no haya sellado recibe una coartada automática.
+            </p>
           </div>
-          <button className="btn btn-ghost btn-block" onClick={() => setRules(true)}>
-            Cómo se juega
+        )}
+        {!confirmLeave ? (
+          <button className="btn btn-ghost btn-block" onClick={() => setConfirmLeave(true)}>
+            {snap.mode === 'local' ? 'Terminar partida' : 'Salir de la sala'}
           </button>
-          <Switch label="Sonido" hint="Solo suena en momentos que vive todo el mundo a la vez." checked={prefs.sound} onChange={(sound) => setPrefs({ sound })} />
-          <Switch label="Reducir animaciones" checked={prefs.reduceMotion} onChange={(reduceMotion) => setPrefs({ reduceMotion })} />
-          {isHost && roundLive && (
-            <div className="stack" style={{ gap: 6 }}>
-              {!confirmSkip ? (
-                <button className="btn btn-ghost btn-block" onClick={() => setConfirmSkip(true)}>
-                  Terminar esta fase
-                </button>
-              ) : (
-                <button
-                  className="btn btn-primary btn-block"
-                  disabled={busy}
-                  onClick={() =>
-                    void run(
-                      () => store.send('game:advance'),
-                      () => {
-                        toast('Fase terminada.');
-                        onClose();
-                      },
-                      errorText,
-                    )
-                  }
-                >
-                  Sí, terminar esta fase ya
-                </button>
-              )}
-              <p className="small muted">
-                Equivale a que se acabe el tiempo de la fase actual. En la declaración, quien no haya sellado recibe una coartada automática.
-              </p>
-            </div>
-          )}
-          {!confirmLeave ? (
-            <button className="btn btn-ghost btn-block" onClick={() => setConfirmLeave(true)}>
-              {snap.mode === 'local' ? 'Terminar partida' : 'Salir de la sala'}
-            </button>
-          ) : (
-            <button
-              className="btn btn-primary btn-block"
-              onClick={async () => {
-                await store.leave();
-                onClose();
-              }}
-            >
-              {roundLive ? 'Salir aunque la ronda siga' : 'Sí, salir'}
-            </button>
-          )}
-        </div>
-      )}
+        ) : (
+          <button
+            className="btn btn-primary btn-block"
+            onClick={async () => {
+              await store.leave();
+              onClose();
+            }}
+          >
+            {roundLive ? 'Salir aunque la ronda siga' : 'Sí, salir'}
+          </button>
+        )}
+      </div>
     </Sheet>
   );
 }

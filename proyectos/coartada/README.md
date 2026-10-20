@@ -1,16 +1,16 @@
 # Coartada
 
-Juego de deducción social para jugar con amigos, cada uno con su móvil. Ha ocurrido algo absurdo y una persona del grupo es la culpable: declaráis en secreto dónde estuvisteis a tres horas, las coartadas se revelan a la vez en un tablero común, dais testimonios («estuve con Marta a las 23:00») y el tablero dice si coinciden o contradicen. Salen dos pruebas que nunca mienten, la persona más señalada tiene 15 segundos de última defensa y votáis en secreto.
+Juego de deducción social para jugar con amigos, cada uno con su móvil. Ha ocurrido algo absurdo y una persona del grupo es la culpable: declaráis en secreto dónde estuvisteis a tres horas, las coartadas se revelan a la vez en un tablero común, dais testimonios («estuve con Marta a las 23:00») y el tablero dice si coinciden o contradicen. Salen dos pruebas que nunca mienten, la persona más señalada tiene 25 segundos de última defensa (en ritmo normal) y votáis en secreto.
 
 - 4–10 personas (mejor 5–8), rondas de 7–9 minutos como máximo en ritmo normal (menos si todo el mundo termina antes), 25 casos.
 - Sin cuentas, sin anuncios, sin IA durante la partida y sin datos personales.
 - Modo principal: un móvil por persona (sala con código, enlace o QR). Alternativa: un solo móvil que se va pasando.
 
-Documentación: [diseño](docs/GAME_DESIGN.md) · [reglas](docs/RULES.md) · [arquitectura](docs/ARCHITECTURE.md) · [investigación](docs/RESEARCH.md) · [estado](docs/CHECKPOINT.md) · [prueba con personas](docs/playtest-v1.1.md)
+Documentación: [diseño](docs/GAME_DESIGN.md) · [reglas](docs/RULES.md) · [arquitectura](docs/ARCHITECTURE.md) · [investigación](docs/RESEARCH.md) · [estado](docs/CHECKPOINT.md) · [primera prueba con amigos](docs/PLAYTEST-amigos.md) · [auditoría previa](docs/AUDITORIA-playtest.md) · [protocolo técnico de prueba](docs/playtest-v1.1.md) · [escenas](docs/ESCENAS.md) · [equilibrio y variantes](docs/EQUILIBRIO-y-variantes.md)
 
 ## Probarlo sin instalar nada
 
-`npm run build:demo` genera `dist/coartada-un-movil.html`: un único archivo con el juego en modo «un solo móvil» y una guía rápida ilustrada. Se abre directamente en el navegador (también sin internet). La versión con un móvil por persona necesita el servidor (abajo).
+`npm run build:demo` genera `dist/coartada-un-movil.html`: un único archivo con el juego en modo «un solo móvil» y una guía rápida ilustrada. Se abre directamente en el navegador (también sin internet) y permite una partida completa de 4–10 personas pasándose el móvil, con rondas, puntos y nueva partida; opcionalmente con la regla experimental «Prueba falsificable». La versión con un móvil por persona necesita el servidor (abajo).
 
 ## Requisitos
 
@@ -32,15 +32,20 @@ npm run typecheck
 npm run validate     # comprueba los 25 casos para 4–10 jugadores
 npm run simulate     # simulación de equilibrio con bots (no son personas) → docs/balance-sim.txt
 INDEPENDENT=1 npm run simulate   # variante: cada bot decide por su cuenta
+npm run balance      # auditoría con intervalos, ablaciones y variantes experimentales → docs/EQUILIBRIO-datos.md
 npm run texts        # inventario de textos + comprobación de terminología → docs/TEXT_INVENTORY.md
 
 # E2E con navegadores reales (necesita un servidor arrancado, p. ej. en :4100)
 PORT=4100 npm start &
 node e2e/match.mjs http://127.0.0.1:4100 6 qa-out   # 4–10 sesiones independientes (+ auditoría axe)
 node e2e/local.mjs http://127.0.0.1:4100 qa-out     # modo un solo móvil
+node e2e/scenes.mjs http://127.0.0.1:4100           # escena propia de cada caso, móvil y respaldo
+node scripts/import-scene.mjs <imagen.png> <id-caso> # importa una ilustración aprobada (docs/ESCENAS-higgsfield.md)
 npm run e2e:crowd                                   # 10 personas, peor caso de tablero lleno, a 390/360/320 px
 npm run e2e:restart                                 # reinicio del servidor a mitad de ronda (arranca su propio servidor desde dist/, puerto 4190)
 DEMO=1 node e2e/local.mjs "file://$PWD/dist/coartada-un-movil.html" qa-out   # demo de un archivo + guía
+node e2e/prueba-falsa.mjs http://127.0.0.1:4100      # reglas experimentales «Prueba falsificable» (docs/PRUEBA-FALSA.md)
+node e2e/un-movil.mjs http://127.0.0.1:4100 qa-out/un-movil   # un solo móvil: personajes, cuaderno, voto, 5 rondas + variante y 25 % (también con DEMO=1 y el archivo)
 # Si Playwright no encuentra Chromium: CHROMIUM_PATH=/ruta/a/chromium
 ```
 
@@ -57,6 +62,8 @@ DEMO=1 node e2e/local.mjs "file://$PWD/dist/coartada-un-movil.html" qa-out   # d
 
 Para jugar a distancia (videollamada) hace falta una URL pública: ver «Desplegar».
 
+**Reglas experimentales para partidas de prueba:** en la sala, quien dirige puede activar «Prueba falsificable · experimental» (desactivada por defecto). Reglas, cómo jugarla y protocolo de prueba: `docs/PRUEBA-FALSA.md`.
+
 ## Desplegar (URL pública)
 
 El juego es un único servicio Node con WebSocket. Las salas viven en memoria, así que **usa una sola instancia** (sin escalado horizontal). No hacen falta secretos.
@@ -69,7 +76,7 @@ El juego es un único servicio Node con WebSocket. Las salas viven en memoria, a
    - Tampoco definas `PORT` ni `HOST`: Render da `PORT` y el servidor escucha en `0.0.0.0`.
 4. Desactiva *Auto-Deploy* mientras se juega: cada despliegue reinicia el servidor y borra las salas.
 
-> El `render.yaml` incluido no indica `plan`. En un *Blueprint*, Render crea entonces una instancia **de pago**. Para usar el plan gratuito, crea el servicio a mano como arriba (o añade `plan: free` al blueprint antes de usarlo).
+> El `render.yaml` incluido pide el plan gratuito (`plan: free`); sin esa línea, un *Blueprint* crea una instancia **de pago**. Crear el servicio a mano como arriba también vale. Guía para la prueba con amigos: `docs/DEPLOY-RENDER-PLAYTEST.md`.
 >
 > En el plan gratuito:
 > - el servicio se duerme tras 15 min sin tráfico, y el primer acceso tarda alrededor de 1 min;

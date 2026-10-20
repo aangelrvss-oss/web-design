@@ -4,12 +4,14 @@ import { useSyncExternalStore } from 'react';
 export interface Prefs {
   sound: boolean;
   reduceMotion: boolean;
+  /** A short buzz at a few timed moments, where the phone supports it (lib/haptics.ts). */
+  vibrate: boolean;
   lastName: string;
 }
 
 const KEY = 'coartada:prefs';
 const systemReduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-let prefs: Prefs = { sound: false, reduceMotion: systemReduced, lastName: '' };
+let prefs: Prefs = { sound: false, reduceMotion: systemReduced, vibrate: true, lastName: '' };
 try {
   const raw = localStorage.getItem(KEY);
   if (raw) prefs = { ...prefs, ...JSON.parse(raw) };
@@ -39,6 +41,7 @@ export function usePrefs(): Prefs {
       listeners.add(l);
       return () => listeners.delete(l);
     },
+    () => prefs,
     () => prefs,
   );
 }
