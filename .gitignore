@@ -8,3 +8,6 @@ proyectos/*/preview/
 dist/
 entregables/
 __pycache__/
+# Másters de vídeo: pesados y regenerables (tools/video/animatica.mjs o el original del cliente)
+proyectos/*/assets-src/video/*.mp4
+proyectos/*/assets-src/video/*.mov

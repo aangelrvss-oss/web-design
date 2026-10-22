@@ -1,0 +1,2 @@
+Animática provisional generada por tools/video/animatica.mjs (300 fotogramas, 25 fps, 1920x1080).
+No es el vídeo definitivo: sustituir con tools/video/prepare.mjs <vídeo real>.

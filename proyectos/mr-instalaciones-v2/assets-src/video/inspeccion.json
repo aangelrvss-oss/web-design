@@ -1,0 +1,20 @@
+{
+  "source": {
+    "file": "animatica-provisional.mp4",
+    "codec": "h264",
+    "profile": "High",
+    "pixfmt": "yuv420p",
+    "width": 1920,
+    "height": 1080,
+    "fps": 25,
+    "duration": 12,
+    "frames": 300,
+    "bitrateKbps": 2473,
+    "sizeMB": 3.54,
+    "audio": false,
+    "keyframes": 1,
+    "maxKeyGapS": null
+  },
+  "sceneCuts": [],
+  "contactSheetStepS": 0.375
+}
