@@ -19,9 +19,7 @@ const dataUri = (p) => {
 // Cualquier ruta absoluta a un recurso binario, con o sin ?v=, en HTML o JS.
 const inlineAssets = (s) => s.replace(/\/(assets\/[\w/.-]+\.(?:webp|png|mp4|webm))(?:\?v=\w+)?/g, (_, p) => dataUri(p));
 
-// El WebM de móvil solo lo usarían navegadores sin H.264 en pantallas
-// estrechas: se reutiliza el de escritorio para no duplicar peso.
-let html = read('index.html').replace(/data-webm-mobile="[^"]*"/, (m) => m.replace(/film-m\.webm/, 'film.webm'));
+let html = read('index.html');
 
 const css = read('assets/css/site.css').replace(/url\("\.\.\/fonts\/([^"]+)"\)/g, (_, f) => `url("${dataUri('assets/fonts/' + f)}")`);
 const engineCss = read('assets/vendor/scrollcraft/scrollcraft.css');

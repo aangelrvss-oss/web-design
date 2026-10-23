@@ -7,10 +7,11 @@
 //    entre fotogramas clave, cortes de escena detectados y una hoja de
 //    contactos (assets-src/video/) para decidir tiempos, encuadres y lados del
 //    texto en src/film.mjs.
-// 2. Codificación para scrub, no para reproducción (ajustes del encode.sh de
-//    Scroll-craft: GOP denso, sin audio, faststart), sin ampliar el original.
-// 3. Póster (primer fotograma útil) y un fotograma fijo por escena, en WebP,
-//    para la carga, el movimiento reducido y el fallo de vídeo.
+// 2. Codificación para scrub, no para reproducción: un único archivo a la
+//    resolución de origen, GOP denso, alta calidad, etiquetas de color del
+//    original, sin audio. Más VP9 para navegadores sin H.264.
+// 3. Póster (primer fotograma) y un fotograma fijo por escena, en WebP a
+//    resolución completa, para la carga, el movimiento reducido y el fallo.
 // 4. film.json con la duración real: build.mjs convierte con ella los tiempos
 //    de las escenas en ventanas de scroll.
 import { execFileSync } from 'node:child_process';
@@ -47,6 +48,7 @@ function probe(file) {
   return {
     file: basename(file),
     codec: v.codec_name, profile: v.profile, pixfmt: v.pix_fmt,
+    color: { space: v.color_space, primaries: v.color_primaries, transfer: v.color_transfer, range: v.color_range },
     width: v.width, height: v.height, fps: +(n / d).toFixed(3),
     duration: +Number(j.format.duration).toFixed(3),
     frames: Number(v.nb_frames) || null,
@@ -79,58 +81,61 @@ writeFileSync(join(lab, 'inspeccion.json'), JSON.stringify({ source: src, sceneC
 
 if (inspectOnly) process.exit(0);
 
-// Codificación para scrub. Mismos ajustes que el encode.sh de Scroll-craft
-// (x264 high, preset slow, GOP fijo sin cortes por escena, sin audio,
-// faststart) pero sin ampliar nunca el original: un 720p llevado a 1080p pesa
-// más y no gana detalle. Escritorio: resolución de origen hasta 1080p, un
-// fotograma clave cada 1/4 s. Móvil: hasta 540p, cada 1/6 s.
-const desk = join(out, 'film.mp4');
-const mob = join(out, 'film-m.mp4');
+// Codificación para scrub: un solo archivo para todos los dispositivos.
+// - Resolución de origen, nunca ampliada (un 720p llevado a 1080p pesa más y
+//   no gana detalle) ni reducida para móvil: a pantalla completa un teléfono
+//   necesita toda la que hay.
+// - Un fotograma clave cada 1/6 s (GOP 4 a 24 fps): el móvil busca rápido y
+//   el escritorio también.
+// - Calidad alta (H.264 CRF 17, VP9 CRF 26): SSIM >= 0,993 frente al original.
+// - Mismas etiquetas de color que el original, sin conversión.
+// - Sin audio (se recorre, no se reproduce) y con faststart.
+const film = join(out, 'film.mp4');
+const webm = join(out, 'film.webm');
 const fps = Math.round(src.fps) || 24;
-const hDesk = Math.min(1080, src.height);
-const hMob = Math.min(540, src.height);
-const gDesk = Math.max(2, Math.round(fps / 4));
-const gMob = Math.max(2, Math.round(fps / 6));
-const h264 = (file, h, gop, crf) => run('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-i', input, '-an',
-  '-vf', `scale=-2:${h}:flags=lanczos,format=yuv420p`, '-c:v', 'libx264', '-profile:v', 'high', '-preset', 'slow',
-  '-crf', String(crf), '-g', String(gop), '-keyint_min', String(gop), '-sc_threshold', '0', '-movflags', '+faststart', file]);
-h264(desk, hDesk, gDesk, 21);
-h264(mob, hMob, gMob, 24);
+const h = Math.min(1080, src.height);
+const gop = Math.max(2, Math.round(fps / 6));
+const tag = (c) => [
+  ...(c.space ? ['-colorspace', c.space] : []),
+  ...(c.primaries ? ['-color_primaries', c.primaries] : []),
+  ...(c.transfer ? ['-color_trc', c.transfer] : []),
+  ...(c.range ? ['-color_range', c.range] : []),
+];
+const scale = src.height > h ? ['-vf', `scale=-2:${h}:flags=lanczos`] : [];
+run('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-i', input, '-an', ...scale, '-pix_fmt', 'yuv420p',
+  '-c:v', 'libx264', '-profile:v', 'high', '-preset', 'veryslow', '-crf', '17',
+  '-g', String(gop), '-keyint_min', String(gop), '-sc_threshold', '0', ...tag(src.color), '-movflags', '+faststart', film]);
 // Alternativa VP9 para los navegadores sin H.264 (Chromium libre, algunos
-// Firefox de Linux). Mismo GOP denso; film.js elige el formato antes de que el
-// motor pida el clip.
-const vp9 = (file, h, gop, crf) => run('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-i', input, '-an',
-  '-vf', `scale=-2:${h}:flags=lanczos,format=yuv420p`, '-c:v', 'libvpx-vp9', '-b:v', '0', '-crf', String(crf),
-  '-g', String(gop), '-keyint_min', String(gop), '-row-mt', '1', '-deadline', 'good', '-cpu-used', '2', file]);
-vp9(join(out, 'film.webm'), hDesk, gDesk, 33);
-vp9(join(out, 'film-m.webm'), hMob, gMob, 36);
+// Firefox de Linux). film.js elige el formato antes de que el motor pida el clip.
+run('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-i', input, '-an', ...scale, '-pix_fmt', 'yuv420p',
+  '-c:v', 'libvpx-vp9', '-b:v', '0', '-crf', '26', '-g', String(gop), '-keyint_min', String(gop),
+  '-row-mt', '1', '-deadline', 'good', '-cpu-used', '1', ...tag(src.color), webm]);
 
-// Póster y fotogramas fijos, sacados del original (no de una recodificación).
-// El póster es el fotograma con el que abre el acto, así que no hay salto
-// cuando el vídeo lo sustituye. Cada escena puede fijar su fotograma (still).
-const wDesk = Math.min(1600, src.width);
-const still = (t, w, file) => run('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-ss', String(t), '-i', input,
-  '-frames:v', '1', '-vf', `scale=${w}:-2:flags=lanczos`, '-c:v', 'libwebp', '-quality', '80', '-compression_level', '6', file]);
-still(0, wDesk, join(out, 'poster.webp'));
-still(0, Math.min(960, wDesk), join(out, 'poster-m.webp'));
-for (const s of FILM.scenes) {
-  const t = Math.min(s.still ?? s.t0 + (s.t1 - s.t0) * 0.55, src.duration - 0.05);
-  still(t, wDesk, join(out, `still-${s.key}.webp`));
-  still(t, Math.min(960, wDesk), join(out, `still-${s.key}-m.webp`));
-}
+// Fidelidad medida, fotograma a fotograma (misma base de tiempo en ambos: el
+// WebM redondea los tiempos al milisegundo y sin esto empareja mal).
+const ssim = (f) => {
+  const r = run('bash', ['-c', `ffmpeg -hide_banner -i "$1" -i "$2" -lavfi "[0:v]scale=${src.width}:${src.height}:flags=bicubic,settb=1/${fps},setpts=N[a];[1:v]settb=1/${fps},setpts=N[b];[a][b]ssim" -f null - 2>&1 | grep -o 'All:[0-9.]*' | cut -d: -f2`, '_', f, input]);
+  return +Number(r.trim()).toFixed(4);
+};
 
-const enc = probe(desk);
-const encM = probe(mob);
+// Póster y fotogramas fijos, sacados del original a su resolución completa.
+// El póster es el primer fotograma: el vídeo lo sustituye sin salto.
+const still = (t, file) => run('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-ss', String(t), '-i', input,
+  '-frames:v', '1', '-c:v', 'libwebp', '-quality', '90', '-compression_level', '6', file]);
+still(0, join(out, 'poster.webp'));
+for (const s of FILM.scenes) still(Math.min(s.still ?? s.t0 + (s.t1 - s.t0) * 0.55, src.duration - 0.05), join(out, `still-${s.key}.webp`));
+
+const enc = probe(film);
 const meta = {
   source: src.file,
+  sourceInfo: { width: src.width, height: src.height, fps: src.fps, bitrateKbps: src.bitrateKbps, keyframes: src.keyframes, color: src.color },
   duration: enc.duration,
   width: enc.width, height: enc.height, fps: enc.fps,
-  desktop: { file: 'film.mp4', sizeMB: enc.sizeMB, maxKeyGapS: enc.maxKeyGapS },
-  mobile: { file: 'film-m.mp4', width: encM.width, height: encM.height, sizeMB: encM.sizeMB, maxKeyGapS: encM.maxKeyGapS },
-  webm: { desktopMB: +(statSync(join(out, 'film.webm')).size / 1048576).toFixed(2), mobileMB: +(statSync(join(out, 'film-m.webm')).size / 1048576).toFixed(2) },
+  mp4: { file: 'film.mp4', sizeMB: enc.sizeMB, maxKeyGapS: enc.maxKeyGapS, ssim: ssim(film) },
+  webm: { file: 'film.webm', sizeMB: +(statSync(webm).size / 1048576).toFixed(2), ssim: ssim(webm) },
   sceneCuts: cutTimes,
 };
 writeFileSync(join(out, 'film.json'), JSON.stringify(meta, null, 2) + '\n');
-console.log('Escritorio:', desk, mb(desk), `GOP máx. ${enc.maxKeyGapS}s`);
-console.log('Móvil:', mob, mb(mob), `GOP máx. ${encM.maxKeyGapS}s`);
+console.log('MP4:', film, mb(film), `GOP máx. ${enc.maxKeyGapS}s`, `SSIM ${meta.mp4.ssim}`);
+console.log('WebM:', webm, mb(webm), `SSIM ${meta.webm.ssim}`);
 console.log('Ahora: revisar la hoja de contactos, ajustar src/film.mjs y ejecutar node src/build.mjs');

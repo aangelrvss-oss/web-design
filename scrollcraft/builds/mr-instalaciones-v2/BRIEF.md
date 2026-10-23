@@ -17,7 +17,7 @@
 
 - **Sección**: la portada es una ventana; el resto son hojas de papel o grafito que se alternan.
 - **Chrome**: barra que forma parte de la escena (papel sobre papel, clara con velo sobre la imagen), teléfono en mono y un único CTA; dentro de la secuencia, un carril de escenas que también navega.
-- **Hero**: `scrub` con apertura de ventana (clip-path desde `--sc-p`), titular real sobre papel.
+- **Hero**: `scrub` a sangre desde el primer pintado, titular serif superpuesto con contraste local (V2.1; la V2.0 abría una ventana enmarcada sobre papel con clip-path desde `--sc-p`).
 - **Cierre**: formulario sobre grafito con teléfono grande (heredado de la V1, comparte este eje).
 - **Prohíbe**: texto sobre el centro del encuadre, scrims a pantalla completa, contadores, tarjetas repetidas, un segundo pico.
 
@@ -25,8 +25,8 @@
 
 | # | Emoción | Causa |
 |---|---|---|
-| 1 | Orientación | Titular, CTA y una ventana que ya deja ver la casa |
-| 2 | Inmersión (pico) | La ventana se abre a sangre y el recorrido avanza bajo la mano |
+| 1 | Orientación e inmersión | El salón a pantalla completa con el titular y los CTA encima |
+| 2 | Recorrido (pico) | El hero se retira y la casa avanza bajo la mano, sistema a sistema |
 | 3 | Reconocimiento | «¿Qué necesitas resolver?» en filas tipográficas |
 | 4 | Seguridad | La placa de inscripciones aparece con un barrido |
 | 5 | Amplitud | Sectores en horizontal sobre grafito |
@@ -39,14 +39,14 @@
 
 | Acto | Dispositivo | Span |
 |---|---|---|
-| 1 Ventana (hero + pico) | `scrub` (`clip-map="travel"`) + apertura por `--sc-p` + carril propio | 4,8 |
+| 1 Casa (hero + pico) | `scrub` (`clip-map="travel"`) a sangre + hero que se retira por `--sc-p` + carril propio | 4,2 (V2.0: 4,8) |
 | 2 Necesidades | `flow` + `in` | natural |
 | 3 Habilitaciones | `flow` + `reveal` | natural |
 | 4 Sectores | `pan` | 3,2 |
 | 5 Dudas | `flow` | natural |
 | 6 Presupuesto | `flow` | natural |
 
-Seis actos, ~12,6 alturas en escritorio (medido; V1: 14,0): fuera de la banda 6-7 actos / 13,6-13,8.
+Seis actos, ~12,0 alturas en escritorio (medido en la V2.1; V2.0: 12,6; V1: 14,0): fuera de la banda 6-7 actos / 13,6-13,8.
 
 ## Gate de huellas
 

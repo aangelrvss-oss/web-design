@@ -1,24 +1,32 @@
 {
   "source": "mri-original.mp4",
+  "sourceInfo": {
+    "width": 1280,
+    "height": 720,
+    "fps": 24,
+    "bitrateKbps": 3867,
+    "keyframes": 1,
+    "color": {
+      "space": "smpte170m",
+      "primaries": "bt709",
+      "transfer": "iec61966-2-1",
+      "range": "tv"
+    }
+  },
   "duration": 10,
   "width": 1280,
   "height": 720,
   "fps": 24,
-  "desktop": {
+  "mp4": {
     "file": "film.mp4",
-    "sizeMB": 3.1,
-    "maxKeyGapS": 0.25
-  },
-  "mobile": {
-    "file": "film-m.mp4",
-    "width": 960,
-    "height": 540,
-    "sizeMB": 1.67,
-    "maxKeyGapS": 0.167
+    "sizeMB": 5.14,
+    "maxKeyGapS": 0.167,
+    "ssim": 0.9943
   },
   "webm": {
-    "desktopMB": 2,
-    "mobileMB": 1.51
+    "file": "film.webm",
+    "sizeMB": 3.79,
+    "ssim": 0.9935
   },
   "sceneCuts": []
 }

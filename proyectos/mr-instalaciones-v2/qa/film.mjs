@@ -84,6 +84,15 @@ const pan = await page.evaluate(() => { const el = document.getElementById('sect
 stops.push(['sec-sectores-mid', pan[0] + (pan[1] - H) * 0.6]);
 
 const report = [];
+// Sin clip: primero la carga (póster), luego se espera a que film.js pase a
+// los fotogramas fijos (9 s) y se recorre la secuencia con ellos.
+if (flag('--novideo')) {
+  await settle();
+  await page.screenshot({ path: join(out, 'film-loading.png') });
+  report.push({ name: 'film-loading', ...(await state()) });
+  console.log('film-loading'.padEnd(18), JSON.stringify(report[0]));
+  await page.waitForFunction(() => document.querySelector('[data-film]').classList.contains('film--stills'), null, { timeout: 15000 }).catch(() => {});
+}
 for (const [name, y] of stops) {
   await page.evaluate((yy) => window.scrollTo({ top: yy, behavior: 'instant' }), Math.round(y));
   await settle();

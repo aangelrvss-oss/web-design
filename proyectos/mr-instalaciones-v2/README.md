@@ -1,6 +1,8 @@
 # MRI V2 · rediseño cinematográfico
 
-Segunda versión de la web de MRI (Martínez Rojas Instalaciones). La portada abre con una **secuencia de vídeo controlada por el scroll**: el titular ocupa el papel, el vídeo asoma por una ventana enmarcada y, al bajar, la ventana se abre a sangre mientras tres bloques de texto real acompañan a cada sistema: climatización en el salón, aerotermia y fontanería en la sala técnica y ventilación en el falso techo.
+Segunda versión de la web de MRI (Martínez Rojas Instalaciones). La portada abre con una **secuencia de vídeo controlada por el scroll**: el vídeo ocupa toda la pantalla desde el primer instante, con el titular superpuesto («El confort empieza donde no lo ves.»), y al bajar el hero se retira mientras tres bloques de texto real acompañan a cada sistema: climatización en el salón, aerotermia y fontanería en la sala técnica y ventilación en el falso techo.
+
+**V2.1 (23/10/2026)**: hero a pantalla completa (sin la ventana enmarcada sobre papel de la V2.0), titular en Instrument Serif, cabecera superpuesta a la imagen, un único clip de máxima calidad para todos los dispositivos y contraste local medido. La V2.0 queda recuperable en el commit `68baba7` (`git show 68baba7:<ruta>` o `git checkout 68baba7 -- proyectos/mr-instalaciones-v2`).
 
 **La V1 no se ha tocado.** Vive en `proyectos/mr-instalaciones/` y sigue funcionando igual. La V2 lee de ella el contenido, las plantillas de las páginas interiores y los archivos estáticos; lo propio de la V2 está en esta carpeta.
 
@@ -28,9 +30,9 @@ node proyectos/mr-instalaciones-v2/tools/video/prepare.mjs /ruta/al/video.mp4   
 ```
 
 1. **Inspección** (no modifica el original): formato, duración, resolución, fps, tamaño, intervalo real entre fotogramas clave, cortes de escena detectados y una hoja de contactos con tiempos en `assets-src/video/`. Con ella se deciden tiempos, encuadres y lado del texto.
-2. **Codificación para scrub** con los ajustes del `encode.sh` de Scroll-craft pero sin ampliar el original: H.264 a la resolución de origen (hasta 1080p) con un fotograma clave cada 1/4 s, y hasta 540p con uno cada 1/6 s para móvil, más VP9 equivalentes para navegadores sin H.264. Sin audio, `faststart`.
-3. **Póster** (primer fotograma) y un **fotograma fijo por escena** (`still` en `film.mjs`) en WebP, sacados del original.
-4. `site/assets/film/film.json` con la duración real.
+2. **Codificación para scrub**, un único archivo para todos los dispositivos, a la resolución de origen (nunca ampliada; si llega un original de 1080p se usa tal cual): H.264 High CRF 17 `veryslow` con un fotograma clave cada 1/6 s, más VP9 CRF 26 equivalente para navegadores sin H.264. Mismas etiquetas de color que el original, sin filtros, sin audio, `faststart`. Mide la fidelidad (SSIM fotograma a fotograma) frente al original.
+3. **Póster** (primer fotograma) y un **fotograma fijo por escena** (`still` en `film.mjs`) en WebP calidad 90 a resolución completa, sacados del original.
+4. `site/assets/film/film.json` con la duración real, los datos del original y el SSIM de cada versión.
 
 Después, editar **`src/film.mjs`**: tiempos de cada escena en segundos del clip (`t0`, `t1`), punto focal para móvil (`focal`), lado del texto en escritorio (`side`) y fotograma fijo (`still`). Ejecutar `npm run build:mri2`. Los tiempos se convierten solos en ventanas de scroll: una escena nunca aparece fuera de su tramo de vídeo.
 
@@ -44,17 +46,18 @@ src/pages.mjs             Portada de la V2
 src/build.mjs             Genera site/: portada V2 + páginas interiores con las plantillas de la V1
 site/assets/css/site.css  Sistema visual de la V2 (también estiliza las páginas interiores)
 site/assets/js/film.js    Carril de escenas, cabecera, encuadre móvil, teclado, degradación
-site/assets/film/         Clip codificado (mp4 + webm, escritorio y móvil), póster y fotogramas fijos
+site/assets/film/         Clip codificado (mp4 + webm, uno para todos los dispositivos), póster y fotogramas fijos
 tools/video/prepare.mjs   Inspección y codificación del vídeo
 assets-src/video/         Vídeo original del cliente, hoja de contactos e informe de inspección
 qa/film.mjs               Capturas de la secuencia y del resto de la home + informe
 qa/functional.mjs         Suite funcional (la de la V1 adaptada a la secuencia)
+qa/hero-contrast.mjs      Contraste del hero y la cabecera sobre el fotograma real (texto 4,5:1; gráficos 3:1)
 docs/DIRECCION.md         Dirección artística, referencias del ZIP y decisiones
 docs/VERIFICACION.md      Pruebas ejecutadas, resultados y límites
 docs/capturas/            Capturas reales de V1 y V2
 ```
 
-Los archivos copiados de la V1 al construir (fuentes Geist, marca, motor de Scroll-craft sin modificar, `site.js`, `contacto.php`) no se editan aquí: se editan en la V1 y se vuelve a construir.
+Instrument Serif (OFL, `@fontsource/instrument-serif`) es propia de la V2 (`site/assets/fonts/`, con su licencia). Los archivos copiados de la V1 al construir (fuentes Geist, marca, motor de Scroll-craft sin modificar, `site.js`, `contacto.php`) no se editan aquí: se editan en la V1 y se vuelve a construir.
 
 ## Vista previa en un solo archivo
 
@@ -69,6 +72,8 @@ La portada completa en un HTML autónomo (CSS, JS, fuentes, imágenes y clips de
 ```bash
 npm run qa:mri2                    # suite funcional (279 comprobaciones)
 npm run qa:mri2:film               # capturas de la secuencia (añadir --w 390 --h 844 --mobile, --reduced, --novideo, --nojs)
+node proyectos/mr-instalaciones-v2/qa/hero-contrast.mjs http://127.0.0.1:4512 [--w 390 --h 844 --mobile]
+                                   # contraste del hero; necesita un servidor sin CSP: MRI_NO_CSP=1 php -S 127.0.0.1:4512 tools/dev/router.php
 ```
 
 El envío real del formulario en local necesita un `sendmail` falso que acepte argumentos, por ejemplo un script que haga `cat >> /tmp/outbox.eml`, y `php -d sendmail_path=/ruta/al/script -S ...`.

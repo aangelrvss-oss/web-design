@@ -5,13 +5,8 @@ import { head, header, footer, quoteForm, contactBlock, esc, businessJsonLd } fr
 import { picto, icon } from '../../mr-instalaciones/src/pictos.mjs';
 import { FILM } from './film.mjs';
 
-export const ASSET_V = '20261022a';
+export const ASSET_V = '20261023a';
 const a = (p) => `${p}?v=${ASSET_V}`;
-
-const ctaPair = (loc, cls = '') => `<div class="cta-pair ${cls}">
-  <a class="btn btn--accent btn--lg" href="#presupuesto" data-track="click_cta" data-track-loc="${loc}">Pedir presupuesto</a>
-  <a class="btn btn--line btn--lg" href="${SITE.phoneHref}" data-track="click_phone" data-track-loc="${loc}">${icon.phone}<span>Llamar al ${SITE.phone}</span></a>
-</div>`;
 
 const r3 = (x) => Math.round(x * 1000) / 1000;
 
@@ -25,21 +20,25 @@ const r3 = (x) => Math.round(x * 1000) / 1000;
 function filmTimeline(meta) {
   const k = FILM.clipMap === 'travel' ? 1 : FILM.span / (FILM.span - 1);
   const p = (t) => (t / meta.duration) * k;
-  const first = FILM.open + 0.03;
+  const first = FILM.heroOut + 0.02;
   return FILM.scenes.map((s, i) => {
     const last = i === FILM.scenes.length - 1;
     const from = Math.max(p(s.t0), first);
     const to = last ? 1 : Math.min(p(s.t1), 1);
-    // La última escena no se apaga: sale con el escenario, que sigue
-    // reproduciendo el final del clip mientras sube.
+    // La última escena no se apaga: sale con el escenario, que se lleva el
+    // plano final del clip.
     const cue = last ? `${r3(from)} 1 0.18 0` : `${r3(from)} ${r3(to)} 0.16 0.16`;
     return { ...s, from: r3(from), to: r3(to), cue, c0: r3(s.t0 / meta.duration), c1: r3(Math.min(s.t1 / meta.duration, 1)) };
   });
 }
 
+const arrow = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 12h15M13 6l6 6-6 6"/></svg>';
+const down = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v15M6 13l6 6 6-6"/></svg>';
+
 function film(meta) {
   const tl = filmTimeline(meta);
   const v = meta.v;
+  const H = FILM.hero;
   const caps = tl.map((s) => `<div class="cap-veil cap-veil--${s.side}" data-veil="${s.key}" aria-hidden="true"></div>
       <article class="cap cap--${s.side}" id="escena-${s.key}" data-sc-cue="${s.cue}" data-scene="${s.key}" aria-labelledby="cap-${s.key}">
         <p class="cap__k">${esc(s.kicker)}</p>
@@ -48,32 +47,43 @@ function film(meta) {
         <p class="cap__links">${s.links.map(([href, label]) => `<a class="cap__a" href="${href}" data-track="click_scene" data-track-loc="${s.key}">${esc(label)} ${icon.arrow}</a>`).join('')}</p>
       </article>`).join('\n      ');
   const rail = tl.map((s) => `<li><a class="rail__i" href="#escena-${s.key}" data-goto="${s.key}"><span class="rail__l">${esc(s.rail)}</span><span class="rail__bar" aria-hidden="true"><i></i></span></a></li>`).join('');
-  const stills = tl.map((s) => `<img class="film__still" data-still="${s.key}" src="/assets/film/still-${s.key}.webp?v=${v.poster}" srcset="/assets/film/still-${s.key}-m.webp?v=${v.poster} 960w, /assets/film/still-${s.key}.webp?v=${v.poster} 1600w" sizes="100vw" width="1600" height="${Math.round(1600 * meta.height / meta.width)}" alt="" loading="lazy" decoding="async">`).join('\n        ');
+  const dims = `width="${meta.width}" height="${meta.height}"`;
+  const stills = tl.map((s) => `<img class="film__still" data-still="${s.key}" src="/assets/film/still-${s.key}.webp?v=${v.poster}" ${dims} alt="" loading="lazy" decoding="async">`).join('\n        ');
   // Lo que film.js necesita saber y el HTML no dice.
-  const cfg = { open: FILM.open, travel: FILM.clipMap === 'travel', duration: meta.duration, scenes: tl.map(({ key, c0, c1, from, to, focal, side }) => ({ key, c0, c1, from, to, focal, side })) };
+  const cfg = { heroOut: FILM.heroOut, heroFade: FILM.heroFade, travel: FILM.clipMap === 'travel', duration: meta.duration, scenes: tl.map(({ key, c0, c1, from, to, focal, side }) => ({ key, c0, c1, from, to, focal, side })) };
 
+  // El vídeo es la portada desde el primer instante: póster (= primer
+  // fotograma) y clip a sangre, y encima, sin franja ni marco, el hero. El
+  // titular no es un cue del motor (el motor oculta los cues hasta montarse):
+  // se ve desde el primer pintado y se retira con --sc-p.
   return `<section class="film" id="inicio" data-sc-act="scrub" data-sc-span="${FILM.span}"${FILM.clipMap === 'travel' ? ' data-sc-clip-map="travel"' : ''} aria-labelledby="hero-h" data-film="${esc(JSON.stringify(cfg))}">
     <div class="film__stage" data-sc-stage>
-      <div class="film__window">
-        <img class="sc-stage__poster film__poster" src="/assets/film/poster.webp?v=${v.poster}" srcset="/assets/film/poster-m.webp?v=${v.poster} 960w, /assets/film/poster.webp?v=${v.poster} 1600w" sizes="100vw" width="1600" height="${Math.round(1600 * meta.height / meta.width)}" alt="" fetchpriority="high">
-        ${stills}
-        <video data-sc-scrub data-sc-src="/assets/film/film.mp4?v=${v.desktop}" data-sc-src-mobile="/assets/film/film-m.mp4?v=${v.mobile}" data-webm="/assets/film/film.webm?v=${v.webm}" data-webm-mobile="/assets/film/film-m.webm?v=${v.webmMobile}" muted playsinline preload="none" aria-hidden="true" tabindex="-1"></video>
-        <div class="film__shade" aria-hidden="true"></div>
+      <div class="film__media">
+        <img class="sc-stage__poster film__poster" src="/assets/film/poster.webp?v=${v.poster}" ${dims} alt="" fetchpriority="high">
+        <video data-sc-scrub data-sc-src="/assets/film/film.mp4?v=${v.mp4}" data-webm="/assets/film/film.webm?v=${v.webm}" muted playsinline preload="none" disablepictureinpicture aria-hidden="true" tabindex="-1"></video>
       </div>
-      <div class="film__mat" aria-hidden="true"></div>
-      <div class="film__intro" data-film-intro>
-        <p class="film__kicker">Fontanería · Climatización · Aerotermia · Ventilación · Gas</p>
-        <h1 id="hero-h" class="film__h">Instaladores de fontanería y&nbsp;climatización</h1>
-        <div class="film__aside">
-          <p class="film__lede">Empresa instaladora habilitada, con sede en Rivas-Vaciamadrid, para hogares, comercios, industria y obra nueva.</p>
-          ${ctaPair('hero')}
+      <div class="film__stills">
+        ${stills}
+      </div>
+      <div class="film__shade" aria-hidden="true"></div>
+      <div class="hero" data-film-hero>
+        <div class="hero__veil" aria-hidden="true"></div>
+        <div class="hero__copy">
+          <p class="hero__k">${esc(H.kicker)}</p>
+          <h1 id="hero-h" class="hero__h">El confort<br class="br-m"> empieza<br class="br-d"> <em>donde<br class="br-m"> no lo ves.</em></h1>
+          <p class="hero__lede">${esc(H.lede)}</p>
+          <div class="hero__cta">
+            <a class="cta" href="#presupuesto" data-track="click_cta" data-track-loc="hero"><span>Pedir presupuesto</span><span class="cta__arr">${arrow}</span></a>
+            <a class="cta-2" href="#escena-${tl[0].key}" data-film-start>${esc(H.discover)} ${down}</a>
+          </div>
         </div>
+        <div class="hero__scroll" aria-hidden="true"><span>Desliza</span><i></i></div>
       </div>
       <div class="film__caps">
       ${caps}
       </div>
       <nav class="film__rail" aria-label="Escenas de la secuencia"><ol>${rail}</ol></nav>
-      <p class="vh">Secuencia ilustrativa de una vivienda: climatización del salón, zona técnica con aerotermia y calefacción, ventilación y fontanería. El texto de cada escena está en esta misma sección.</p>
+      <p class="vh">Secuencia de una vivienda: climatización del salón, sala técnica con aerotermia y fontanería, y ventilación en el falso techo. El texto de cada escena está en esta misma sección.</p>
     </div>
   </section>`;
 }
@@ -102,7 +112,7 @@ export function home(meta) {
     description: 'Fontanería, calefacción, aerotermia, gas, ventilación y domótica para hogares, empresas y obra nueva. Empresa instaladora habilitada en Rivas-Vaciamadrid.',
     path: '/',
     jsonld: [businessJsonLd(), { '@context': 'https://schema.org', '@type': 'WebSite', name: 'MRI · Martínez Rojas Instalaciones', url: `${SITE.origin}/`, inLanguage: 'es' }],
-  }).replace('</head>', `<link rel="preload" href="/assets/film/poster.webp?v=${meta.v.poster}" as="image" imagesrcset="/assets/film/poster-m.webp?v=${meta.v.poster} 960w, /assets/film/poster.webp?v=${meta.v.poster} 1600w" imagesizes="100vw" fetchpriority="high">
+  }).replace('</head>', `<link rel="preload" href="/assets/film/poster.webp?v=${meta.v.poster}" as="image" fetchpriority="high">
 </head>`)}
 <body class="page-home">
 <span data-sc-progress></span>

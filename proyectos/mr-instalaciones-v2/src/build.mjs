@@ -23,7 +23,7 @@ const v1site = join(here, '..', '..', 'mr-instalaciones', 'site');
 // ---------------------------------------------------- estáticos de la V1 --
 const shared = [
   'assets/fonts/geist.woff2', 'assets/fonts/geist-mono.woff2',
-  'assets/fonts/LICENSE-geist.txt', 'assets/fonts/LICENSE-archivo.txt',
+  'assets/fonts/LICENSE-geist.txt',
   'assets/brand', 'assets/og', 'assets/vendor',
   'assets/js/boot.js', 'assets/js/site.js',
   'contacto.php', 'favicon.ico',
@@ -46,11 +46,16 @@ writeFileSync(join(root, '.htaccess'), ht.replace('# MRI · configuración', '# 
 
 // ------------------------------------------------------------ las páginas --
 // Las páginas interiores salen de las plantillas de la V1; solo cambian la
-// fuente de titulares (Archivo condensada, recortada para la V2), el color de
-// la barra del navegador y la versión de los recursos.
+// fuente de titulares que se precarga (Instrument Serif), el color de la
+// barra del navegador y la versión de los recursos.
 const v2ify = (html) => {
-  let h = must(html, '/assets/fonts/archivo-wdth.woff2', '/assets/fonts/archivo-cond.woff2');
+  let h = must(html, '/assets/fonts/archivo-wdth.woff2', '/assets/fonts/instrument-serif.woff2');
   h = must(h, '<meta name="theme-color" content="#EDEEEB">', '<meta name="theme-color" content="#EFECE6">');
+  // Logotipo claro para la barra sobre la imagen, en el marcado (no en JS):
+  // así funciona también sin JavaScript. Solo en la portada, la única página
+  // con la barra sobre una imagen.
+  if (h.includes('class="page-home')) h = must(h, '<img src="/assets/brand/logo-mri.webp" width="284" height="180" alt="MRI · Martínez Rojas Instalaciones">',
+    '<img src="/assets/brand/logo-mri.webp" width="284" height="180" alt="MRI · Martínez Rojas Instalaciones"><img class="bar__logo-alt" src="/assets/brand/logo-mri-claro.webp" width="284" height="180" alt="" aria-hidden="true">');
   return h.replaceAll(`?v=${V1_ASSET_V}`, `?v=${ASSET_V}`);
 };
 
@@ -65,8 +70,8 @@ const filmFile = join(root, 'assets/film/film.json');
 if (!existsSync(filmFile)) throw new Error('Falta site/assets/film/film.json: ejecuta tools/video/prepare.mjs con el clip.');
 const filmMeta = JSON.parse(readFileSync(filmFile, 'utf8'));
 const hash = (f) => createHash('sha1').update(readFileSync(join(root, 'assets/film', f))).digest('hex').slice(0, 8);
-filmMeta.v = { desktop: hash('film.mp4'), mobile: hash('film-m.mp4'), webm: hash('film.webm'), webmMobile: hash('film-m.webm'), poster: hash('poster.webp') };
-filmMeta.bytes = { desktop: statSync(join(root, 'assets/film/film.mp4')).size, mobile: statSync(join(root, 'assets/film/film-m.mp4')).size };
+filmMeta.v = { mp4: hash('film.mp4'), webm: hash('film.webm'), poster: hash('poster.webp') };
+filmMeta.bytes = { mp4: statSync(join(root, 'assets/film/film.mp4')).size, webm: statSync(join(root, 'assets/film/film.webm')).size };
 
 const pages = [
   ['index.html', home(filmMeta), '/', '1.0'],
@@ -95,4 +100,4 @@ const urls = pages.filter((p) => p[2]).map(([, , path, prio]) => `  <url><loc>${
 writeFileSync(join(root, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`);
 writeFileSync(join(root, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /contacto.php\nDisallow: /gracias/\nDisallow: /envio-no-completado/\n\nSitemap: ${SITE.origin}/sitemap.xml\n`);
 
-console.log(`V2: ${pages.length} páginas en site/ · clip ${filmMeta.duration}s (${(filmMeta.bytes.desktop / 1048576).toFixed(2)} MB escritorio, ${(filmMeta.bytes.mobile / 1048576).toFixed(2)} MB móvil)`);
+console.log(`V2: ${pages.length} páginas en site/ · clip ${filmMeta.width}x${filmMeta.height}, ${filmMeta.duration}s (MP4 ${(filmMeta.bytes.mp4 / 1048576).toFixed(2)} MB, WebM ${(filmMeta.bytes.webm / 1048576).toFixed(2)} MB)`);

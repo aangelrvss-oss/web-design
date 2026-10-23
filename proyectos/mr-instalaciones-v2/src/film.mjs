@@ -13,16 +13,26 @@
 //        protagoniza la escena.
 
 export const FILM = {
-  // Recorrido del acto en alturas de pantalla (incluye apertura y cierre).
-  span: 4.8,
+  // Recorrido del acto en alturas de pantalla. El tramo fijado es span - 1:
+  // 3,2 pantallas para 10 s de vídeo, sin alargar el pin más de lo necesario.
+  span: 4.2,
   // El clip entero se reparte sobre el tramo fijado. Los dos últimos segundos
   // son un plano fijo de los conductos, así que la revelación del falso techo
   // (7,5-8,1 s) cae dentro del tramo y se sostiene; al salir, el escenario
   // se lleva ese plano final. Sin esto, el último 21 % del clip (justo la
   // revelación) se reproduciría ya con el escenario saliendo.
   clipMap: 'travel',
-  // Fracción del recorrido fijado que tarda la ventana en abrirse a sangre.
-  open: 0.13,
+  // El hero (titular, texto y CTA) está compuesto sobre el vídeo desde el
+  // primer instante y se retira entre heroOut - heroFade y heroOut del tramo
+  // fijado, mientras el aire empieza a salir del split. Después entran las
+  // escenas.
+  heroOut: 0.1,
+  heroFade: 0.05,
+  hero: {
+    kicker: 'Martínez Rojas Instalaciones · Madrid',
+    lede: 'Climatización, aerotermia, ventilación y fontanería, proyectadas e instaladas para funcionar juntas.',
+    discover: 'Descubrir nuestros sistemas',
+  },
   scenes: [
     // Tiempos leídos en la hoja de contactos del vídeo (assets-src/video/):
     // 0-1,6 s salón con el split en marcha; 1,6-3,3 s la cámara cruza el
