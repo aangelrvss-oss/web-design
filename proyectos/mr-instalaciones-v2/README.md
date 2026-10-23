@@ -56,6 +56,14 @@ docs/capturas/            Capturas reales de V1 y V2
 
 Los archivos copiados de la V1 al construir (fuentes Geist, marca, motor de Scroll-craft sin modificar, `site.js`, `contacto.php`) no se editan aquí: se editan en la V1 y se vuelve a construir.
 
+## Vista previa en un solo archivo
+
+```bash
+npm run preview:mri2    # -> proyectos/mr-instalaciones-v2/preview/mri-v2-portada-preview.html (~13 MB)
+```
+
+La portada completa en un HTML autónomo (CSS, JS, fuentes, imágenes y clips dentro) que se abre con doble clic, sin servidor. El formulario está en modo demostración: valida, pero no envía. Los enlaces a otras páginas se quedan en la portada. Es para revisión interna: no se versiona (`preview/` está en `.gitignore`).
+
 ## QA
 
 ```bash

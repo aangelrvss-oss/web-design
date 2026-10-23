@@ -12,6 +12,7 @@
     "qa:mri2": "node proyectos/mr-instalaciones-v2/qa/functional.mjs http://127.0.0.1:4510 qa/out/mri2",
     "qa:mri2:film": "node proyectos/mr-instalaciones-v2/qa/film.mjs http://127.0.0.1:4510 qa/out/mri2-film",
     "video:mri2": "node proyectos/mr-instalaciones-v2/tools/video/prepare.mjs",
+    "preview:mri2": "node proyectos/mr-instalaciones-v2/tools/preview/bundle.mjs",
     "build:living": "node proyectos/living-clean/src/build.mjs",
     "serve:living": "SITE_ROOT=proyectos/living-clean/site php -S 127.0.0.1:4600 tools/dev/router.php",
     "qa:living": "node proyectos/living-clean/qa/functional.mjs http://127.0.0.1:4600 qa/out/living",
