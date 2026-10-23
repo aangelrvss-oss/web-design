@@ -242,12 +242,8 @@ body.menu-open .bar .bar__logo .bar__logo-alt { opacity: 0; }
 .film.film--stills .film__still.is-on { opacity: 1; }
 .film__window video { z-index: 2; }
 .film__shade { position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: var(--es);
-  background:
-    linear-gradient(to top, rgb(8 10 11 / .82) 0%, rgb(8 10 11 / .52) 20%, rgb(8 10 11 / 0) 46%),
-    radial-gradient(60% 96% at var(--shade-x, 0%) 100%, rgb(8 10 11 / .8), rgb(8 10 11 / .55) 50%, rgb(8 10 11 / 0) 78%),
-    linear-gradient(rgb(8 10 11 / .38), rgb(8 10 11 / 0) 22%);
+  background: linear-gradient(to top, rgb(8 10 11 / .58) 0%, rgb(8 10 11 / .2) 12%, rgb(8 10 11 / 0) 26%);
 }
-.film__stage[data-side="right"] .film__shade { --shade-x: 100%; }
 
 /* El bloque del titular sobre el papel. Se aparta antes de que la ventana
    llegue a él: nunca hay texto encima de la imagen a medio abrir. */
@@ -278,10 +274,24 @@ body.menu-open .bar .bar__logo .bar__logo-alt { opacity: 0; }
   width: min(36rem, 44vw); color: var(--cap-ink); pointer-events: none;
 }
 .cap.is-on { pointer-events: auto; }
+/* Velo de tercio inferior, uno por escena y hermano del texto (no dentro de
+   él): denso solo en la esquina del texto, recortado hacia el centro, y
+   encendido por el propio --sc-p con la ventana de su escena (--vf, --vt,
+   --vr; film.js). Llega un poco antes que el texto y se va un poco después.
+   El vídeo es luminoso: oscurecerlo entero para leer una esquina lo apagaría. */
+.cap-veil {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(to top, rgb(8 10 11 / .84) 0%, rgb(8 10 11 / .78) 42%, rgb(8 10 11 / .36) 54%, rgb(8 10 11 / 0) 66%);
+  -webkit-mask-image: linear-gradient(to right, #000 0%, #000 44%, transparent 74%);
+  mask-image: linear-gradient(to right, #000 0%, #000 44%, transparent 74%);
+  --p: var(--sc-p, 0);
+  opacity: min(clamp(0, calc((var(--p) - var(--vf, 2)) / var(--vr, .05)), 1), clamp(0, calc((var(--vt, -1) - var(--p)) / var(--vr, .05)), 1));
+}
+.cap-veil--right { -webkit-mask-image: linear-gradient(to left, #000 0%, #000 44%, transparent 74%); mask-image: linear-gradient(to left, #000 0%, #000 44%, transparent 74%); }
 .cap--right { left: auto; right: var(--g); }
 .cap__k { display: flex; align-items: center; gap: .65rem; margin: 0 0 .9rem; font: 500 .74rem/1.3 var(--sc-font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--cap-ink); }
 .cap__k::before { content: ""; width: 22px; height: 2px; background: var(--sc-accent); flex: none; }
-.cap__h { margin: 0 0 .85rem; font: 600 clamp(1.9rem, 1.1rem + 2.1vw, 3.15rem)/.94 var(--sc-font-display); font-stretch: 70%; letter-spacing: -0.014em; max-width: 17ch; text-wrap: balance; text-shadow: 0 1px 24px rgb(0 0 0 / .25); }
+.cap__h { margin: 0 0 .85rem; font: 600 clamp(1.9rem, 1.1rem + 2.1vw, 3.15rem)/.94 var(--sc-font-display); font-stretch: 70%; letter-spacing: -0.014em; max-width: 21ch; text-wrap: balance; text-shadow: 0 1px 24px rgb(0 0 0 / .25); }
 .cap__t { margin: 0 0 .7rem; max-width: 42ch; font-size: 1.01rem; line-height: 1.5; color: var(--cap-soft); }
 .cap__links { margin: 0; display: flex; flex-wrap: wrap; gap: .25rem 1.4rem; }
 .cap__a { display: inline-flex; align-items: center; gap: .45rem; min-height: 44px; font-weight: 600; text-decoration: none; color: var(--cap-ink); background: linear-gradient(var(--sc-accent), var(--sc-accent)) left calc(100% - 9px) / 100% 1.5px no-repeat; }
@@ -299,7 +309,6 @@ body.menu-open .bar .bar__logo .bar__logo-alt { opacity: 0; }
 .rail__bar i { position: absolute; inset: 0; background: #F3F2EF; transform-origin: left; transform: scaleX(var(--f, 0)); }
 .is-on .rail__bar i { background: var(--sc-accent); }
 
-.film__tag { position: absolute; z-index: 4; right: var(--g); top: calc(var(--bar-h) + .6rem); margin: 0; padding: .35rem .55rem; border: 1px solid rgb(243 242 239 / .35); font: 500 .66rem/1.2 var(--sc-font-mono); letter-spacing: .08em; text-transform: uppercase; color: rgb(243 242 239 / .78); background: rgb(8 10 11 / .35); opacity: var(--es); }
 
 /* ---- móvil: la composición se reorganiza, no se encoge -------------------
    El clip ocupa la parte alta del escenario y el texto vive debajo, sobre
@@ -315,7 +324,8 @@ body.menu-open .bar .bar__logo .bar__logo-alt { opacity: 0; }
     transform: translate3d(0, calc(var(--wt) * (1 - var(--es))), 0);
     clip-path: inset(0 calc(var(--g) * (1 - var(--es))) 0 calc(var(--g) * (1 - var(--es))));
   }
-  .film__shade { background: linear-gradient(rgb(8 10 11 / .5), rgb(8 10 11 / 0) 30%), linear-gradient(to top, rgb(12 14 15 / .55), rgb(12 14 15 / 0) 26%); }
+  .film__shade { background: linear-gradient(rgb(8 10 11 / .42), rgb(8 10 11 / 0) 24%); }
+  .cap-veil { display: none; }
   .film__window > :is(video, img) { transform: none; }
   /* El grafito de debajo sube pegado a la ventana: el papel no se funde. */
   .film__stage::before { opacity: 1; }
@@ -342,8 +352,6 @@ body.menu-open .bar .bar__logo .bar__logo-alt { opacity: 0; }
   .film__rail ol { gap: .5rem; }
   .film__rail li:not(.is-on) .rail__l { opacity: 0; }
   .rail__i { gap: .4rem; }
-  .film__tag { top: calc(var(--bar-h) + .5rem); right: var(--sc-gutter); font-size: .58rem; }
-  .film__tag span { display: none; }
 }
 @media (max-width: 760px) and (max-height: 700px) {
   .film { --vid-h: 50svh; }
@@ -373,12 +381,12 @@ html:not(.js) .film__intro, .film--static .film__intro {
   position: relative; grid-column: 1 / -1; grid-row: 1; height: auto; opacity: 1; transform: none; margin: 0 calc(var(--sc-gutter) * -1) clamp(1.5rem, 3vw, 2.5rem);
   padding-top: calc(var(--bar-h) + clamp(2rem, 6vh, 4rem)); background: var(--paper); row-gap: 1.5rem;
 }
-html:not(.js) :is(.film__poster, video, .film__shade, .film__rail, .film__tag), .film--static :is(.film__poster, video, .film__shade, .film__rail, .film__tag) { display: none; }
-html:not(.js) .film__still, .film--static .film__still { position: static; grid-row: 2; opacity: 1; aspect-ratio: 16 / 9; height: auto; }
+html:not(.js) :is(.film__poster, video, .film__shade, .film__rail, .cap-veil), .film--static :is(.film__poster, video, .film__shade, .film__rail, .cap-veil) { display: none; }
+html:not(.js) .film__still, .film--static .film__still { position: static; grid-row: 2; opacity: 1; aspect-ratio: 16 / 9; height: auto; transform: none; }
 html:not(.js) .cap, .film--static .cap { position: static; grid-row: 3; width: auto; opacity: 1 !important; transform: none !important; pointer-events: auto; padding-top: 1.25rem; }
 html:not(.js) .cap__h, .film--static .cap__h { font-size: clamp(1.8rem, 1.2rem + 1.6vw, 2.6rem); }
 html:not(.js) .film__still[data-still="termica"], .film--static .film__still[data-still="termica"] { grid-column: 2; }
-html:not(.js) .film__still[data-still="aire-agua"], .film--static .film__still[data-still="aire-agua"] { grid-column: 3; }
+html:not(.js) .film__still[data-still="ventilacion"], .film--static .film__still[data-still="ventilacion"] { grid-column: 3; }
 @media (max-width: 760px) {
   html:not(.js) .film__stage, .film--static .film__stage { grid-template-columns: 1fr; }
   html:not(.js) :is(.film__still, .cap), .film--static :is(.film__still, .cap) { grid-column: 1 !important; grid-row: auto; }
@@ -386,8 +394,8 @@ html:not(.js) .film__still[data-still="aire-agua"], .film--static .film__still[d
   html:not(.js) #escena-clima, .film--static #escena-clima { order: 2; }
   html:not(.js) .film__still[data-still="termica"], .film--static .film__still[data-still="termica"] { order: 3; margin-top: 2rem; }
   html:not(.js) #escena-termica, .film--static #escena-termica { order: 4; }
-  html:not(.js) .film__still[data-still="aire-agua"], .film--static .film__still[data-still="aire-agua"] { order: 5; margin-top: 2rem; }
-  html:not(.js) #escena-aire-agua, .film--static #escena-aire-agua { order: 6; }
+  html:not(.js) .film__still[data-still="ventilacion"], .film--static .film__still[data-still="ventilacion"] { order: 5; margin-top: 2rem; }
+  html:not(.js) #escena-ventilacion, .film--static #escena-ventilacion { order: 6; }
   html:not(.js) .film__intro, .film--static .film__intro { order: 0; }
 }
 
@@ -407,12 +415,12 @@ html:not(.js) .film__still[data-still="aire-agua"], .film--static .film__still[d
   position: relative; grid-column: 1 / -1; grid-row: 1; height: auto; opacity: 1; transform: none; margin: 0 calc(var(--sc-gutter) * -1) clamp(1.5rem, 3vw, 2.5rem);
   padding-top: calc(var(--bar-h) + clamp(2rem, 6vh, 4rem)); background: var(--paper); row-gap: 1.5rem;
 }
-  .film :is(.film__poster, video, .film__shade, .film__rail, .film__tag) { display: none; }
-  .film .film__still { position: static; grid-row: 2; opacity: 1; aspect-ratio: 16 / 9; height: auto; }
+  .film :is(.film__poster, video, .film__shade, .film__rail, .cap-veil) { display: none; }
+  .film .film__still { position: static; grid-row: 2; opacity: 1; aspect-ratio: 16 / 9; height: auto; transform: none; }
   .film .cap { position: static; grid-row: 3; width: auto; opacity: 1 !important; transform: none !important; pointer-events: auto; padding-top: 1.25rem; }
   .film .cap__h { font-size: clamp(1.8rem, 1.2rem + 1.6vw, 2.6rem); }
   .film .film__still[data-still="termica"] { grid-column: 2; }
-  .film .film__still[data-still="aire-agua"] { grid-column: 3; }
+  .film .film__still[data-still="ventilacion"] { grid-column: 3; }
 }
 @media (prefers-reduced-motion: reduce) and (max-width: 760px) {
   .film .film__stage { grid-template-columns: 1fr; }
@@ -421,8 +429,8 @@ html:not(.js) .film__still[data-still="aire-agua"], .film--static .film__still[d
   .film #escena-clima { order: 2; }
   .film .film__still[data-still="termica"] { order: 3; margin-top: 2rem; }
   .film #escena-termica { order: 4; }
-  .film .film__still[data-still="aire-agua"] { order: 5; margin-top: 2rem; }
-  .film #escena-aire-agua { order: 6; }
+  .film .film__still[data-still="ventilacion"] { order: 5; margin-top: 2rem; }
+  .film #escena-ventilacion { order: 6; }
   .film .film__intro { order: 0; }
 }
 

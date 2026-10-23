@@ -1,20 +1,20 @@
 {
   "source": {
-    "file": "animatica-provisional.mp4",
+    "file": "mri-original.mp4",
     "codec": "h264",
     "profile": "High",
     "pixfmt": "yuv420p",
-    "width": 1920,
-    "height": 1080,
-    "fps": 25,
-    "duration": 12,
-    "frames": 300,
-    "bitrateKbps": 2473,
-    "sizeMB": 3.54,
-    "audio": false,
+    "width": 1280,
+    "height": 720,
+    "fps": 24,
+    "duration": 10.027,
+    "frames": 240,
+    "bitrateKbps": 3867,
+    "sizeMB": 4.62,
+    "audio": true,
     "keyframes": 1,
-    "maxKeyGapS": null
+    "maxKeyGapS": 10.027
   },
   "sceneCuts": [],
-  "contactSheetStepS": 0.375
+  "contactSheetStepS": 0.313
 }

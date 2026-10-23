@@ -13,17 +13,27 @@
 //        protagoniza la escena.
 
 export const FILM = {
-  // true mientras el clip es la animática provisional: muestra la etiqueta
-  // «Animática provisional» sobre el escenario. Con el vídeo real, false.
-  provisional: true,
   // Recorrido del acto en alturas de pantalla (incluye apertura y cierre).
   span: 4.8,
+  // El clip entero se reparte sobre el tramo fijado. Los dos últimos segundos
+  // son un plano fijo de los conductos, así que la revelación del falso techo
+  // (7,5-8,1 s) cae dentro del tramo y se sostiene; al salir, el escenario
+  // se lleva ese plano final. Sin esto, el último 21 % del clip (justo la
+  // revelación) se reproduciría ya con el escenario saliendo.
+  clipMap: 'travel',
   // Fracción del recorrido fijado que tarda la ventana en abrirse a sangre.
   open: 0.13,
   scenes: [
+    // Tiempos leídos en la hoja de contactos del vídeo (assets-src/video/):
+    // 0-1,6 s salón con el split en marcha; 1,6-3,3 s la cámara cruza el
+    // salón hacia la sala técnica; 3,3-5,9 s bomba de calor, módulo hidráulico
+    // y grupos de bombeo, con acercamiento a las tuberías de cobre; 5,9-7,5 s
+    // pasillo con difusores lineales; 7,5-8,1 s el falso techo se vuelve
+    // transparente y aparecen los conductos, que se mantienen hasta el final.
+    // still: fotograma fijo de la escena (movimiento reducido, sin vídeo).
     {
       key: 'clima',
-      t0: 0.0, t1: 3.9, focal: 66, side: 'left',
+      t0: 0.0, t1: 3.3, still: 0.95, focal: 46, side: 'left',
       kicker: 'Salón · Climatización',
       title: 'Frío y calor, estancia por estancia',
       text: 'Aire acondicionado con equipos individuales o por conductos en falso techo. Montaje y mantenimiento con habilitación en gases fluorados.',
@@ -33,23 +43,23 @@ export const FILM = {
     },
     {
       key: 'termica',
-      t0: 3.9, t1: 7.5, focal: 64, side: 'left',
-      kicker: 'Zona técnica · Aerotermia y calefacción',
-      title: 'Calefacción y agua caliente desde una sola máquina',
-      text: 'Aerotermia conectada a suelo radiante o radiadores. Instalamos y mantenemos la instalación térmica completa como empresa RITE.',
-      links: [['/servicios/aerotermia/', 'Aerotermia']],
+      t0: 3.3, t1: 6.0, still: 4.45, focal: 36, side: 'right',
+      kicker: 'Sala técnica · Aerotermia y fontanería',
+      title: 'Aerotermia y fontanería, en una sola red',
+      text: 'Aerotermia conectada a suelo radiante o radiadores, y la fontanería que la lleva a cada punto. Instalamos y mantenemos la instalación térmica como empresa RITE.',
+      links: [['/servicios/aerotermia/', 'Aerotermia'], ['/servicios/fontaneria-saneamiento/', 'Fontanería']],
       service: 'aerotermia',
-      rail: 'Aerotermia y calefacción',
+      rail: 'Aerotermia y fontanería',
     },
     {
-      key: 'aire-agua',
-      t0: 7.5, t1: 12.0, focal: 52, side: 'right',
-      kicker: 'Ventilación · Fontanería',
-      title: 'Aire renovado y agua bien conducida',
-      text: 'Ventilación autorregulable, higrorregulable o con recuperación de energía, y fontanería desde la acometida hasta cada grifo.',
-      links: [['/servicios/ventilacion/', 'Ventilación'], ['/servicios/fontaneria-saneamiento/', 'Fontanería']],
+      key: 'ventilacion',
+      t0: 6.0, t1: 10.03, still: 9.2, focal: 50, side: 'left',
+      kicker: 'Falso techo · Ventilación',
+      title: 'Aire renovado en cada estancia',
+      text: 'Ventilación autorregulable, higrorregulable o con recuperación de energía, con los conductos ocultos en el falso techo.',
+      links: [['/servicios/ventilacion/', 'Ventilación']],
       service: 'ventilacion',
-      rail: 'Ventilación y fontanería',
+      rail: 'Ventilación',
     },
   ],
   // Cierre del tramo: aparece sobre la última escena y se va con el escenario.

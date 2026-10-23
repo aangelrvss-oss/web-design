@@ -32,27 +32,42 @@ Descartados con motivo: menús (genéricos o con jQuery/Bootstrap), logins (no h
 
 La V1 traía Archivo solo en anchuras expandidas (102–110 %). La V2 usa un recorte propio del Archivo variable (`archivo-cond.woff2`, 46 KB: latín con español, `wght` 400–700, `wdth` 62–100) generado con fontTools a partir de @fontsource-variable/archivo (OFL).
 
-## 3. La portada
+## 3. El vídeo: lectura del plano
 
-**Primer viewport (escritorio).** Rejilla de 12 columnas. Arriba la barra (logotipo, menú, teléfono en mono, «Pedir presupuesto»). El titular ocupa ocho columnas en dos líneas, con una etiqueta mono de servicios encima y una regla naranja. A la derecha, alineados a la base del titular, la frase de valor real y los dos CTA (presupuesto y llamada). Debajo, a partir del borde medido del bloque de texto (`--wt`, film.js), la ventana con el vídeo enmarcada por el margen. El fotograma se desplaza dentro de la ventana para que se vea su centro (el equipo), no el suelo.
+Vídeo del cliente (generado con IA): 1280×720, 24 fps, 10,03 s, plano continuo sin cortes (la detección de escenas de ffmpeg no encuentra ninguno), pista de audio y **un único fotograma clave**. Hoja de contactos en `assets-src/video/contactos-mri-original.jpg`.
 
-**Apertura.** Con el primer 13 % del tramo fijado la ventana se abre a sangre (smoothstep), el titular se aparta antes de que la ventana llegue a él y el fondo pasa de papel a grafito. La barra cambia a tinta clara con un velo propio en cuanto el borde de la ventana la alcanza.
+| Tiempo | Qué se ve | Uso |
+|---|---|---|
+| 0–1,6 s | Salón luminoso; el split se enciende y su caudal de aire se hace visible | Primer fotograma = póster. Escena 1, **Climatización** |
+| 1,6–3,3 s | La cámara cruza el salón hacia una puerta | Transición; el texto 1 se despide |
+| 3,3–5,9 s | Sala técnica: bomba de calor exterior (izquierda), módulo hidráulico (derecha), grupos de bombeo y tuberías de cobre; acercamiento hasta un detalle de fontanería | Escena 2, **Aerotermia y fontanería**; texto a la derecha para dejar libre la bomba de calor |
+| 5,9–7,5 s | Sale a un pasillo con difusores lineales en el techo | Escena 3 empieza: ya se ven las rejillas de ventilación |
+| 7,5–8,1 s | El falso techo se vuelve transparente y aparecen los conductos | **Revelación**: el momento más fuerte del vídeo |
+| 8,1–10 s | Plano casi fijo de los conductos | Se sostiene hasta el final del tramo fijado |
 
-**Escenas.** Tres bloques sincronizados con los tiempos del clip (no con el scroll): kicker mono con regla naranja, titular condensado, una frase con información real y el enlace al servicio. Van abajo, al lado contrario del equipo (`side`), sobre un velo local; el centro del encuadre queda libre. El carril de escenas cierra la composición.
+El orden real es clima → aerotermia y fontanería → ventilación (la fontanería está en la sala técnica, no al final). Defectos observados: desenfoque de movimiento en 5,9–6,3 s (transición, aceptable) y la transparencia del techo produce un fundido doble durante 0,6 s (es el efecto buscado). Primer y último fotograma funcionan como encuadres: salón con el split arriba en el centro y conductos con el techo abierto. Zonas que admiten texto: el tercio inferior (sofá, suelo, paredes bajas); los equipos están siempre en la mitad superior o en un lateral.
 
-**Móvil y tableta vertical.** No se encoge la composición de escritorio: el vídeo ocupa el 56 % superior del escenario y el texto vive debajo, sobre grafito, sin superponerse a la imagen. La ventana entra desde abajo y sube a su sitio; el 16:9 se recorta siguiendo el punto focal de cada escena, interpolado en los cambios. En el carril solo se rotula la escena activa.
+## 4. La portada
 
-**Final.** La última escena no se apaga: sale con el escenario mientras el clip termina, y la página continúa con «¿Qué necesitas resolver?», que retoma la idea del recorrido («Una sola empresa para que todo encaje»).
+**Primer viewport (escritorio).** Rejilla de 12 columnas. Arriba la barra (logotipo, menú, teléfono en mono, «Pedir presupuesto»). El titular ocupa ocho columnas en dos líneas, con una etiqueta mono de servicios encima y una regla naranja. A la derecha, alineados a la base del titular, la frase de valor real y los dos CTA (presupuesto y llamada). Debajo, a partir del borde medido del bloque de texto (`--wt`, film.js), la ventana con el vídeo enmarcada por el margen. El fotograma se desplaza dentro de la ventana para que se vea su centro (el split), no el suelo.
 
-## 4. Scroll y vídeo
+**Apertura.** Con el primer 13 % del tramo fijado la ventana se abre a sangre (smoothstep), el titular se aparta antes de que la ventana llegue a él y el fondo pasa de papel a grafito. La barra cambia a tinta clara con un velo propio en cuanto el borde de la ventana la alcanza. Mientras tanto el clip ya avanza: el aire empieza a salir del split.
+
+**Escenas.** Tres bloques sincronizados con los tiempos del clip: kicker mono con regla naranja, titular condensado a dos líneas, una frase con información real y el enlace al servicio. Van en el tercio inferior, al lado contrario del equipo protagonista (`side`). Cada bloque tiene su propio velo de «tercio inferior», recortado hacia el centro y encendido por el progreso del acto con la ventana de su escena: llega un poco antes que el texto y se va un poco después. Fuera de esos momentos el vídeo, que es luminoso y cálido, se ve sin oscurecer. El carril de escenas cierra la composición.
+
+**Móvil y tableta vertical.** No se encoge la composición de escritorio: el vídeo ocupa el 56 % superior del escenario y el texto vive debajo, sobre grafito, sin superponerse a la imagen (sin velos). La ventana entra desde abajo y sube a su sitio; el 16:9 se recorta siguiendo el punto focal de cada escena (salón 46 %, sala técnica 36 % para conservar la bomba de calor, techo 50 %), interpolado en los cambios. En el carril solo se rotula la escena activa.
+
+**Final.** La revelación de los conductos cae dentro del tramo fijado y se sostiene; después el escenario sale llevándose el último fotograma (los conductos) y la página continúa con «¿Qué necesitas resolver?», que retoma la idea del recorrido («Una sola empresa para que todo encaje»).
+
+## 5. Scroll y vídeo
 
 - Motor: **Scroll-craft sin modificar** (hash idéntico al de la V1 y al del ZIP `scroll-craft-main`). Acto `scrub` de 4,8 alturas: el motor fija el escenario, descarga el clip como Blob (búsqueda sin peticiones por rangos), lo recorre con cabezal suavizado (lerp, zona muerta y coalescencia de búsquedas) y mantiene el póster hasta que hay un fotograma pintado. No se añadió GSAP: duplicaría lo que el motor ya hace.
-- El clip se reparte por toda la vida visible del escenario (comportamiento por defecto del motor): no se congela al entrar ni al salir. Los textos se calculan con esa misma correspondencia: `progreso = (t / duración) · span / (span − 1)`.
-- Codificación para scrub (GOP 8 en 1080p, GOP 4 en 720p). El original de la animática tenía un fotograma clave cada 3,8 s; codificado, cada 0,32 s.
-- H.264 por defecto; VP9 para navegadores sin H.264 (film.js elige antes de que el motor pida el clip).
+- El clip se reparte sobre el **tramo fijado** (`data-sc-clip-map="travel"`), no sobre toda la vida visible del escenario (el comportamiento por defecto). Con el reparto por defecto el último 21 % del clip, justo la revelación de los conductos, se reproducía ya con el escenario saliendo. Como los dos últimos segundos son un plano fijo, sostener el último fotograma durante la salida no se percibe como congelación. Los textos usan la misma correspondencia: `progreso = t / duración`.
+- **Codificación para scrub**: el original tiene un único fotograma clave en 10 s, así que cada búsqueda tendría que decodificar desde el principio. Se recodifica sin ampliar (720p, que es el origen): un fotograma clave cada 0,25 s en escritorio y cada 0,17 s en móvil (540p), sin audio. 3,1 MB / 1,7 MB en H.264; 2,0 MB / 1,5 MB en VP9.
+- H.264 por defecto; VP9 para navegadores sin H.264 (film.js elige antes de que el motor pida el clip). El clip se pide cuando la página ha terminado de cargar, para que no compita con el póster ni con las fuentes; hasta entonces el póster, que es su primer fotograma, cubre el escenario.
 - Degradación: con **movimiento reducido** o **sin motor/JS**, la secuencia es una página estática (titular y tres fotogramas fijos con su texto); si el **clip no llega** en 9 s, se encadenan los fotogramas fijos de cada escena con el mismo scroll; mientras carga, el póster.
 
-## 5. Lo que se ha conservado y lo que no
+## 6. Lo que se ha conservado y lo que no
 
 Se conservan íntegros los contenidos comerciales de la V1: necesidades → servicios, habilitaciones con sus registros, sectores, preguntas frecuentes, contacto y formulario (mismo `contacto.php`, misma validación). No se ha inventado ninguna cifra, certificación, garantía ni reseña (la V1 no tenía reseñas publicadas y la V2 tampoco).
 

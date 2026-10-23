@@ -107,10 +107,10 @@ for (const vp of [{ width: 1440, height: 900 }, { width: 375, height: 740 }]) {
   await page.waitForTimeout(1800);
   const f1 = await readFilm();
   ok('secuencia: el carril lleva a la escena de aerotermia', f1.scene === 'termica' && f1.capOn.includes('escena-termica'), JSON.stringify(f1));
-  await page.click('[data-goto="aire-agua"]');
+  await page.click('[data-goto="ventilacion"]');
   await page.waitForTimeout(1800);
   const f2 = await readFilm();
-  ok('secuencia: el clip avanza con la escena (ida)', f2.scene === 'aire-agua' && f2.t > f1.t, `${f1.t}s -> ${f2.t}s`);
+  ok('secuencia: el clip avanza con la escena (ida)', f2.scene === 'ventilacion' && f2.t > f1.t, `${f1.t}s -> ${f2.t}s`);
   await page.click('[data-goto="clima"]');
   await page.waitForTimeout(1800);
   const f3 = await readFilm();

@@ -1,10 +1,10 @@
 # MRI V2 · rediseño cinematográfico
 
-Segunda versión de la web de MRI (Martínez Rojas Instalaciones). La portada abre con una **secuencia de vídeo controlada por el scroll**: el titular ocupa el papel, el vídeo asoma por una ventana enmarcada y, al bajar, la ventana se abre a sangre mientras tres bloques de texto real acompañan a cada sistema (climatización, aerotermia y calefacción, ventilación y fontanería).
+Segunda versión de la web de MRI (Martínez Rojas Instalaciones). La portada abre con una **secuencia de vídeo controlada por el scroll**: el titular ocupa el papel, el vídeo asoma por una ventana enmarcada y, al bajar, la ventana se abre a sangre mientras tres bloques de texto real acompañan a cada sistema: climatización en el salón, aerotermia y fontanería en la sala técnica y ventilación en el falso techo.
 
 **La V1 no se ha tocado.** Vive en `proyectos/mr-instalaciones/` y sigue funcionando igual. La V2 lee de ella el contenido, las plantillas de las páginas interiores y los archivos estáticos; lo propio de la V2 está en esta carpeta.
 
-> **Vídeo pendiente.** El vídeo cinematográfico no estaba en el entorno de trabajo. La secuencia usa una **animática provisional** (un recorrido de cámara por el dibujo técnico de la V1 con las mismas cuatro estaciones) para poder verificar el scrub, la sincronización y el móvil. Se identifica en pantalla con la etiqueta «Animática provisional». Sustituirla es un solo comando: ver [Cambiar el vídeo](#cambiar-el-vídeo).
+> **El vídeo.** `assets-src/video/mri-original.mp4` es el vídeo del cliente, sin modificar (1280×720, 24 fps, 10 s, un único fotograma clave y pista de audio). Lo que se publica es su versión codificada para scrub en `site/assets/film/`. Tiempos y lectura del plano en `src/film.mjs` y `docs/DIRECCION.md`.
 
 ## Ejecutar y comparar con la V1
 
@@ -28,11 +28,11 @@ node proyectos/mr-instalaciones-v2/tools/video/prepare.mjs /ruta/al/video.mp4   
 ```
 
 1. **Inspección** (no modifica el original): formato, duración, resolución, fps, tamaño, intervalo real entre fotogramas clave, cortes de escena detectados y una hoja de contactos con tiempos en `assets-src/video/`. Con ella se deciden tiempos, encuadres y lado del texto.
-2. **Codificación para scrub**: H.264 1080p (GOP 8) y 720p (GOP 4) con el `encode.sh` de Scroll-craft, más VP9 equivalentes para navegadores sin H.264. Sin audio, `faststart`.
-3. **Póster** (primer fotograma) y un **fotograma fijo por escena** en WebP.
+2. **Codificación para scrub** con los ajustes del `encode.sh` de Scroll-craft pero sin ampliar el original: H.264 a la resolución de origen (hasta 1080p) con un fotograma clave cada 1/4 s, y hasta 540p con uno cada 1/6 s para móvil, más VP9 equivalentes para navegadores sin H.264. Sin audio, `faststart`.
+3. **Póster** (primer fotograma) y un **fotograma fijo por escena** (`still` en `film.mjs`) en WebP, sacados del original.
 4. `site/assets/film/film.json` con la duración real.
 
-Después, editar **`src/film.mjs`**: tiempos de cada escena en segundos del clip (`t0`, `t1`), punto focal para móvil (`focal`), lado del texto en escritorio (`side`) y `provisional: false`. Ejecutar `npm run build:mri2`. Los tiempos se convierten solos en ventanas de scroll: una escena nunca aparece fuera de su tramo de vídeo.
+Después, editar **`src/film.mjs`**: tiempos de cada escena en segundos del clip (`t0`, `t1`), punto focal para móvil (`focal`), lado del texto en escritorio (`side`) y fotograma fijo (`still`). Ejecutar `npm run build:mri2`. Los tiempos se convierten solos en ventanas de scroll: una escena nunca aparece fuera de su tramo de vídeo.
 
 Si se cambia `span` en `film.mjs`, cambiar también `--film-span` en `site/assets/css/site.css` (el build avisa si no coinciden).
 
@@ -46,7 +46,7 @@ site/assets/css/site.css  Sistema visual de la V2 (también estiliza las página
 site/assets/js/film.js    Carril de escenas, cabecera, encuadre móvil, teclado, degradación
 site/assets/film/         Clip codificado (mp4 + webm, escritorio y móvil), póster y fotogramas fijos
 tools/video/prepare.mjs   Inspección y codificación del vídeo
-tools/video/animatica.mjs Genera la animática provisional
+assets-src/video/         Vídeo original del cliente, hoja de contactos e informe de inspección
 qa/film.mjs               Capturas de la secuencia y del resto de la home + informe
 qa/functional.mjs         Suite funcional (la de la V1 adaptada a la secuencia)
 docs/DIRECCION.md         Dirección artística, referencias del ZIP y decisiones

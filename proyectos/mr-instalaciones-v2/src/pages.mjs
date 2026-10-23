@@ -17,12 +17,13 @@ const r3 = (x) => Math.round(x * 1000) / 1000;
 
 // ------------------------------------------------------------ secuencia --
 // Convierte los tiempos del clip (segundos) en ventanas de progreso del acto.
-// El motor reparte el clip por toda la vida visible del escenario: en un acto
-// que empieza en lo alto del documento, el clip va de 0 a 1 mientras el scroll
-// recorre la altura completa del acto (span), y el tramo fijado solo ocupa
-// span - 1. Por eso progreso = (t / duración) * span / (span - 1).
+// Con clipMap 'travel' el clip entero se reparte sobre el tramo fijado, así
+// que progreso = t / duración. Con el reparto por defecto del motor (toda la
+// vida visible del escenario, en un acto que empieza en lo alto del
+// documento) el tramo fijado solo cubre (span - 1) / span del clip y
+// progreso = (t / duración) * span / (span - 1).
 function filmTimeline(meta) {
-  const k = FILM.span / (FILM.span - 1);
+  const k = FILM.clipMap === 'travel' ? 1 : FILM.span / (FILM.span - 1);
   const p = (t) => (t / meta.duration) * k;
   const first = FILM.open + 0.03;
   return FILM.scenes.map((s, i) => {
@@ -39,7 +40,8 @@ function filmTimeline(meta) {
 function film(meta) {
   const tl = filmTimeline(meta);
   const v = meta.v;
-  const caps = tl.map((s) => `<article class="cap cap--${s.side}" id="escena-${s.key}" data-sc-cue="${s.cue}" data-scene="${s.key}" aria-labelledby="cap-${s.key}">
+  const caps = tl.map((s) => `<div class="cap-veil cap-veil--${s.side}" data-veil="${s.key}" aria-hidden="true"></div>
+      <article class="cap cap--${s.side}" id="escena-${s.key}" data-sc-cue="${s.cue}" data-scene="${s.key}" aria-labelledby="cap-${s.key}">
         <p class="cap__k">${esc(s.kicker)}</p>
         <h2 class="cap__h" id="cap-${s.key}">${esc(s.title)}</h2>
         <p class="cap__t">${esc(s.text)}</p>
@@ -48,9 +50,9 @@ function film(meta) {
   const rail = tl.map((s) => `<li><a class="rail__i" href="#escena-${s.key}" data-goto="${s.key}"><span class="rail__l">${esc(s.rail)}</span><span class="rail__bar" aria-hidden="true"><i></i></span></a></li>`).join('');
   const stills = tl.map((s) => `<img class="film__still" data-still="${s.key}" src="/assets/film/still-${s.key}.webp?v=${v.poster}" srcset="/assets/film/still-${s.key}-m.webp?v=${v.poster} 960w, /assets/film/still-${s.key}.webp?v=${v.poster} 1600w" sizes="100vw" width="1600" height="${Math.round(1600 * meta.height / meta.width)}" alt="" loading="lazy" decoding="async">`).join('\n        ');
   // Lo que film.js necesita saber y el HTML no dice.
-  const cfg = { open: FILM.open, duration: meta.duration, scenes: tl.map(({ key, c0, c1, from, to, focal, side }) => ({ key, c0, c1, from, to, focal, side })) };
+  const cfg = { open: FILM.open, travel: FILM.clipMap === 'travel', duration: meta.duration, scenes: tl.map(({ key, c0, c1, from, to, focal, side }) => ({ key, c0, c1, from, to, focal, side })) };
 
-  return `<section class="film" id="inicio" data-sc-act="scrub" data-sc-span="${FILM.span}" aria-labelledby="hero-h" data-film="${esc(JSON.stringify(cfg))}">
+  return `<section class="film" id="inicio" data-sc-act="scrub" data-sc-span="${FILM.span}"${FILM.clipMap === 'travel' ? ' data-sc-clip-map="travel"' : ''} aria-labelledby="hero-h" data-film="${esc(JSON.stringify(cfg))}">
     <div class="film__stage" data-sc-stage>
       <div class="film__window">
         <img class="sc-stage__poster film__poster" src="/assets/film/poster.webp?v=${v.poster}" srcset="/assets/film/poster-m.webp?v=${v.poster} 960w, /assets/film/poster.webp?v=${v.poster} 1600w" sizes="100vw" width="1600" height="${Math.round(1600 * meta.height / meta.width)}" alt="" fetchpriority="high">
@@ -71,7 +73,6 @@ function film(meta) {
       ${caps}
       </div>
       <nav class="film__rail" aria-label="Escenas de la secuencia"><ol>${rail}</ol></nav>
-      ${FILM.provisional ? '<p class="film__tag" aria-hidden="true">Animática provisional<span> · se sustituye por el vídeo definitivo</span></p>' : ''}
       <p class="vh">Secuencia ilustrativa de una vivienda: climatización del salón, zona técnica con aerotermia y calefacción, ventilación y fontanería. El texto de cada escena está en esta misma sección.</p>
     </div>
   </section>`;

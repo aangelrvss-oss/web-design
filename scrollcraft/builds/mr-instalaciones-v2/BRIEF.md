@@ -7,11 +7,11 @@
 1. **Vibe**: arquitectura contemporánea, tecnología doméstica, precisión, confort. Referencias: la ventana como encuadre (una casa vista desde dentro), una ficha técnica bien compuesta.
 2. **Recorrido**: entiendo quién es y puedo llamar; veo la casa por dentro sistema a sistema; encuentro mi caso; compruebo las habilitaciones; veo que trabajan para mi tipo de edificio; resuelvo dudas; pido presupuesto.
 3. **Energía**: calma informativa al entrar, la máxima en la secuencia, descenso ordenado hacia el formulario.
-4. **Sentimiento y momento**: «bajé y la ventana se abrió y entré en la casa: primero el salón con el aire, luego la máquina, luego el aire y el agua». El pico es la apertura de la ventana y el recorrido.
+4. **Sentimiento y momento**: «bajé y la ventana se abrió y entré en la casa: primero el salón con el aire, luego la sala de máquinas, y al final el techo se volvió transparente y se vieron los conductos». El pico es la apertura de la ventana y el recorrido; el momento recordado, la revelación del techo.
 5. **Lo que ninguna web de instaladores hace**: que el visitante recorra con su propia mano una casa instalada, y cada parada le lleve al servicio real.
 6. **Distancia del premium-minimal**: editorial técnico. Papel cálido y grafito, naranja solo donde actúa.
 7. **Mundo continuo o escenas**: un plano continuo (el vídeo), con capítulos marcados por un carril.
-8. **Activos**: el vídeo del cliente (pendiente: se usa una animática provisional generada sin coste a partir del dibujo de la V1), logotipo y datos reales. Coste de generación: 0.
+8. **Activos**: el vídeo del cliente (10 s, 720p, plano continuo: salón con split → sala técnica con aerotermia y fontanería → revelación de los conductos de ventilación en el falso techo), logotipo y datos reales. Coste de generación por nuestra parte: 0.
 
 ## Gramática: «Ventana a la casa» (nueva)
 
@@ -39,7 +39,7 @@
 
 | Acto | Dispositivo | Span |
 |---|---|---|
-| 1 Ventana (hero + pico) | `scrub` + apertura por `--sc-p` + carril propio | 4,8 |
+| 1 Ventana (hero + pico) | `scrub` (`clip-map="travel"`) + apertura por `--sc-p` + carril propio | 4,8 |
 | 2 Necesidades | `flow` + `in` | natural |
 | 3 Habilitaciones | `flow` + `reveal` | natural |
 | 4 Sectores | `pan` | 3,2 |

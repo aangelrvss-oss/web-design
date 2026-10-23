@@ -4,7 +4,7 @@
    monta y gestiona menú y formulario. Aquí solo va lo propio de la V2:
 
    - el carril de escenas: escena activa, progreso de cada tramo y saltos;
-   - el lado del velo según la escena y el encuadre del móvil (--fx);
+   - el encuadre del móvil por escena (--fx);
    - la cabecera clara sobre la imagen y de tinta sobre el papel;
    - el teclado: lo enfocado dentro del acto se lleva a su momento;
    - la degradación: con movimiento reducido o sin motor la secuencia es una
@@ -20,7 +20,6 @@
   var doc = document.documentElement;
   var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   var narrow = matchMedia('(max-width: 760px), (max-aspect-ratio: 4/5)'); // = site.css
-  var stage = film.querySelector('[data-sc-stage]');
   var intro = film.querySelector('[data-film-intro]');
   var bar = document.querySelector('[data-bar]');
   var scenes = cfg.scenes;
@@ -37,7 +36,34 @@
     video.setAttribute('data-sc-src', video.getAttribute('data-webm'));
     video.setAttribute('data-sc-src-mobile', video.getAttribute('data-webm-mobile'));
   }
+  /* El clip se pide cuando la página ha cargado: hasta entonces el póster
+     (que es su primer fotograma) cubre el escenario y no compite por la red
+     con él ni con las fuentes. Sin data-sc-src el motor no descarga nada y
+     vuelve a intentarlo en su siguiente lectura, que se fuerza aquí. */
+  if (video && document.readyState !== 'complete') {
+    var held = [video.getAttribute('data-sc-src'), video.getAttribute('data-sc-src-mobile')];
+    video.removeAttribute('data-sc-src');
+    video.removeAttribute('data-sc-src-mobile');
+    addEventListener('load', function () {
+      video.setAttribute('data-sc-src', held[0]);
+      video.setAttribute('data-sc-src-mobile', held[1]);
+      var sc = window.ScrollCraft && window.ScrollCraft.instances[0];
+      if (sc) sc.read();
+    }, { once: true });
+  }
   film.style.setProperty('--open', String(cfg.open));
+
+  /* Ventana de cada velo, derivada de la de su texto (rampa del cue = 16 %
+     de la ventana): entra antes y sale después que las letras. */
+  cfg.scenes.forEach(function (s, i) {
+    var v = film.querySelector('[data-veil="' + s.key + '"]');
+    if (!v) return;
+    var ramp = 0.16 * (s.to - s.from);
+    var last = i === cfg.scenes.length - 1;
+    v.style.setProperty('--vf', (s.from - 0.3 * ramp).toFixed(4));
+    v.style.setProperty('--vt', last ? '9' : (s.to + 0.3 * ramp).toFixed(4));
+    v.style.setProperty('--vr', (0.8 * ramp).toFixed(4));
+  });
 
   /* Logotipo claro para la cabecera sobre la imagen. */
   var logo = bar && bar.querySelector('.bar__logo img');
@@ -90,21 +116,24 @@
       film.style.setProperty('--wt', wtPx + 'px');
     }
 
-    /* Misma correspondencia que usa el motor para el clip: toda la vida
-       visible del escenario, recortada al scroll que existe. */
+    /* Misma correspondencia que usa el motor para el clip: el tramo fijado
+       (data-sc-clip-map="travel") o toda la vida visible del escenario,
+       recortada al scroll que existe. */
+    function clipRange() {
+      if (cfg.travel) return [top, top + Math.max(height - vh, 1)];
+      return [top - Math.min(vh, top), Math.min(top + height, maxY)];
+    }
     function clipAt(y) {
-      var startY = top - Math.min(vh, top);
-      var endY = Math.min(top + height, maxY);
-      return Math.min(Math.max((y - startY) / Math.max(endY - startY, 1), 0), 1);
+      var r = clipRange();
+      return Math.min(Math.max((y - r[0]) / Math.max(r[1] - r[0], 1), 0), 1);
     }
     function yForClip(c) {
-      var startY = top - Math.min(vh, top);
-      var endY = Math.min(top + height, maxY);
-      return startY + c * (endY - startY);
+      var r = clipRange();
+      return r[0] + c * (r[1] - r[0]);
     }
     function yForP(p) { return top + p * Math.max(height - vh, 1); }
 
-    var last = { scene: -1, dark: null, side: '', fx: '' };
+    var last = { scene: -1, dark: null, fx: '' };
     var raf = 0;
 
     function update() {
@@ -137,9 +166,6 @@
         var on = p >= s.from && p <= s.to + 0.001 && p > cfg.open;
         el.classList.toggle('is-on', on);
       });
-
-      var side = scenes[k].side;
-      if (side !== last.side) { stage.setAttribute('data-side', side); last.side = side; }
 
       /* Encuadre del móvil: el punto focal se interpola en un margen corto
          alrededor de cada cambio de escena, nunca salta. */
@@ -194,11 +220,16 @@
       var target = null;
       if (cap) {
         var s = scenes[caps.indexOf(cap)];
-        target = yForP(Math.min((s.from + s.to) / 2, s.from + 0.06));
+        target = yForP(s.from + 0.3 * (s.to - s.from)); // pasada la rampa de entrada
       } else if (intro.contains(ev.target)) {
         target = top;
       }
-      if (target !== null && Math.abs(scrollY - target) > 4) window.scrollTo({ top: Math.round(target), behavior: 'instant' });
+      if (target === null) return;
+      /* El navegador desplaza por su cuenta para mostrar lo enfocado, después
+         de este evento: la corrección va en el fotograma siguiente. */
+      requestAnimationFrame(function () {
+        if (Math.abs(scrollY - target) > 4) window.scrollTo({ top: Math.round(target), behavior: 'instant' });
+      });
     });
 
     /* Si el clip no consigue pintar (red, decodificador, ahorro de datos), la

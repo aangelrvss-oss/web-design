@@ -1,24 +1,24 @@
 {
-  "source": "animatica-provisional.mp4",
-  "duration": 12,
-  "width": 1920,
-  "height": 1080,
-  "fps": 25,
+  "source": "mri-original.mp4",
+  "duration": 10,
+  "width": 1280,
+  "height": 720,
+  "fps": 24,
   "desktop": {
     "file": "film.mp4",
-    "sizeMB": 2.48,
-    "maxKeyGapS": 0.32
+    "sizeMB": 3.1,
+    "maxKeyGapS": 0.25
   },
   "mobile": {
     "file": "film-m.mp4",
-    "width": 1280,
-    "height": 720,
-    "sizeMB": 1.26,
-    "maxKeyGapS": 0.16
+    "width": 960,
+    "height": 540,
+    "sizeMB": 1.67,
+    "maxKeyGapS": 0.167
   },
   "webm": {
-    "desktopMB": 2.07,
-    "mobileMB": 1.47
+    "desktopMB": 2,
+    "mobileMB": 1.51
   },
   "sceneCuts": []
 }
