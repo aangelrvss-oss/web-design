@@ -94,6 +94,42 @@ for (const vp of [{ width: 1440, height: 900 }, { width: 375, height: 740 }]) {
   await page.addInitScript(() => document.addEventListener('mri:track', (e) => window.__track(e.detail)));
   await page.goto(BASE + '/', { waitUntil: 'networkidle' });
 
+  // Plano técnico (recuperado de la V1): cada capa se dibuja en su ventana,
+  // la leyenda marca la capa en curso, aísla capas y las pasa al formulario.
+  const peakAt = async (p) => {
+    await page.evaluate((p) => { const s = document.getElementById('instalacion'); scrollTo({ top: s.offsetTop + p * (s.offsetHeight - innerHeight), behavior: 'instant' }); }, p);
+    await page.waitForTimeout(250);
+    return page.evaluate(() => {
+      const g = (k) => document.querySelector(`.house--peak .sys[data-sys="${k}"] .ln`);
+      // pathLength = 1: el desplazamiento llega como «calc(0.44px)», «1px» o «0%».
+      const dash = (k) => { const v = getComputedStyle(g(k)).strokeDashoffset.replace(/^calc\((.*)\)$/, '$1'); return v.endsWith('%') ? parseFloat(v) / 100 : parseFloat(v); };
+      const onCue = [...document.querySelectorAll('#instalacion .pc')].filter((c) => +getComputedStyle(c).opacity > 0.9).map((c) => c.dataset.pc || 'intro/end');
+      return { agua: dash('agua'), calefaccion: dash('calefaccion'), domotica: dash('domotica'), onCue };
+    });
+  };
+  const pk0 = await peakAt(0.02), pk1 = await peakAt(0.37), pk2 = await peakAt(0.98);
+  ok('plano: al entrar no hay capas dibujadas y se lee la presentación', pk0.agua > 0.95 && pk0.onCue.join() === "intro/end", JSON.stringify(pk0));
+  ok('plano: a mitad, agua dibujada, calefacción en curso y su texto en pantalla', pk1.agua < 0.01 && pk1.calefaccion > 0 && pk1.calefaccion < 1 && pk1.onCue.join() === "calefaccion", JSON.stringify(pk1));
+  ok('plano: al final, todas las capas dibujadas', pk2.agua < 0.01 && pk2.domotica < 0.01, JSON.stringify(pk2));
+  await peakAt(0.37);
+  // La capa en curso tiñe el fondo de su botón (color-mix con --now).
+  const nowLg = await page.evaluate(() => [...document.querySelectorAll('.lg')].map((b) => [b.dataset.sysBtn, getComputedStyle(b).backgroundColor]));
+  const nowOn = nowLg.filter(([, c]) => { const m = c.match(/\/\s*([\d.]+)\)/); return m && +m[1] > 0.08; }).map(([k]) => k);
+  ok('leyenda: marca la capa que se está dibujando', nowOn.join() === 'calefaccion', JSON.stringify(nowLg));
+  await page.click('[data-sys-btn="aerotermia"]');
+  await page.click('[data-sys-btn="gas"]');
+  const iso = await page.evaluate(() => document.querySelector('.house--peak').classList.contains('is-iso'));
+  const checked = await page.evaluate(() => [...document.querySelectorAll('input[name="servicio[]"]:checked')].map((c) => c.value));
+  ok('leyenda aísla capas en el dibujo', iso);
+  ok('leyenda marca servicios en el formulario', checked.includes('aerotermia') && checked.includes('instalaciones-de-gas'), checked.join(','));
+  await page.click('[data-sys-btn="gas"]');
+  const checked2 = await page.evaluate(() => [...document.querySelectorAll('input[name="servicio[]"]:checked')].map((c) => c.value));
+  ok('desmarcar en la leyenda desmarca el servicio', !checked2.includes('instalaciones-de-gas') && checked2.includes('aerotermia'));
+  await page.screenshot({ path: `${OUT}/legend.png` });
+  await page.click('[data-sys-btn="aerotermia"]');
+  await page.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
+  await page.waitForTimeout(300);
+
   // Secuencia: el carril salta a cada escena y la deja activa; el clip avanza.
   const readFilm = () => page.evaluate(() => ({
     y: Math.round(scrollY),

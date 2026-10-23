@@ -3,7 +3,8 @@
    con el scroll y enciende los textos de escena (data-sc-cue). site.js (de la
    V1) lo monta y gestiona menú y formulario. Aquí solo va lo propio de la V2:
 
-   - formato del clip y momento de pedirlo (antes de que el motor se monte);
+   - formato y versión del clip (completa o vertical para móvil) y momento de
+     pedirlo, antes de que el motor se monte;
    - el hero: se retira con el scroll (el CSS lo calcula; aquí solo se le
      quita el foco y los clics cuando ya no se ve);
    - el carril de escenas: escena activa, progreso de cada tramo y saltos;
@@ -34,8 +35,16 @@
      H.264 lo reproducen Chrome, Edge, Safari y casi todos los Firefox; donde
      no hay H.264 se da la versión VP9 (mismo encuadre, mismo GOP). */
   var video = film.querySelector('video[data-sc-scrub]');
-  if (video && !video.canPlayType('video/mp4; codecs="avc1.640028"') && video.canPlayType('video/webm; codecs="vp9"')) {
-    video.setAttribute('data-sc-src', video.getAttribute('data-webm'));
+  /* En vertical estrecho (la misma consulta que el <picture> del póster), la
+     versión vertical: un recorte del original ya encuadrado. Se elige una
+     sola vez, antes de pedir nada: el motor descarga un único archivo. */
+  var portraitMQ = cfg.portrait ? matchMedia(cfg.portrait) : null;
+  var portrait = !!(portraitMQ && portraitMQ.matches && video && video.getAttribute('data-portrait'));
+  if (video) {
+    var vp9 = !video.canPlayType('video/mp4; codecs="avc1.640028"') && video.canPlayType('video/webm; codecs="vp9"');
+    var pickSrc = portrait ? (vp9 ? 'data-portrait-webm' : 'data-portrait') : (vp9 ? 'data-webm' : null);
+    if (pickSrc) video.setAttribute('data-sc-src', video.getAttribute(pickSrc));
+    film.classList.toggle('film--portrait', portrait);
   }
   /* El clip se pide en cuanto la página ha cargado: hasta entonces el póster
      (su primer fotograma, precargado) ya compone la portada, y el clip no
@@ -220,5 +229,15 @@
       if (film.classList.contains('sc-has-clip')) { clearTimeout(giveUp); film.classList.remove('film--stills'); watch.disconnect(); }
     });
     watch.observe(film, { attributes: true, attributeFilter: ['class'] });
+
+    /* Si el teléfono gira después de cargar, el clip elegido ya no encaja
+       (un recorte vertical en horizontal se ampliaría de más, o al revés). No
+       se descarga otro: mientras dure el giro, la secuencia usa los
+       fotogramas fijos a resolución completa, con el mismo scroll. */
+    if (portraitMQ) portraitMQ.addEventListener('change', function () {
+      if (portraitMQ.matches !== portrait) film.classList.add('film--stills');
+      else if (film.classList.contains('sc-has-clip')) film.classList.remove('film--stills');
+      queue();
+    });
   }
 })();

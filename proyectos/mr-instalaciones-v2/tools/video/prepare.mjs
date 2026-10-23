@@ -2,6 +2,7 @@
 //
 //   node tools/video/prepare.mjs <clip.mp4>            inspecciona y codifica
 //   node tools/video/prepare.mjs <clip.mp4> --inspect  solo inspecciona
+//   node tools/video/prepare.mjs <clip.mp4> --portrait solo la versión vertical
 //
 // 1. Inspección: formato, duración, resolución, fps, tamaño, intervalo real
 //    entre fotogramas clave, cortes de escena detectados y una hoja de
@@ -12,10 +13,13 @@
 //    original, sin audio. Más VP9 para navegadores sin H.264.
 // 3. Póster (primer fotograma) y un fotograma fijo por escena, en WebP a
 //    resolución completa, para la carga, el movimiento reducido y el fallo.
+// 3b. Versión vertical para móvil (FILM.portrait): recorte del original a su
+//    resolución que sigue un recorrido de cámara, con su póster y una hoja de
+//    contactos del recorrido para revisarlo.
 // 4. film.json con la duración real: build.mjs convierte con ella los tiempos
 //    de las escenas en ventanas de scroll.
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, statSync, writeFileSync, existsSync } from 'node:fs';
+import { mkdirSync, statSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { FILM } from '../../src/film.mjs';
@@ -27,6 +31,7 @@ const lab = join(proj, 'assets-src/video');
 
 const input = process.argv[2];
 const inspectOnly = process.argv.includes('--inspect');
+const portraitOnly = process.argv.includes('--portrait');
 if (!input || !existsSync(input)) {
   console.error('uso: node tools/video/prepare.mjs <clip.mp4> [--inspect]');
   process.exit(1);
@@ -81,6 +86,56 @@ writeFileSync(join(lab, 'inspeccion.json'), JSON.stringify({ source: src, sceneC
 
 if (inspectOnly) process.exit(0);
 
+// ---- versión vertical (móvil) -------------------------------------------
+// Centro del recorte en función del tiempo: tramos con curva coseno entre los
+// puntos de FILM.portrait.path, limitados a los bordes del original.
+const P = FILM.portrait;
+const cropX = () => {
+  const pts = P.path, maxX = src.width - P.w;
+  const seg = (i) => {
+    const [t0, c0] = pts[i], [t1, c1] = pts[i + 1];
+    return `${c0}+(${c1 - c0})*(0.5-0.5*cos(PI*(t-${t0})/${t1 - t0}))`;
+  };
+  let e = String(pts[pts.length - 1][1]);
+  for (let i = pts.length - 2; i >= 0; i--) e = `if(lt(t,${pts[i + 1][0]}),${seg(i)},${e})`;
+  return `clip((${e})-${P.w / 2},0,${maxX})`;
+};
+const cropF = () => `crop=w=${P.w}:h=${src.height}:x='${cropX()}':y=0`;
+function encodePortrait() {
+  const fpsP = Math.round(src.fps) || 24, gopP = Math.max(2, Math.round(fpsP / 6));
+  const tagP = [...(src.color.space ? ['-colorspace', src.color.space] : []), ...(src.color.primaries ? ['-color_primaries', src.color.primaries] : []),
+    ...(src.color.transfer ? ['-color_trc', src.color.transfer] : []), ...(src.color.range ? ['-color_range', src.color.range] : [])];
+  const mp4 = join(out, 'film-v.mp4'), wbm = join(out, 'film-v.webm');
+  run('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-i', input, '-an', '-vf', cropF(), '-pix_fmt', 'yuv420p',
+    '-c:v', 'libx264', '-profile:v', 'high', '-preset', 'veryslow', '-crf', '17',
+    '-g', String(gopP), '-keyint_min', String(gopP), '-sc_threshold', '0', ...tagP, '-movflags', '+faststart', mp4]);
+  run('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-i', input, '-an', '-vf', cropF(), '-pix_fmt', 'yuv420p',
+    '-c:v', 'libvpx-vp9', '-b:v', '0', '-crf', '26', '-g', String(gopP), '-keyint_min', String(gopP),
+    '-row-mt', '1', '-deadline', 'good', '-cpu-used', '1', ...tagP, wbm]);
+  // Fidelidad frente al mismo recorte del original.
+  const ssimP = (f) => +Number(run('bash', ['-c', `ffmpeg -hide_banner -i "$1" -i "$2" -lavfi "[1:v]$3,settb=1/${fpsP},setpts=N[a];[0:v]settb=1/${fpsP},setpts=N[b];[a][b]ssim" -f null - 2>&1 | grep -o 'All:[0-9.]*' | cut -d: -f2`, '_', f, input, cropF()]).trim()).toFixed(4);
+  // Póster vertical: el mismo primer fotograma, recortado igual que el clip.
+  run('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-i', input, '-vf', cropF(), '-frames:v', '1', '-c:v', 'libwebp', '-quality', '90', '-compression_level', '6', join(out, 'poster-v.webp')]);
+  // Hoja de contactos del recorrido: dónde cae el recorte en cada momento.
+  run('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-i', mp4, '-vf',
+    `fps=2,scale=160:-2,drawtext=text='%{pts\\:hms}':x=4:y=4:fontsize=12:fontcolor=white:box=1:boxcolor=black@0.6,tile=10x2:padding=4:color=white`,
+    '-frames:v', '1', '-q:v', '3', join(lab, 'recorte-movil.jpg')]);
+  const e = probe(mp4);
+  return {
+    w: e.width, h: e.height, media: P.media,
+    mp4: { file: 'film-v.mp4', sizeMB: e.sizeMB, maxKeyGapS: e.maxKeyGapS, ssim: ssimP(mp4) },
+    webm: { file: 'film-v.webm', sizeMB: +(statSync(wbm).size / 1048576).toFixed(2), ssim: ssimP(wbm) },
+  };
+}
+if (portraitOnly) {
+  const metaFile = join(out, 'film.json');
+  const meta = JSON.parse(readFileSync(metaFile, 'utf8'));
+  meta.portrait = encodePortrait();
+  writeFileSync(metaFile, JSON.stringify(meta, null, 2) + '\n');
+  console.log('Vertical:', meta.portrait);
+  process.exit(0);
+}
+
 // Codificación para scrub: un solo archivo para todos los dispositivos.
 // - Resolución de origen, nunca ampliada (un 720p llevado a 1080p pesa más y
 //   no gana detalle) ni reducida para móvil: a pantalla completa un teléfono
@@ -134,8 +189,10 @@ const meta = {
   mp4: { file: 'film.mp4', sizeMB: enc.sizeMB, maxKeyGapS: enc.maxKeyGapS, ssim: ssim(film) },
   webm: { file: 'film.webm', sizeMB: +(statSync(webm).size / 1048576).toFixed(2), ssim: ssim(webm) },
   sceneCuts: cutTimes,
+  portrait: encodePortrait(),
 };
 writeFileSync(join(out, 'film.json'), JSON.stringify(meta, null, 2) + '\n');
 console.log('MP4:', film, mb(film), `GOP máx. ${enc.maxKeyGapS}s`, `SSIM ${meta.mp4.ssim}`);
 console.log('WebM:', webm, mb(webm), `SSIM ${meta.webm.ssim}`);
+console.log('Vertical:', meta.portrait);
 console.log('Ahora: revisar la hoja de contactos, ajustar src/film.mjs y ejecutar node src/build.mjs');

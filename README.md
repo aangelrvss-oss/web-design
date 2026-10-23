@@ -5,7 +5,7 @@ Repositorio de propuestas de rediseño web para negocios locales. Cada web vive 
 | Proyecto | Carpeta | Estado |
 |---|---|---|
 | MRI · Martínez Rojas Instalaciones | `proyectos/mr-instalaciones/` | Terminada · zip de demostración para Netlify |
-| MRI V2 · rediseño cinematográfico | `proyectos/mr-instalaciones-v2/` | V2.1: vídeo del cliente a pantalla completa como secuencia de scroll, titular en Instrument Serif · verificada · la V1 queda intacta |
+| MRI V2 · rediseño cinematográfico | `proyectos/mr-instalaciones-v2/` | V2.2: vídeo del cliente a pantalla completa (versión vertical para móvil) + plano técnico de la V1 recuperado · verificada · la V1 queda intacta |
 | Living Clean Multiservicios | `proyectos/living-clean/` | Construida y verificada · faltan por descargar las 7 imágenes generadas (red bloqueada) |
 | Pro Reforma | `proyectos/pro-reforma/` | Construida y verificada · vista previa en un archivo · reseñas por API pendientes de credenciales |
 

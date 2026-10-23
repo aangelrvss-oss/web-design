@@ -28,5 +28,21 @@
     "sizeMB": 3.79,
     "ssim": 0.9935
   },
-  "sceneCuts": []
+  "sceneCuts": [],
+  "portrait": {
+    "w": 480,
+    "h": 720,
+    "media": "(max-aspect-ratio: 2/3)",
+    "mp4": {
+      "file": "film-v.mp4",
+      "sizeMB": 2.01,
+      "maxKeyGapS": 0.167,
+      "ssim": 0.9935
+    },
+    "webm": {
+      "file": "film-v.webm",
+      "sizeMB": 1.59,
+      "ssim": 0.9931
+    }
+  }
 }

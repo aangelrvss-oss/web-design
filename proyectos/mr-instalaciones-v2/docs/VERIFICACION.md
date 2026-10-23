@@ -1,5 +1,50 @@
 # MRI V2 · verificación
 
+## V2.2 · plano técnico recuperado y vídeo vertical para móvil (23/10/2026)
+
+Chromium 141 headless con Playwright sobre el servidor local con la CSP de producción (contraste y arnés en una instancia sin CSP). Las capturas se han revisado a ojo; las de `docs/capturas/` son de esta pasada (`v2-plano-escritorio.webp`, `v2-plano-movil.webp` y `v2-plano-otros.webp` son nuevas).
+
+### Pruebas y resultados
+
+| Prueba | Herramienta | Resultado |
+|---|---|---|
+| Suite funcional (las 279 de antes + 7 del plano: capas sin dibujar al entrar, capa en curso a mitad con su texto, todas al final, la leyenda marca la capa en curso, aísla, marca y desmarca servicios en el formulario) | `qa/functional.mjs` | **286/286**, incluido el recorrido de teclado completo con el nuevo acto fijado |
+| Los 7 estados pedidos: hero escritorio, hero móvil, primer scroll, plano en escritorio, plano en móvil, transición entre sistemas, final y continuación | `qa/film.mjs` y capturas del acto `#instalacion` | Correctos. Secuencia de vídeo reversible (7,01 s → 3,01 s) en 1440, 1920, 820×1180, 390×844, 360×640 y 844×390; consola limpia |
+| Qué vídeo y qué póster se descargan | Playwright (peticiones) | 390×844, 360×640, 412×915 y 390×664 (con barras): solo `poster-v.webp` + `film-v.webm`. 820×1180, 844×390 y 1440×900: solo `poster.webp` + `film.webm`. Nunca dos clips |
+| Encaje del plano (ningún texto sale de pantalla ni pisa la leyenda o el dibujo, en cada una de sus 9 ventanas) | script de comprobación | 320×568, 360×640, 390×844, 412×915, 820×1180, 844×390, 1024×768, 1280×720, 1440×900 y 1920×1080: sin problemas (320×568 necesitó una variante compacta) |
+| Contraste del hero (con el póster y el clip verticales en móvil) | `qa/hero-contrast.mjs` | 1440×900, 390×844, 360×640 y 412×915: todo el texto ≥ 4,5:1 (titular ≥ 3:1), logotipo e icono ≥ 3:1 |
+| Arnés oficial de Scroll-craft (escritorio, 390×844, movimiento reducido) | `shoot.mjs` | Sin scroll muerto; todos los textos sobre imagen ≥ 4,5:1 en su peor fotograma |
+| Movimiento reducido, sin JS, sin vídeo | `--reduced`, `--nojs`, `--novideo` | Reducido y sin JS: hero sobre el póster (vertical en móvil) y el plano completo y quieto con sus siete notas. Sin vídeo: póster y, a los 9 s, fotogramas fijos |
+
+#### Lighthouse (portada, mismo servidor y máquina)
+
+| Versión | Modo | Rendimiento | Accesibilidad | Buenas prácticas | SEO | FCP | LCP | CLS | Peso |
+|---|---|---|---|---|---|---|---|---|---|
+| V1 | móvil | 95 | 100 | 100 | 100 | 1,8 s | 2,7 s | 0 | 315 KiB |
+| V2.2 | móvil | 90 | 100 | 100 | 100 | 2,3 s | 3,3 s | 0,001 | 2008 KiB |
+| V1 | escritorio | 100 | 100 | 100 | 100 | 0,5 s | 0,7 s | 0 | 315 KiB |
+| V2.2 | escritorio | 100 | 100 | 100 | 100 | 0,5 s | 0,7 s | 0,001 | 4305 KiB |
+
+Con estrangulamiento real (`devtools`), móvil: **V1 96 (LCP 2,2 s) · V2.2 95 (LCP 2,3 s, igual que su FCP)**; la V2.1 daba 91. El peso de la portada en móvil baja de 4275 a 2008 KiB por el clip vertical (1626 KiB en VP9).
+
+### Problemas encontrados y corregidos en la V2.2
+
+| Problema | Cómo se vio | Corrección |
+|---|---|---|
+| Plano de la V1: «Domótica» sola en una segunda fila de la leyenda en escritorio y tableta | Capturas de la V1 y de la primera versión portada | Leyenda como clave en dos columnas (escritorio) o cuatro (tableta) |
+| Plano de la V1 en móvil: leyenda en tira lateral con dos botones y medio visibles; huecos muertos encima y debajo del dibujo; texto separado del dibujo | Capturas 390×844 y 360×640 de la V1 | Dibujo recortado a la casa, leyenda entera debajo y texto justo después |
+| «···· Domótica»: la muestra punteada pegada al título parecía puntos suspensivos | Capturas | Muestra discontinua de trazo largo, en la línea «Capa 07 / 07», no junto al título |
+| En 320×568 los textos del plano salían por abajo (hasta 57 px) | Script de encaje | Variante compacta para pantallas muy bajas en vertical |
+| El motor avisaba de que el plano no se fijaría | Consola en la suite funcional | La versión sin motor forzaba `position: static` mientras el motor se montaba; quitado |
+| Encuadre vertical sobre una pared vacía a 5,5 s | Hoja de contactos del recorte | Recorrido corregido hacia los grupos de bombeo |
+| Sectores en móvil demasiado largos al dejar de ser horizontales | Captura 390 | Pictograma menor y lista de servicios en dos columnas |
+
+### Lo que no se ha podido verificar
+
+- Lo mismo que en la V2.1: H.264 en navegadores reales (aquí se usa el VP9, que comparte recorte, GOP y tiempos), un teléfono real (decodificador de iOS, giro real del dispositivo) y Apache real.
+- **La calidad en móvil sigue limitada por el origen**: el recorte vertical no añade detalle; cada píxel del original sigue ocupando ~3,5 píxeles de pantalla en un teléfono de 390 px. Lo que mejora es el encuadre, el peso y la velocidad de búsqueda.
+
+
 ## V2.1 · hero a pantalla completa (23/10/2026)
 
 Chromium 141 headless con Playwright sobre el servidor local (`tools/dev/router.php`, misma CSP que producción; las mediciones de contraste, que inyectan estilos, en una instancia sin CSP). Todas las capturas se han revisado a ojo; las de `docs/capturas/` son de esta pasada.

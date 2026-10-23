@@ -41,12 +41,13 @@
 |---|---|---|
 | 1 Casa (hero + pico) | `scrub` (`clip-map="travel"`) a sangre + hero que se retira por `--sc-p` + carril propio | 4,2 (V2.0: 4,8) |
 | 2 Necesidades | `flow` + `in` | natural |
-| 3 Habilitaciones | `flow` + `reveal` | natural |
-| 4 Sectores | `pan` | 3,2 |
-| 5 Dudas | `flow` | natural |
-| 6 Presupuesto | `flow` | natural |
+| 3 Plano técnico (V2.2, de la V1) | `pin`: capas SVG trazadas desde `--sc-p`, leyenda sincronizada | 4,8 |
+| 4 Habilitaciones | `flow` + `reveal` | natural |
+| 5 Sectores | `flow` + `in` (V2.1: `pan` 3,2) | natural |
+| 6 Dudas | `flow` | natural |
+| 7 Presupuesto | `flow` | natural |
 
-Seis actos, ~12,0 alturas en escritorio (medido en la V2.1; V2.0: 12,6; V1: 14,0): fuera de la banda 6-7 actos / 13,6-13,8.
+Siete actos, ~15,1 alturas en escritorio (medido en la V2.2; V2.1: 12,0; V2.0: 12,6; V1: 14,0). Dos actos fijados: el vídeo (impacto) y el plano (explicación); el resto, flujo con entradas discretas: fuera de la banda 6-7 actos / 13,6-13,8.
 
 ## Gate de huellas
 

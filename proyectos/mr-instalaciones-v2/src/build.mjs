@@ -70,8 +70,10 @@ const filmFile = join(root, 'assets/film/film.json');
 if (!existsSync(filmFile)) throw new Error('Falta site/assets/film/film.json: ejecuta tools/video/prepare.mjs con el clip.');
 const filmMeta = JSON.parse(readFileSync(filmFile, 'utf8'));
 const hash = (f) => createHash('sha1').update(readFileSync(join(root, 'assets/film', f))).digest('hex').slice(0, 8);
-filmMeta.v = { mp4: hash('film.mp4'), webm: hash('film.webm'), poster: hash('poster.webp') };
-filmMeta.bytes = { mp4: statSync(join(root, 'assets/film/film.mp4')).size, webm: statSync(join(root, 'assets/film/film.webm')).size };
+if (!filmMeta.portrait) throw new Error('Falta la versión vertical en film.json: ejecuta tools/video/prepare.mjs <clip> --portrait.');
+filmMeta.v = { mp4: hash('film.mp4'), webm: hash('film.webm'), poster: hash('poster.webp'), mp4V: hash('film-v.mp4'), webmV: hash('film-v.webm'), posterV: hash('poster-v.webp') };
+const size = (f) => statSync(join(root, 'assets/film', f)).size;
+filmMeta.bytes = { mp4: size('film.mp4'), webm: size('film.webm'), mp4V: size('film-v.mp4'), webmV: size('film-v.webm') };
 
 const pages = [
   ['index.html', home(filmMeta), '/', '1.0'],
@@ -100,4 +102,4 @@ const urls = pages.filter((p) => p[2]).map(([, , path, prio]) => `  <url><loc>${
 writeFileSync(join(root, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`);
 writeFileSync(join(root, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /contacto.php\nDisallow: /gracias/\nDisallow: /envio-no-completado/\n\nSitemap: ${SITE.origin}/sitemap.xml\n`);
 
-console.log(`V2: ${pages.length} páginas en site/ · clip ${filmMeta.width}x${filmMeta.height}, ${filmMeta.duration}s (MP4 ${(filmMeta.bytes.mp4 / 1048576).toFixed(2)} MB, WebM ${(filmMeta.bytes.webm / 1048576).toFixed(2)} MB)`);
+console.log(`V2: ${pages.length} páginas en site/ · clip ${filmMeta.width}x${filmMeta.height}, ${filmMeta.duration}s (MP4 ${(filmMeta.bytes.mp4 / 1048576).toFixed(2)} MB, WebM ${(filmMeta.bytes.webm / 1048576).toFixed(2)} MB) · vertical ${filmMeta.portrait.w}x${filmMeta.portrait.h} (MP4 ${(filmMeta.bytes.mp4V / 1048576).toFixed(2)} MB, WebM ${(filmMeta.bytes.webmV / 1048576).toFixed(2)} MB)`);

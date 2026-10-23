@@ -250,6 +250,11 @@ body.page-home.menu-open .bar:not(.is-solid) .bar__logo .bar__logo-alt { opacity
   object-fit: cover; object-position: var(--fx, 50%) 50%;
 }
 .film__media video { z-index: 1; }
+/* Móvil en vertical: póster y clip llegan ya encuadrados (recorte 2:3 que
+   sigue su propio recorrido, ver src/film.mjs), así que van centrados y sin
+   --fx. La consulta es la misma que eligen el <picture> y film.js. */
+@media (max-aspect-ratio: 2/3) { .film__media .film__poster { object-position: 50% 50%; } }
+.film.film--portrait .film__media video { object-position: 50% 50%; }
 .film__stills { z-index: 1; pointer-events: none; }
 /* Los fotogramas fijos solo existen si hacen falta (clip que no llega o
    versión estática): con display: none el navegador ni los descarga. */
@@ -561,6 +566,197 @@ html:not(.js) .film .film__still[data-still="ventilacion"], .film.film--static .
 .js .house--focus .sys[data-focus] .ln { stroke-dasharray: 1 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1.8s var(--sc-ease-in-out) .25s; }
 .js .sc-in .house--focus .sys[data-focus] .ln { stroke-dashoffset: 0; }
 
+/* --------------------------------------------------------- plano técnico --
+   El pico de la V1 (mismo dibujo y mismas reglas de trazado por capas desde
+   --sc-p), recompuesto: el dibujo ocupa toda la columna derecha a toda
+   altura; a la izquierda, el texto de la capa que se dibuja y debajo la
+   leyenda, que es la clave del plano y marca la capa en curso. */
+.peak {
+  --h-line: #85919A; --h-solid: #323B41; --h-hatch: rgb(160 172 180 / 0.22); --h-dim: #8E99A0;
+  --c-agua: #62AEDB; --c-hot: #F08A7A; --c-saneamiento: #B5A28F; --c-calefaccion: #FF6500;
+  --c-aerotermia: #45C7A0; --c-ventilacion: #A9BDCB; --c-gas: #EDC03A; --c-domotica: #EEF0EE;
+}
+.house--peak .sys[data-sys="agua"],        .lg[data-sys-btn="agua"]        { --a: .100; --b: .190; }
+.house--peak .sys[data-sys="saneamiento"], .lg[data-sys-btn="saneamiento"] { --a: .210; --b: .300; }
+.house--peak .sys[data-sys="calefaccion"], .lg[data-sys-btn="calefaccion"] { --a: .320; --b: .410; }
+.house--peak .sys[data-sys="aerotermia"],  .lg[data-sys-btn="aerotermia"]  { --a: .430; --b: .515; }
+.house--peak .sys[data-sys="ventilacion"], .lg[data-sys-btn="ventilacion"] { --a: .540; --b: .625; }
+.house--peak .sys[data-sys="gas"],         .lg[data-sys-btn="gas"]         { --a: .650; --b: .730; }
+.house--peak .sys[data-sys="domotica"],    .lg[data-sys-btn="domotica"]    { --a: .760; --b: .840; }
+.house--peak .sys {
+  --p: var(--sc-p, 0);
+  --on: clamp(0, min((var(--p) - var(--a)) * 40 + .4, (var(--b) + .06 - var(--p)) * 30), 1);
+  --fin: clamp(0, (var(--p) - .86) * 22, 1);
+  opacity: max(var(--on), calc(.38 + .62 * var(--fin)));
+}
+.house--peak .ln { stroke-dasharray: 1 1; stroke-dashoffset: calc(1 - clamp(0, (var(--p) - var(--a)) / (var(--b) - var(--a)), 1)); }
+.house--peak .nd { opacity: clamp(0, (var(--p) - var(--a)) * 36, 1); }
+.house--peak.is-iso .sys:not(.is-pick) { opacity: .08; }
+.house--peak .sys.is-pick { opacity: 1; }
+.house--peak .sys.is-pick .ln { stroke-dashoffset: 0; }
+.house--peak .sys.is-pick .nd { opacity: 1; }
+
+.peak__stage {
+  display: grid; grid-template-columns: minmax(0, .74fr) minmax(0, 1.72fr); grid-template-rows: minmax(0, 1fr) auto;
+  gap: clamp(1rem, 2.6vh, 1.75rem) clamp(2rem, 4vw, 4.5rem);
+  padding: calc(var(--bar-h) + clamp(1rem, 3vh, 2.25rem)) max(var(--sc-gutter), calc((100vw - var(--sc-maxw)) / 2 + var(--sc-gutter))) clamp(1.25rem, 3.5vh, 2.25rem);
+  background: var(--graphite);
+}
+.peak__draw { grid-column: 2; grid-row: 1 / span 2; min-height: 0; position: relative; }
+.peak__frame { position: absolute; inset: 0; }
+.peak__draw .house { width: 100%; height: 100%; }
+/* Al final, cuando todas las capas están dibujadas, la casa se enciende. */
+.peak__draw::after {
+  content: ""; position: absolute; inset: 12% 16% 16% 20%; pointer-events: none;
+  background: radial-gradient(closest-side, rgb(255 101 0 / .16), transparent 75%);
+  opacity: clamp(0, (var(--sc-p, 0) - .86) * 18, 1);
+}
+.peak__copy { grid-column: 1; grid-row: 1; position: relative; min-height: 0; }
+.pc { position: absolute; left: 0; right: 0; top: 50%; translate: 0 -50%; }
+.pc--intro .d-md { margin: 0 0 1.1rem; max-width: 12ch; }
+.pc__n { display: flex; align-items: center; gap: .7rem; margin: 0; font: 500 .72rem/1.3 var(--sc-font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--sc-ink-soft); }
+.pc__n .sw { width: 30px; height: 4px; }
+.pc__k { margin: .55rem 0 .9rem; font: 400 clamp(2.3rem, 1.5rem + 2.1vw, 3.5rem)/.98 var(--sc-font-display); letter-spacing: -0.016em; }
+.pc__t { margin: 0 0 1.1rem; color: var(--sc-ink-soft); max-width: 40ch; line-height: 1.55; }
+.pc__a { display: inline-flex; align-items: center; gap: .45rem; min-height: 44px; font-weight: 500; text-decoration: none; color: var(--sc-ink);
+  background: linear-gradient(var(--sc-accent), var(--sc-accent)) left calc(100% - 9px) / 100% 1.5px no-repeat; }
+.pc__a .ic { width: 1rem; height: 1rem; transition: transform 160ms var(--sc-ease-out); }
+@media (hover: hover) and (pointer: fine) { .pc__a:hover .ic { transform: translateX(3px); } }
+.pc__end-h { margin: 0 0 1rem; max-width: 12ch; }
+
+/* La leyenda es la clave del plano: muestra de línea y nombre de cada capa.
+   Las capas pendientes van atenuadas, la que se está dibujando se marca con
+   su color (las mismas ventanas que el dibujo, leídas de --sc-p) y pulsar
+   una la aísla y la marca en el formulario (site.js). */
+.peak__legend { grid-column: 1; grid-row: 2; }
+.peak__legend-h { margin: 0 0 .6rem; font: 500 .7rem/1.3 var(--sc-font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--sc-ink-soft); }
+.lgs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .3rem; }
+.lg {
+  --p: var(--sc-p, 0);
+  --now: clamp(0, min((var(--p) - var(--a)) * 40 + .4, (var(--b) + .06 - var(--p)) * 30), 1);
+  --done: clamp(0, (var(--p) - var(--a)) * 30, 1);
+  display: flex; align-items: center; gap: .55rem; width: 100%; min-height: 38px; padding: .3rem .6rem; border-radius: var(--r); text-align: left;
+  color: var(--sc-ink); font: 500 .82rem/1.15 var(--sc-font-text); cursor: pointer;
+  background: transparent; border: 1px solid var(--hair);
+  border-color: color-mix(in oklab, var(--c) calc(var(--now) * 100%), var(--hair));
+  background: color-mix(in oklab, var(--c) calc(var(--now) * 14%), transparent);
+  transition: background-color 140ms var(--sc-ease-out), border-color 140ms var(--sc-ease-out);
+}
+.lg .sw { opacity: calc(.3 + .7 * var(--done)); }
+.lg span { opacity: calc(.62 + .38 * var(--done)); }
+.lg[aria-pressed="true"] { background: rgb(238 237 234 / .12); border-color: var(--sc-ink); }
+.lg[aria-pressed="true"] :is(.sw, span) { opacity: 1; }
+@media (hover: hover) and (pointer: fine) { .lg:hover { border-color: rgb(238 237 234 / .5); } }
+.lg[data-sys-btn="agua"] { --c: var(--c-agua); } .lg[data-sys-btn="saneamiento"] { --c: var(--c-saneamiento); }
+.lg[data-sys-btn="calefaccion"] { --c: var(--c-calefaccion); } .lg[data-sys-btn="aerotermia"] { --c: var(--c-aerotermia); }
+.lg[data-sys-btn="ventilacion"] { --c: var(--c-ventilacion); } .lg[data-sys-btn="gas"] { --c: var(--c-gas); }
+.lg[data-sys-btn="domotica"] { --c: var(--c-domotica); }
+/* Muestras de línea: el mismo color y grosor relativo que en el dibujo. La
+   domótica (cableado de control) es discontinua, con trazos largos para que
+   no se lea como unos puntos suspensivos. */
+.sw { display: inline-block; width: 18px; height: 4px; border-radius: 1px; background: var(--c); flex: none; }
+.sw--agua { --c: var(--c-agua); } .sw--saneamiento { --c: var(--c-saneamiento); height: 6px; }
+.sw--calefaccion { --c: var(--c-calefaccion); } .sw--aerotermia { --c: var(--c-aerotermia); }
+.sw--ventilacion { --c: var(--c-ventilacion); height: 7px; } .sw--gas { --c: var(--c-gas); }
+.sw--domotica { --c: var(--c-domotica); height: 3px; background: repeating-linear-gradient(90deg, var(--c) 0 6px, transparent 6px 9px); }
+.peak__pick { margin: .5rem 0 0; min-height: 1.4em; font-size: .86rem; color: var(--sc-ink-soft); }
+.peak__pick:empty { margin: 0; min-height: 0; }
+.peak__pick a { color: var(--sc-ink); }
+
+/* Móvil y tableta en vertical: dibujo a sangre arriba, recortado a la casa y
+   la bomba de calor (x 195-1135 del dibujo) para que se vea grande; la
+   leyenda pegada debajo, entera y sin desplazamiento lateral; el texto de la
+   capa justo después, siempre en el mismo sitio. */
+@media (max-width: 860px) and (orientation: portrait) {
+  .peak__stage {
+    grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr); align-content: start;
+    gap: .9rem; padding: calc(var(--bar-h) + .5rem) var(--sc-gutter) 1rem;
+  }
+  .peak__draw { grid-column: 1; grid-row: 1; margin-inline: calc(var(--sc-gutter) * -1); }
+  .peak__frame { position: relative; inset: auto; aspect-ratio: 940 / 640; overflow: hidden; }
+  .peak__draw .house { display: block; width: 127.66%; max-width: none; height: auto; margin-left: -20.74%; }
+  .peak__draw::after { inset: 8% 10% 12% 10%; }
+  .peak__legend { grid-column: 1; grid-row: 2; }
+  .peak__legend-h { display: none; }
+  .lgs { display: flex; flex-wrap: wrap; gap: .3rem; }
+  .lg { width: auto; min-height: 34px; padding: .2rem .55rem; gap: .45rem; font-size: .78rem; }
+  .lg .sw { width: 14px; }
+  .peak__pick { font-size: .8rem; }
+  .peak__copy { grid-column: 1; grid-row: 3; }
+  .pc { top: 0; translate: none; }
+  .pc--intro .d-md, .pc__end-h { font-size: clamp(1.75rem, 7.4vw, 2.3rem); margin-bottom: .6rem; max-width: 16ch; }
+  .pc--intro .eyebrow { margin-bottom: .6rem; }
+  .pc__k { font-size: clamp(1.9rem, 8.4vw, 2.6rem); margin: .4rem 0 .5rem; }
+  .pc__t { font-size: .95rem; line-height: 1.5; margin-bottom: .35rem; }
+  .pc .btn { min-height: 48px; }
+}
+@media (max-width: 860px) and (orientation: portrait) and (max-height: 700px) {
+  .peak__stage { gap: .6rem; }
+  .pc__t { font-size: .9rem; line-height: 1.45; }
+  .pc__k { font-size: 1.85rem; }
+}
+@media (min-width: 600px) and (max-width: 860px) and (orientation: portrait) {
+  .peak__stage { gap: 1.25rem; padding-inline: clamp(1.5rem, 5vw, 3rem); }
+  .lgs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .4rem; }
+  .lg { width: 100%; min-height: 40px; font-size: .86rem; }
+  .pc--intro .d-md, .pc__end-h { font-size: clamp(2.2rem, 5vw, 2.9rem); }
+  .pc__k { font-size: clamp(2.4rem, 5.6vw, 3.2rem); }
+  .pc__t { font-size: 1.06rem; max-width: 46ch; }
+}
+@media (max-width: 860px) and (orientation: portrait) and (max-height: 600px) {
+  .peak__stage { gap: .45rem; padding-top: calc(var(--bar-h) + .25rem); }
+  .peak__frame { aspect-ratio: 940 / 560; }
+  .lg { min-height: 30px; padding-block: .1rem; font-size: .74rem; }
+  .pc--intro .d-md, .pc__end-h { font-size: 1.55rem; }
+  .pc__k { font-size: 1.6rem; margin: .25rem 0 .35rem; }
+  .pc__t { font-size: .84rem; line-height: 1.4; }
+  .pc__a { min-height: 40px; }
+}
+/* Pantallas bajas en horizontal: dos columnas compactas, sin leyenda (es un
+   atajo; el formulario tiene sus propias casillas). */
+@media (max-height: 560px) and (orientation: landscape) {
+  .peak__stage { grid-template-rows: minmax(0, 1fr); padding-block: calc(var(--bar-h) + .5rem) .75rem; }
+  .peak__legend { display: none; }
+  .peak__copy { grid-row: 1; }
+  .pc--intro .d-md, .pc__end-h { font-size: 1.6rem; }
+  .pc__k { font-size: 1.8rem; margin: .3rem 0 .4rem; }
+  .pc__t { font-size: .86rem; line-height: 1.4; margin-bottom: .2rem; }
+  .pc--intro .pc__t { display: none; }
+}
+
+/* Sin motor, sin JavaScript o con movimiento reducido: el plano completo,
+   quieto, con las siete notas debajo (la leyenda sigue aislando capas). */
+html:not(.sc-ready) .peak .peak__stage { height: auto; }
+html:not(.sc-ready) .peak { --sc-p: 1; }
+html:not(.js) .peak__legend { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .peak { --sc-p: 1 !important; height: auto !important; }
+  .peak .peak__stage { position: static !important; height: auto !important; }
+  .peak [data-sc-cue] { opacity: 1 !important; transform: none !important; }
+}
+html:not(.sc-ready) .peak__stage { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto; padding-bottom: clamp(3rem, 6vw, 5rem); }
+html:not(.sc-ready) .peak__draw { grid-column: 1; grid-row: 1; height: min(70vh, 46rem); }
+html:not(.sc-ready) .peak__legend { grid-column: 1; grid-row: 2; }
+html:not(.sc-ready) .peak__copy { grid-column: 1; grid-row: 3; display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 2rem 2.5rem; }
+html:not(.sc-ready) .pc { position: static; translate: none; }
+html:not(.sc-ready) .lgs { display: flex; flex-wrap: wrap; }
+html:not(.sc-ready) .lg { width: auto; }
+@media (prefers-reduced-motion: reduce) {
+  .peak .peak__stage { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto; padding-bottom: clamp(3rem, 6vw, 5rem); }
+  .peak .peak__draw { grid-column: 1; grid-row: 1; height: min(70vh, 46rem); }
+  .peak .peak__legend { grid-column: 1; grid-row: 2; }
+  .peak .peak__copy { grid-column: 1; grid-row: 3; display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 2rem 2.5rem; }
+  .peak .pc { position: static; translate: none; }
+  .peak .lgs { display: flex; flex-wrap: wrap; }
+  .peak .lg { width: auto; }
+}
+@media (max-width: 860px) and (orientation: portrait) {
+  html:not(.sc-ready) .peak__draw { height: auto; }
+}
+@media (max-width: 860px) and (orientation: portrait) and (prefers-reduced-motion: reduce) {
+  .peak .peak__draw { height: auto; }
+}
+
 /* ----------------------------------------------------------------- creds -- */
 .creds { padding-block: clamp(4.5rem, 9vw, 9rem); background: var(--paper-2); }
 .creds__grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(2rem, 5vw, 6rem); align-items: start; }
@@ -624,39 +820,43 @@ html:not(.js) .film .film__still[data-still="ventilacion"], .film.film--static .
 @media (max-width: 860px) { .dudas__grid { grid-template-columns: 1fr; } }
 
 /* --------------------------------------------------------------- sectors -- */
-.sect { background: var(--graphite); }
-.sect__stage { display: flex; align-items: center; padding-top: var(--bar-h); background: var(--graphite); color: #EEEDEA; --hair: rgb(238 237 234 / .16); --sc-ink-soft: #A7ACAE; --accent-text: #FF8A3D; }
-.sect__rail { align-items: stretch; gap: 0; padding-inline: var(--sc-gutter); }
-.sect__lead, .sect__item, .sect__note { flex: none; padding: 1.5rem clamp(1.25rem, 2.5vw, 2.5rem); background: var(--graphite); }
-.sect__lead { width: clamp(17rem, 34vw, 32rem); padding-left: 0; display: flex; flex-direction: column; justify-content: center; gap: 1.2rem; }
+/* V2.2: rejilla en el flujo (antes un recorrido horizontal fijado). El plano
+   técnico es la única animación protagonista después del hero; aquí basta
+   una entrada discreta (data-sc-in). */
+.sect { padding-block: clamp(4.5rem, 9vw, 8rem); background: var(--graphite); color: #EEEDEA; --hair: rgb(238 237 234 / .16); --sc-ink-soft: #A7ACAE; --accent-text: #FF8A3D; --focus: #FF6500; }
+.sect__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.sect__lead, .sect__item, .sect__note { padding: 2rem clamp(1.25rem, 2.5vw, 2.5rem) 2.4rem; border-top: 1px solid rgb(238 237 234 / .22); }
+.sect__item, .sect__note { border-left: 1px solid rgb(238 237 234 / .22); }
+.sect__grid > :nth-child(3n + 1) { border-left: 0; padding-left: 0; }
+.sect__lead { display: flex; flex-direction: column; justify-content: flex-start; gap: 1.2rem; border-top: 0; }
 .sect__lead .d-lg { max-width: 8ch; }
 .sect__intro { margin: 0; color: #C9CCCD; max-width: 30ch; font-size: 1.08rem; line-height: 1.5; }
-.sect__item { width: clamp(17rem, 26vw, 24rem); border-left: 1px solid rgb(238 237 234 / .22); }
-.sect__note { width: clamp(17rem, 26vw, 24rem); border-left: 1px solid rgb(238 237 234 / .22); display: flex; flex-direction: column; justify-content: center; gap: 1rem; }
+.sect__grid > :nth-child(-n + 3) { border-top: 0; }
+.sect__note { display: flex; flex-direction: column; justify-content: center; gap: 1rem; }
 .sect__note p { margin: 0; color: #C9CCCD; }
 .sect__note .sect__note-h { font: 400 1.85rem/1.05 var(--sc-font-display); color: #EEEDEA; }
 .sect__note .link-arrow { color: #EEEDEA; }
-.sect__picto svg { width: 100%; max-width: 12rem; height: auto; fill: none; stroke: #C9CCCD; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sect__picto svg { width: 100%; max-width: 10rem; height: auto; fill: none; stroke: #C9CCCD; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .sect__picto .acc, .emp__picto .acc { stroke: var(--sc-accent); stroke-width: 4; }
 .sect__t { margin: 1.25rem 0 .5rem; font: 400 clamp(2.2rem, 1.6rem + 1.7vw, 3.1rem)/.98 var(--sc-font-display); letter-spacing: -0.015em; }
 .sect__p { margin: 0 0 1rem; color: #B9BDBF; }
 .sect__l { list-style: none; margin: 0; padding: 0; font: 450 .86rem/1.4 var(--sc-font-mono); color: #DADCDC; }
 .sect__l li { padding: .4rem 0; border-top: 1px solid rgb(238 237 234 / .14); }
-@media (prefers-reduced-motion: no-preference) {
-  .js .sect__item { --i: 0; --settle: clamp(0, calc((var(--sc-p, 0) * 5 - var(--i)) * 1.4 + .2), 1); opacity: calc(.9 + .1 * var(--settle)); transform: translate3d(0, calc((1 - var(--settle)) * 28px), 0); }
-  .js .sect__item:nth-of-type(1) { --i: 0; } .js .sect__item:nth-of-type(2) { --i: .8; }
-  .js .sect__item:nth-of-type(3) { --i: 1.6; } .js .sect__item:nth-of-type(4) { --i: 2.4; }
+@media (max-width: 1000px) {
+  .sect__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sect__grid > * { border-left: 1px solid rgb(238 237 234 / .22); padding-left: clamp(1.25rem, 2.5vw, 2.5rem); border-top: 1px solid rgb(238 237 234 / .22); }
+  .sect__grid > :nth-child(2n + 1) { border-left: 0; padding-left: 0; }
+  .sect__grid > :nth-child(-n + 2) { border-top: 0; }
 }
-@media (max-width: 760px) {
-  .sect__lead { width: 80vw; }
-  .sect__item, .sect__note { width: 76vw; }
-  .sect__picto svg { max-width: 8.5rem; }
-}
-@media (prefers-reduced-motion: reduce) and (min-width: 900px) {
-  .sect[data-sc-act="pan"] { height: auto !important; }
-  .sect .sect__stage { position: static; height: auto; overflow: visible; padding-block: calc(var(--bar-h) + 3rem) 4rem; }
-  .sect .sect__rail { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 2rem; transform: none !important; }
-  .sect .sect__lead, .sect .sect__item, .sect .sect__note { width: auto; }
+@media (max-width: 640px) {
+  .sect__grid { grid-template-columns: minmax(0, 1fr); }
+  .sect__grid > * { border-left: 0 !important; padding-inline: 0 !important; border-top: 1px solid rgb(238 237 234 / .22); }
+  .sect__grid > :first-child { border-top: 0; padding-top: 0; }
+  .sect__grid > :nth-child(2) { border-top: 1px solid rgb(238 237 234 / .22); }
+  .sect__picto svg { max-width: 5.5rem; }
+  .sect__lead, .sect__item, .sect__note { padding-block: 1.5rem 1.75rem; }
+  .sect__t { margin-top: .75rem; }
+  .sect__l { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 1rem; font-size: .8rem; }
 }
 
 /* ----------------------------------------------------------------- close -- */
@@ -827,4 +1027,3 @@ html:not(.sc-ready) [data-sc-cue]:not(.cap),
 html:not(.sc-ready) [data-sc-in],
 html:not(.sc-ready) [data-sc-stagger] > * { opacity: 1 !important; transform: none !important; }
 html:not(.sc-ready) [data-sc-reveal] { clip-path: none !important; }
-html:not(.sc-ready) .sect__rail { flex-wrap: wrap; }

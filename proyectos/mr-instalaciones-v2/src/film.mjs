@@ -28,6 +28,28 @@ export const FILM = {
   // escenas.
   heroOut: 0.1,
   heroFade: 0.05,
+  // Versión para móvil en vertical: un recorte de 480×720 (2:3) del original,
+  // a su resolución, sin escalar. En un teléfono el 16:9 a pantalla completa
+  // solo deja ver ~1/4 del ancho; este recorte contiene todo lo que se ve,
+  // pesa ~1/3 y decodifica más rápido al buscar. El encuadre sigue un
+  // recorrido de cámara (centro del recorte en píxeles del original, por
+  // segundo del clip), leído fotograma a fotograma con una regla
+  // (assets-src/video/recorte-movil.jpg), con transiciones suaves:
+  // el split, la puerta de la sala técnica, la bomba de calor, un barrido
+  // hacia los grupos de bombeo y el cobre, los difusores y los conductos.
+  // La duración, los fotogramas y el GOP son los del clip completo: el
+  // scroll avanza el vídeo igual en los dos.
+  portrait: {
+    w: 480,
+    // Se usa cuando la ventana es más estrecha que 2:3; si no (tableta,
+    // horizontal), el clip completo.
+    media: '(max-aspect-ratio: 2/3)',
+    path: [
+      [0.0, 650], [1.0, 650], [1.8, 440], [2.4, 700], [3.2, 660], [3.6, 560],
+      [4.0, 500], [4.4, 430], [4.9, 600], [5.3, 780], [5.7, 880], [6.0, 820],
+      [6.4, 660], [7.2, 600], [8.0, 640], [10.1, 640],
+    ],
+  },
   hero: {
     kicker: 'Martínez Rojas Instalaciones · Madrid',
     lede: 'Climatización, aerotermia, ventilación y fontanería, proyectadas e instaladas para funcionar juntas.',

@@ -80,4 +80,47 @@ El CTA principal dice «Pedir presupuesto» y no «Solicitar presupuesto» (la s
 
 Se conservan íntegros los contenidos comerciales de la V1: necesidades → servicios, habilitaciones con sus registros, sectores, preguntas frecuentes, contacto y formulario (mismo `contacto.php`, misma validación). No se ha inventado ninguna cifra, certificación, garantía ni reseña (la V1 no tenía reseñas publicadas y la V2 tampoco).
 
-Se retira de la portada el pico de la V1 (la casa que se dibuja por capas con la leyenda): dos picos competirían, y el encargo pone el vídeo como protagonista. Su función de conversión se mantiene de otra forma: cada escena enlaza a su servicio y cada servicio preselecciona su casilla en el formulario. El dibujo de la V1 sigue en las páginas de servicio.
+V2.0 y V2.1 retiraron de la portada el pico de la V1 (la casa que se dibuja por capas con la leyenda). La V2.2 lo recupera: ver la sección 7.
+
+## 7. V2.2 · el plano técnico y el vídeo en móvil
+
+### Qué había en la V1 y qué se había perdido
+
+La referencia (`mri-portada-preview.html`) es la portada de la V1: comparada con el código de `proyectos/mr-instalaciones/`, el acto `#instalacion` es idéntico (solo cambian los enlaces que reescribe la vista previa). Es un acto `pin` de 5,2 alturas: una sección constructiva de una vivienda (`src/house.mjs`, SVG propio) en la que siete capas (agua, saneamiento, calefacción, aerotermia, ventilación, gas, domótica) se trazan una tras otra con `stroke-dashoffset` calculado desde `--sc-p`, cada una con su texto y el enlace a su servicio; al final la casa se enciende y aparece «Una sola empresa para que todo encaje» con el CTA. La leyenda aísla capas y marca los servicios en el formulario (`site.js`, que la V2 ya compartía sin cambios). La V2 lo había sustituido por las tres escenas del vídeo: se perdieron el dibujo, las siete capas, la leyenda y el traspaso al formulario.
+
+Lo que la V2 hace mejor y se conserva: el hero a pantalla completa con el vídeo, la tipografía, la cabecera superpuesta, el contraste local y la degradación (estático, sin JS, sin vídeo).
+
+### Cómo se conectan
+
+Vídeo (sentir: la casa real) → «¿Qué necesitas resolver?» (elegir) → plano técnico (entender: todos los sistemas, capa a capa) → habilitaciones → sectores → dudas → presupuesto. Es el orden de la V1, con el vídeo delante. Entre los dos actos fijados hay una sección ligera de papel para que no se encadenen 9 pantallas de scroll fijado. El texto final del plano («Una sola empresa para que todo encaje») ya no se repite como antetítulo de las necesidades.
+
+### Jerarquía del movimiento
+
+- Hero: el vídeo (impacto).
+- Plano técnico: la única animación de scroll protagonista después del hero.
+- Necesidades, habilitaciones, sectores: entradas discretas (`data-sc-in`, el barrido de la placa). **Los sectores dejan de ser un recorrido horizontal fijado** (`pan` 3,2) y pasan a una rejilla: con el plano de vuelta, tres actos fijados eran demasiados.
+- Dudas y formulario: quietos.
+
+No se ha añadido ningún efecto nuevo ni otro motor: el plano usa las mismas reglas CSS de la V1 sobre el `--sc-p` de Scroll-craft.
+
+### La composición del plano
+
+- **Escritorio**: el dibujo ocupa toda la columna derecha a toda altura, sin la leyenda debajo (medido en 1440×900, la casa pasa de 499×375 px en la V1 a 548×412 px; el dibujo completo, con la acometida y el saneamiento hasta la calle, mide ~900 px de ancho). A la izquierda, el texto de la capa y, debajo, la leyenda como clave del plano en dos columnas (en la V1 era una fila que dejaba «Domótica» sola en una segunda línea).
+- **La leyenda acompaña al dibujo**: las capas pendientes van atenuadas, la que se está dibujando se marca con su color (mismas ventanas que el trazado) y las ya dibujadas quedan plenas. Así la explicación y el dibujo van sincronizados también en la leyenda.
+- **Cada texto dice qué capa es** («Capa 03 / 07» con la muestra de línea) y el nombre va en la serifa. En la V1 la muestra punteada de la domótica iba pegada al título y se leía como unos puntos suspensivos («···· Domótica»); ahora la muestra es discontinua y va en la línea de la capa, no junto al título.
+- **Móvil en vertical**: el dibujo a sangre arriba, recortado a la casa y la bomba de calor (x 195–1135 del dibujo; en 390×844 la casa pasa de 276×207 px en la V1 a 304×228 px); la leyenda justo debajo, entera, en tres filas sin desplazamiento lateral (en la V1 era una tira que solo mostraba dos botones y medio, y la capa en curso solía quedar fuera); el texto de la capa inmediatamente después, siempre en el mismo sitio. Sin huecos verticales entre dibujo, leyenda y texto.
+- **Tableta en vertical**: leyenda en cuatro columnas y textos más grandes. **Móvil en horizontal**: dos columnas compactas sin leyenda (es un atajo; el formulario tiene sus casillas). **Pantallas muy bajas** (320×568): versión compacta comprobada.
+- **Movimiento reducido, sin JS o sin motor**: el plano completo, quieto, con las siete notas debajo; la leyenda sigue aislando capas (con JS).
+
+### El vídeo en móvil
+
+Diagnóstico: el original es 1280×720. A pantalla completa en un teléfono de 390×844 (DPR 3) solo se ve una franja de 333 px del ancho y cada píxel del original ocupa 3,5 píxeles de pantalla; en 360×640, 2,7. En escritorio 1440×900 es 1,25 (2,5 en pantallas Retina). La blandura del móvil es el límite de la fuente, no del CSS (no hay filtros ni escalados añadidos).
+
+No se puede recuperar detalle que no existe, así que la variante vertical no lo intenta: es un **recorte de 480×720 del original a su resolución** (2:3, sin escalar) que contiene todo lo que el teléfono muestra. Lo que sí gana:
+
+- **Encuadre dirigido**: el recorte sigue un recorrido de cámara leído fotograma a fotograma (el split y su caudal, la puerta de la sala técnica, la bomba de calor, un barrido hacia los grupos de bombeo y el cobre, los difusores del pasillo y los conductos), con transiciones suaves. Antes eran tres puntos focales fijos.
+- **Peso**: 1,6 MB (VP9) / 2,0 MB (H.264) en vez de 3,8 / 5,1 MB; la portada en móvil pasa de ~4,2 MiB a ~2,0 MiB.
+- **Búsquedas más rápidas** al recorrer el vídeo (un 37 % de los píxeles por fotograma), con el mismo GOP de 1/6 s.
+- **Misma relación scroll–vídeo**: mismos fotogramas, misma duración, mismos tiempos de escena.
+
+Se carga una sola versión: `film.js` decide antes de que el motor pida el clip (vertical si la ventana es más estrecha que 2:3, es decir, teléfonos en vertical incluso con las barras del navegador; completa en tableta, horizontal y escritorio) y el `<picture>` del póster usa la misma consulta, con su precarga condicionada. Si el teléfono gira después, no se descarga otro clip: la secuencia pasa a los fotogramas fijos a resolución completa mientras dure el giro.
