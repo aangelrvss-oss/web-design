@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Propuesta AVS-2026-MRI01 · Nueva web MR Instalaciones</title>
+<style>
+@font-face { font-family: "Barlow"; src: url("fonts/barlow-latin-300-normal.woff2") format("woff2"); font-weight: 300; }
+@font-face { font-family: "Barlow"; src: url("fonts/barlow-latin-400-normal.woff2") format("woff2"); font-weight: 400; }
+@font-face { font-family: "Barlow"; src: url("fonts/barlow-latin-500-normal.woff2") format("woff2"); font-weight: 500; }
+@font-face { font-family: "Barlow"; src: url("fonts/barlow-latin-600-normal.woff2") format("woff2"); font-weight: 600; }
+@font-face { font-family: "Plex"; src: url("fonts/ibm-plex-mono-latin-400-normal.woff2") format("woff2"); font-weight: 400; }
+@font-face { font-family: "Plex"; src: url("fonts/ibm-plex-mono-latin-500-normal.woff2") format("woff2"); font-weight: 500; }
+@page { size: A4; margin: 0; }
+:root { --navy: #1E3A8A; --blue: #2F5BD3; --ink: #111827; --soft: #4B5563; --mute: #6B7280; --line: #E5E7EB; --tint: #F4F5F9; --pale: #E4EAF9; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font: 400 9.6pt/1.5 "Barlow", sans-serif; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.page { width: 210mm; height: 297mm; padding: 15mm 20mm 0; position: relative; overflow: hidden; page-break-after: always; }
+.page:last-child { page-break-after: auto; }
+.top { display: flex; justify-content: space-between; align-items: center; padding-bottom: 5mm; border-bottom: .6pt solid var(--line); margin-bottom: 9mm; }
+.top img { height: 11mm; }
+.mono { font-family: "Plex", monospace; text-transform: uppercase; letter-spacing: .14em; }
+.top .mono { font-size: 6.4pt; color: var(--mute); }
+.foot { position: absolute; left: 20mm; right: 20mm; bottom: 9mm; display: flex; justify-content: space-between; padding-top: 3mm; border-top: .6pt solid var(--line); font-size: 6.6pt; color: var(--mute); }
+.kicker { font-family: "Plex", monospace; font-size: 6.4pt; letter-spacing: .14em; text-transform: uppercase; color: var(--blue); margin: 0 0 4mm; }
+h1 { margin: 0; font-weight: 400; font-size: 30pt; line-height: 1.12; letter-spacing: -.01em; }
+h1 span { color: var(--navy); display: block; }
+.sub { margin: 4mm 0 8mm; color: var(--mute); font-size: 10.5pt; }
+h2 { display: flex; align-items: baseline; gap: 5mm; margin: 0 0 4mm; font-weight: 500; font-size: 14pt; }
+h2 .n { font-family: "Plex", monospace; font-size: 6.4pt; color: var(--blue); letter-spacing: .1em; }
+p { margin: 0 0 3mm; }
+.lead { color: var(--soft); font-size: 10pt; max-width: 150mm; }
+/* portada */
+.mock { position: relative; height: 92mm; margin: 0 0 9mm; }
+.mock__d { position: absolute; left: 0; top: 0; width: 150mm; border-radius: 2.4mm 2.4mm 0 0; overflow: hidden; box-shadow: 0 6mm 14mm -6mm rgb(17 24 39 / .45); background: #fff; }
+.mock__bar { height: 5mm; background: #EEF0F4; display: flex; align-items: center; gap: 1.2mm; padding: 0 3mm; }
+.mock__bar i { width: 1.6mm; height: 1.6mm; border-radius: 50%; background: #CBD0D8; display: block; }
+.mock__bar span { margin-left: 3mm; font-family: "Plex", monospace; font-size: 5.6pt; color: var(--mute); background: #fff; padding: .4mm 3mm; border-radius: 1mm; }
+.mock__d img { display: block; width: 100%; }
+.mock__m { position: absolute; right: 0; top: 10mm; width: 40mm; border: 1.6mm solid #111827; border-radius: 5mm; overflow: hidden; box-shadow: 0 6mm 14mm -6mm rgb(17 24 39 / .5); }
+.mock__m img { display: block; width: 100%; }
+.parties { display: grid; grid-template-columns: 1fr 1fr; gap: 10mm; margin-bottom: 8mm; }
+.parties .mono { font-size: 6.4pt; color: var(--blue); margin: 0 0 2.5mm; }
+.parties p { margin: 0; line-height: 1.55; font-size: 8.6pt; color: var(--soft); }
+.parties strong { color: var(--ink); font-weight: 500; font-size: 9.6pt; }
+.facts { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--navy); color: #fff; }
+.facts div { padding: 4mm 5mm; border-right: .6pt solid rgb(255 255 255 / .2); }
+.facts div:last-child { border-right: 0; }
+.facts .mono { font-size: 5.8pt; color: #AFC1EE; margin-bottom: 1.6mm; display: block; }
+.facts b { font-weight: 500; font-size: 11pt; }
+/* resumen */
+.trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; margin: 5mm 0 9mm; }
+.trio div { background: var(--tint); border-top: .9pt solid var(--navy); padding: 4mm; }
+.trio .mono { font-size: 5.8pt; color: var(--mute); display: block; margin-bottom: 2mm; }
+.trio b { font-weight: 500; font-size: 9.4pt; }
+.scope { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm 9mm; }
+.scope h3 { margin: 0 0 1.6mm; font-weight: 500; font-size: 9.8pt; display: flex; gap: 2.5mm; align-items: baseline; padding-top: 2.5mm; border-top: .6pt solid var(--line); }
+.scope h3 .mono { font-size: 5.8pt; color: var(--blue); }
+.scope ul { margin: 0; padding: 0; list-style: none; }
+.scope li { position: relative; padding-left: 4mm; font-size: 8.3pt; color: var(--soft); line-height: 1.45; margin-bottom: 1mm; }
+.scope li::before { content: ""; position: absolute; left: 0; top: 1.5mm; width: 1.5mm; height: 1.5mm; background: var(--blue); }
+/* resultados */
+.cmp { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-bottom: 4mm; }
+.cmp th { font-family: "Plex", monospace; font-weight: 400; font-size: 5.8pt; letter-spacing: .12em; text-transform: uppercase; color: var(--mute); text-align: left; padding: 0 0 2mm; border-bottom: .6pt solid var(--ink); }
+.cmp td { padding: 2.3mm 3mm 2.3mm 0; border-bottom: .6pt solid var(--line); vertical-align: top; }
+.cmp td:first-child { font-weight: 500; width: 30%; }
+.cmp td:nth-child(2) { color: var(--mute); width: 32%; }
+.cmp td:nth-child(3) { color: var(--navy); font-weight: 500; }
+.shots { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; margin: 2mm 0 8mm; }
+.shots figure { margin: 0; }
+.shots img { width: 100%; display: block; border: .6pt solid var(--line); }
+.shots figcaption { font-size: 6.8pt; color: var(--mute); margin-top: 1.6mm; }
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; }
+.cards div { background: var(--tint); border-top: .9pt solid var(--navy); padding: 4mm; min-height: 25mm; }
+.cards b { display: block; font-weight: 500; font-size: 9pt; margin-bottom: 1.6mm; }
+.cards span { font-size: 7.8pt; color: var(--soft); line-height: 1.45; display: block; }
+/* presupuesto */
+.budget { width: 100%; border-collapse: collapse; margin: 3mm 0 0; }
+.budget th { font-family: "Plex", monospace; font-weight: 400; font-size: 5.8pt; letter-spacing: .12em; text-transform: uppercase; color: var(--mute); text-align: left; padding: 0 0 2mm; border-bottom: .6pt solid var(--ink); }
+.budget th:last-child, .budget td:last-child { text-align: right; }
+.budget td { padding: 3.2mm 0; border-bottom: .6pt solid var(--line); vertical-align: top; }
+.budget td.n { font-family: "Plex", monospace; font-size: 6.4pt; color: var(--blue); width: 9mm; padding-top: 3.6mm; }
+.budget b { font-weight: 500; font-size: 9.2pt; display: block; }
+.budget small { color: var(--mute); font-size: 7.4pt; }
+.budget td:last-child { font-weight: 500; white-space: nowrap; }
+.totals { width: 86mm; margin: 6mm 0 0 auto; font-size: 8.8pt; }
+.totals div { display: flex; justify-content: space-between; padding: 2mm 0; border-bottom: .6pt solid var(--line); }
+.totals .grand { background: var(--navy); color: #fff; padding: 4mm 5mm; margin-top: 3mm; border: 0; font-size: 11pt; font-weight: 500; }
+.note { width: 86mm; margin: 4mm 0 0 auto; background: var(--pale); border-left: .9pt solid var(--navy); padding: 3mm 4mm; font-size: 7.4pt; color: var(--soft); }
+/* condiciones */
+.cond { width: 100%; border-collapse: collapse; font-size: 8.4pt; margin-bottom: 8mm; }
+.cond td { padding: 2.6mm 0; border-bottom: .6pt solid var(--line); vertical-align: top; }
+.cond td:first-child { width: 36mm; font-weight: 500; }
+.cond td:last-child { color: var(--soft); }
+.cond tr:first-child td { border-top: .6pt solid var(--ink); }
+.opts { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; margin-bottom: 8mm; }
+.opts div { border: .6pt solid var(--line); padding: 4mm 5mm; }
+.opts b { display: block; font-weight: 500; font-size: 9pt; }
+.opts em { display: block; font-style: normal; color: var(--navy); font-size: 11pt; font-weight: 500; margin: 1.4mm 0 1.6mm; }
+.opts span { font-size: 7.6pt; color: var(--soft); line-height: 1.45; display: block; }
+.sign { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; margin-top: 3mm; }
+.sign div { border: .6pt solid var(--line); padding: 4mm 5mm 5mm; }
+.sign .mono { font-size: 5.8pt; color: var(--blue); display: block; margin-bottom: 1.6mm; }
+.sign b { font-weight: 500; font-size: 9pt; }
+.sign i { display: block; font-style: normal; border-bottom: .6pt solid var(--ink); height: 11mm; margin-top: 2mm; }
+.sign small { font-size: 6.6pt; color: var(--mute); }
+</style>
+</head>
+<body>
+
+<!-- 1 · Portada -->
+<section class="page">
+  <div class="top"><img src="img/avs-media-logo.png" alt="AVS Media"><span class="mono">Propuesta comercial · Ref. AVS-2026-MRI01</span></div>
+  <p class="kicker">Rediseño web corporativo</p>
+  <h1>Nueva web<span>MR Instalaciones</span></h1>
+  <p class="sub">Diseño, desarrollo y puesta en marcha de www.mrinstalaciones.com</p>
+  <div class="mock">
+    <div class="mock__d"><div class="mock__bar"><i></i><i></i><i></i><span>https://www.mrinstalaciones.com</span></div><img src="img/mri-v2-escritorio.jpg" alt="Portada de la nueva web en ordenador"></div>
+    <div class="mock__m"><img src="img/mri-v2-movil.jpg" alt="Portada de la nueva web en el móvil"></div>
+  </div>
+  <div class="parties">
+    <div>
+      <p class="mono">Cliente</p>
+      <p><strong>Martínez Rojas Instalaciones, S.L.</strong><br>CIF B87145165<br>C/ Fundición 4 Bis, Nave 50<br>28522 Rivas-Vaciamadrid (Madrid)<br>A la atención de Antonio</p>
+    </div>
+    <div>
+      <p class="mono">Proveedor</p>
+      <p><strong>AVS Media</strong><br>NIF 51179532R<br>averjano@avsmediaes.com<br>684 30 78 72</p>
+    </div>
+  </div>
+  <div class="facts">
+    <div><span class="mono">Fecha</span><b>27 oct. 2026</b></div>
+    <div><span class="mono">Validez</span><b>30 días</b></div>
+    <div><span class="mono">Estado</span><b>Propuesta</b></div>
+    <div><span class="mono">Importe</span><b>850 € + IVA</b></div>
+  </div>
+  <div class="foot"><span>AVS Media · averjano@avsmediaes.com · 684 30 78 72</span><span>1/5</span></div>
+</section>
+
+<!-- 2 · Resumen y alcance -->
+<section class="page">
+  <div class="top"><img src="img/avs-media-logo.png" alt="AVS Media"><span class="mono">Nueva web · MR Instalaciones</span></div>
+  <h2><span class="n">01</span>Resumen del proyecto</h2>
+  <p class="lead">La web actual de MRI no permite pedir presupuesto (el único formulario es el de «Trabaja con nosotros»), el teléfono no se puede pulsar desde el móvil y las habilitaciones, que son su mejor argumento, están guardadas como PDF en una página aparte. Proponemos una web nueva, diseñada a medida, que explique cada instalación, muestre las habilitaciones con sus registros y convierta las visitas en solicitudes de presupuesto. La web está diseñada y se puede revisar ya en una versión de prueba.</p>
+  <div class="trio">
+    <div><span class="mono">Público</span><b>Hogares, comercios, industria y obra nueva</b></div>
+    <div><span class="mono">Objetivo</span><b>Confianza y solicitudes de presupuesto</b></div>
+    <div><span class="mono">Estado</span><b>Diseño terminado, en versión de prueba</b></div>
+  </div>
+  <h2><span class="n">02</span>Alcance del trabajo</h2>
+  <div class="scope">
+    <div><h3><span class="mono">01</span>Diseño a medida</h3><ul><li>Diseño propio con la identidad de MRI: logotipo, colores y tipografía.</li><li>Portada con vídeo que avanza con el scroll y un plano con todas las instalaciones de una casa.</li><li>Adaptado a móvil, tableta y ordenador. Página 404 propia.</li></ul></div>
+    <div><h3><span class="mono">02</span>Estructura y contenidos</h3><ul><li>Portada, una página por servicio (fontanería, climatización, aerotermia, gas, ventilación y domótica), empresas y obra nueva, certificaciones, contacto y trabaja con nosotros.</li><li>Servicios ordenados por lo que necesita el cliente («Estoy reformando el baño…»).</li><li>Revisión de textos con enfoque profesional.</li></ul></div>
+    <div><h3><span class="mono">03</span>Habilitaciones a la vista</h3><ul><li>RITE (instaladora y mantenedora), gas categoría A, gases fluorados y REA, con su número de registro.</li><li>Enlace a cada documento con su código de verificación de la Comunidad de Madrid.</li></ul></div>
+    <div><h3><span class="mono">04</span>Formulario y contacto</h3><ul><li>Formulario de presupuesto con validación y protección antispam; llega a info@mrinstalaciones.com.</li><li>Teléfono que se pulsa para llamar en cabecera, portada y formulario.</li><li>Dirección, horario y correo integrados en el diseño.</li></ul></div>
+    <div><h3><span class="mono">05</span>Posicionamiento en Google (SEO)</h3><ul><li>Títulos, descripciones, encabezados y textos alternativos.</li><li>Datos estructurados de empresa local con dirección, teléfono y horario.</li><li>Mapa del sitio y redirección de las direcciones antiguas.</li></ul></div>
+    <div><h3><span class="mono">06</span>Rendimiento</h3><ul><li>Sin WordPress ni plugins: web estática, rápida y segura.</li><li>Imágenes optimizadas y tipografías alojadas en el propio servidor.</li><li>Sin cookies de terceros.</li></ul></div>
+    <div><h3><span class="mono">07</span>Accesibilidad</h3><ul><li>Navegación completa con teclado.</li><li>Contraste y textos alternativos revisados.</li><li>Respeta la preferencia de reducir el movimiento.</li></ul></div>
+    <div><h3><span class="mono">08</span>Legal y puesta en marcha</h3><ul><li>Aviso legal y política de privacidad adaptados al formulario.</li><li>Banda Kit Digital conservada.</li><li>Copia de seguridad de la web actual y publicación en su alojamiento.</li></ul></div>
+  </div>
+  <div class="foot"><span>AVS Media · averjano@avsmediaes.com · 684 30 78 72</span><span>2/5</span></div>
+</section>
+
+<!-- 3 · Qué cambia y entregables -->
+<section class="page">
+  <div class="top"><img src="img/avs-media-logo.png" alt="AVS Media"><span class="mono">Nueva web · MR Instalaciones</span></div>
+  <h2><span class="n">03</span>Qué cambia</h2>
+  <table class="cmp">
+    <thead><tr><th>Aspecto</th><th>Web actual</th><th>Nueva web</th></tr></thead>
+    <tbody>
+      <tr><td>Pedir presupuesto</td><td>No hay formulario de presupuesto</td><td>Formulario en la portada y en cada servicio</td></tr>
+      <tr><td>Llamar desde el móvil</td><td>El teléfono no se puede pulsar</td><td>Un toque para llamar desde cualquier pantalla</td></tr>
+      <tr><td>Habilitaciones</td><td>PDF sin explicar en una página aparte</td><td>Explicadas, con su registro y código de verificación</td></tr>
+      <tr><td>Servicios</td><td>Sin página propia por servicio</td><td>Seis páginas, una por instalación</td></tr>
+      <tr><td>Tecnología</td><td>WordPress con plantilla de 2020</td><td>Web estática a medida, sin plugins</td></tr>
+    </tbody>
+  </table>
+  <div class="shots">
+    <figure><img src="img/mri-v2-servicios.jpg" alt="Sección de servicios"><figcaption>Servicios ordenados por lo que necesita el cliente.</figcaption></figure>
+    <figure><img src="img/mri-v2-habilitaciones.jpg" alt="Sección de habilitaciones"><figcaption>Habilitaciones con su número de registro, comprobables.</figcaption></figure>
+  </div>
+  <h2><span class="n">04</span>Entregables</h2>
+  <div class="cards">
+    <div><b>Web publicada</b><span>www.mrinstalaciones.com funcionando en el alojamiento actual, sustituyendo a WordPress.</span></div>
+    <div><b>Versión de prueba</b><span>Enlace privado, fuera de Google, para revisar la web antes de publicarla.</span></div>
+    <div><b>Código fuente</b><span>Todo el código y su historial de cambios, y copia completa en un archivo comprimido.</span></div>
+    <div><b>Documentación técnica</b><span>Guía de publicación, configuración del correo del formulario y mantenimiento.</span></div>
+    <div><b>Formulario operativo</b><span>Envío real de las solicitudes a info@mrinstalaciones.com, probado antes de publicar.</span></div>
+    <div><b>Página 404 y textos legales</b><span>Página de error propia, aviso legal y política de privacidad.</span></div>
+  </div>
+  <div class="foot"><span>AVS Media · averjano@avsmediaes.com · 684 30 78 72</span><span>3/5</span></div>
+</section>
+
+<!-- 4 · Presupuesto -->
+<section class="page">
+  <div class="top"><img src="img/avs-media-logo.png" alt="AVS Media"><span class="mono">Nueva web · MR Instalaciones</span></div>
+  <h2><span class="n">05</span>Presupuesto</h2>
+  <p class="lead">Desglose del trabajo incluido en la propuesta.</p>
+  <table class="budget">
+    <thead><tr><th></th><th>Concepto</th><th>Importe</th></tr></thead>
+    <tbody>
+      <tr><td class="n">01</td><td><b>Diseño a medida y adaptación a todos los dispositivos</b><small>Identidad visual, portada con vídeo y plano de instalaciones, maquetación responsive y página 404</small></td><td>250,00 €</td></tr>
+      <tr><td class="n">02</td><td><b>Estructura y contenidos</b><small>Portada, seis páginas de servicio, empresas y obra nueva, certificaciones y revisión de textos</small></td><td>150,00 €</td></tr>
+      <tr><td class="n">03</td><td><b>Formulario de presupuesto y contacto</b><small>Validación, antispam, envío a info@mrinstalaciones.com y teléfono pulsable</small></td><td>100,00 €</td></tr>
+      <tr><td class="n">04</td><td><b>SEO técnico local</b><small>Metadatos, datos estructurados de empresa local, mapa del sitio y redirecciones</small></td><td>100,00 €</td></tr>
+      <tr><td class="n">05</td><td><b>Rendimiento y accesibilidad</b><small>Web sin WordPress, imágenes y fuentes optimizadas, navegación con teclado</small></td><td>100,00 €</td></tr>
+      <tr><td class="n">06</td><td><b>Textos legales</b><small>Aviso legal y política de privacidad adaptados al formulario</small></td><td>50,00 €</td></tr>
+      <tr><td class="n">07</td><td><b>Publicación y migración</b><small>Copia de seguridad de la web actual, publicación, prueba del formulario y documentación</small></td><td>100,00 €</td></tr>
+    </tbody>
+  </table>
+  <div class="totals">
+    <div><span>Base imponible</span><span>850,00 €</span></div>
+    <div><span>IVA (21 %)</span><span>178,50 €</span></div>
+    <div class="grand"><span>Total</span><span>1.028,50 €</span></div>
+  </div>
+  <div class="note">Importe total del proyecto: 850 € + IVA. Incluye todo lo descrito en el alcance y la publicación de la web.</div>
+  <div class="foot"><span>AVS Media · averjano@avsmediaes.com · 684 30 78 72</span><span>4/5</span></div>
+</section>
+
+<!-- 5 · Condiciones y aceptación -->
+<section class="page">
+  <div class="top"><img src="img/avs-media-logo.png" alt="AVS Media"><span class="mono">Nueva web · MR Instalaciones</span></div>
+  <h2><span class="n">06</span>Condiciones</h2>
+  <table class="cond">
+    <tr><td>Validez</td><td>30 días desde la fecha de emisión (27 de octubre de 2026).</td></tr>
+    <tr><td>Forma de pago</td><td>Pago único a la aceptación, por transferencia bancaria. Los datos bancarios figurarán en la factura.</td></tr>
+    <tr><td>Entrega</td><td>La web está diseñada y disponible en versión de prueba. Se publica tras la aceptación, una vez recibidos el logotipo original y el acceso al alojamiento.</td></tr>
+    <tr><td>Garantía</td><td>30 días desde la publicación para corregir errores y hacer ajustes menores, sin coste.</td></tr>
+    <tr><td>Propiedad</td><td>Tras el pago, el diseño, el código y los contenidos de la web pertenecen a Martínez Rojas Instalaciones, S.L. Las fotografías, documentos y textos aportados por el cliente siguen siendo suyos.</td></tr>
+    <tr><td>No incluido</td><td>Alojamiento y dominio; cuentas y configuración del correo; renovación de certificados o habilitaciones; nuevas secciones, rediseños o redacción de contenidos nuevos; fotografía profesional.</td></tr>
+  </table>
+  <h2><span class="n">07</span>Servicios posteriores (opcionales)</h2>
+  <div class="opts">
+    <div><b>Cambios y ampliaciones</b><em>35 €/hora + IVA</em><span>Nuevas secciones, cambios de diseño o funciones adicionales. Siempre con presupuesto por escrito antes de empezar.</span></div>
+    <div><b>Mantenimiento mensual</b><em>40 €/mes + IVA</em><span>Hasta 1 hora de cambios al mes, revisión periódica del formulario y soporte con el alojamiento. Sin permanencia.</span></div>
+  </div>
+  <h2><span class="n">08</span>Aceptación</h2>
+  <p class="lead">La firma de este documento supone la aceptación de la propuesta y de sus condiciones.</p>
+  <div class="sign">
+    <div><span class="mono">Por el cliente</span><b>Martínez Rojas Instalaciones, S.L.</b><i></i><small>Nombre y DNI</small><i></i><small>Firma y fecha</small></div>
+    <div><span class="mono">Por el proveedor</span><b>AVS Media · NIF 51179532R</b><i></i><small>Nombre</small><i></i><small>Firma y fecha</small></div>
+  </div>
+  <div class="foot"><span>AVS Media · averjano@avsmediaes.com · 684 30 78 72</span><span>5/5</span></div>
+</section>
+</body>
+</html>
