@@ -1,5 +1,15 @@
 # MRI V2 · verificación
 
+## Botón de WhatsApp (28/10/2026)
+
+| Prueba | Resultado |
+|---|---|
+| Suite funcional (`qa/functional.mjs`) | **290/290**: las 286 anteriores (incluido el recorrido de teclado completo, ahora con el botón) y 4 nuevas: botón en las 16 páginas al +34 667 36 98 38 en pestaña nueva; mensaje con el servicio en su página; 56 px a 16 px de la esquina; se aparta sobre el formulario, sobre la franja del Kit Digital y con el menú abierto |
+| Capturas 1440×900, 390×844 y 360×640 (hero, secuencia, plano técnico, formulario, pie) y página de servicio | El botón no tapa el CTA del hero, el carril de escenas (ahora termina antes de la esquina), el indicador de scroll (subido) ni el plano; desaparece sobre el formulario y sobre los logotipos del Kit Digital |
+| Secuencia de vídeo (`qa/film.mjs`, escritorio y móvil) | Reversible, consola limpia |
+| Contraste | Icono blanco sobre verde #1DA851: 3,1:1 (gráfico, mínimo 3:1); el botón contra el grafito 5,9:1 |
+
+
 ## V2.2 · plano técnico recuperado y vídeo vertical para móvil (23/10/2026)
 
 Chromium 141 headless con Playwright sobre el servidor local con la CSP de producción (contraste y arnés en una instancia sin CSP). Las capturas se han revisado a ojo; las de `docs/capturas/` son de esta pasada (`v2-plano-escritorio.webp`, `v2-plano-movil.webp` y `v2-plano-otros.webp` son nuevas).

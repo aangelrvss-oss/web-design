@@ -819,6 +819,35 @@ html:not(.sc-ready) .lg { width: auto; }
 .faq__i p { margin: 0 0 1.3rem; max-width: 60ch; color: var(--sc-ink-soft); line-height: 1.6; }
 @media (max-width: 860px) { .dudas__grid { grid-template-columns: 1fr; } }
 
+/* -------------------------------------------------------------- whatsapp --
+   Botón flotante abajo a la derecha, en todas las páginas. Verde de WhatsApp
+   oscurecido lo justo para que el icono blanco llegue a 3:1. Se aparta con el
+   menú móvil abierto y mientras el formulario está en pantalla (wa.js). La
+   secuencia de la portada le deja sitio: el carril de escenas y el indicador
+   de scroll terminan antes de la esquina. */
+.wa {
+  --wa-s: 56px;
+  position: fixed; z-index: 45; right: max(1rem, env(safe-area-inset-right, 0px)); bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  width: var(--wa-s); height: var(--wa-s); border-radius: 50%; display: grid; place-items: center;
+  background: #1DA851; color: #fff; text-decoration: none;
+  box-shadow: 0 8px 22px rgb(16 13 10 / .26), 0 1px 3px rgb(16 13 10 / .22);
+  transition: opacity 200ms var(--sc-ease-out), transform 200ms var(--sc-ease-out), background-color 160ms var(--sc-ease-out), visibility 0s linear 0s;
+}
+.wa__ic { width: 31px; height: 31px; }
+.wa__b { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; }
+.wa__h { fill: currentColor; }
+.wa:focus-visible { outline: 3px solid #FF6500; outline-offset: 3px; }
+@media (hover: hover) and (pointer: fine) { .wa:hover { background: #168F44; } }
+.wa.wa--off, body.menu-open .wa {
+  opacity: 0; visibility: hidden; transform: translate3d(0, 12px, 0) scale(.92); pointer-events: none;
+  transition: opacity 200ms var(--sc-ease-out), transform 200ms var(--sc-ease-out), visibility 0s linear 200ms;
+}
+@media (max-width: 380px) { .wa { --wa-s: 52px; right: .75rem; bottom: calc(.75rem + env(safe-area-inset-bottom, 0px)); } .wa__ic { width: 28px; height: 28px; } }
+@media (prefers-reduced-motion: reduce) { .wa, .wa.wa--off { transition: none; transform: none; } }
+@media print { .wa { display: none; } }
+.film__rail { right: calc(var(--edge) + 4.5rem); }
+.hero__scroll { bottom: calc(var(--base) + 4.75rem); }
+
 /* --------------------------------------------------------------- sectors -- */
 /* V2.2: rejilla en el flujo (antes un recorrido horizontal fijado). El plano
    técnico es la única animación protagonista después del hero; aquí basta

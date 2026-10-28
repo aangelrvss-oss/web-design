@@ -272,6 +272,38 @@ for (const vp of [{ width: 1440, height: 900 }, { width: 375, height: 740 }]) {
   await m.close();
 }
 
+// WhatsApp flotante: en todas las páginas, al número correcto, con el mensaje
+// escrito (el del servicio en su página); se aparta sobre el formulario, en el
+// pie del Kit Digital y con el menú abierto.
+{
+  const m = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const wp = await m.newPage();
+  const bad = [];
+  for (const p of paths) {
+    await wp.goto(BASE + p, { waitUntil: 'domcontentloaded' });
+    const a = await wp.evaluate(() => { const el = document.querySelector('a.wa[data-wa]'); return el && { href: el.href, label: el.getAttribute('aria-label'), blank: el.target === '_blank' }; });
+    if (!a || !a.href.startsWith('https://wa.me/34667369838?text=') || !a.blank || !/\+34 667 36 98 38/.test(a.label || '')) bad.push(p);
+  }
+  ok(`WhatsApp: botón en las ${paths.length} páginas, al +34 667 36 98 38 y en pestaña nueva`, bad.length === 0, bad.join(', '));
+  await wp.goto(BASE + '/servicios/aerotermia/', { waitUntil: 'load' });
+  const text = await wp.evaluate(() => new URL(document.querySelector('[data-wa]').href).searchParams.get('text'));
+  ok('WhatsApp: mensaje escrito con el servicio de la página', text === 'Hola, os escribo desde la web de MRI. Quería pedir información sobre aerotermia.', text);
+  await wp.goto(BASE + '/', { waitUntil: 'load' });
+  const vis = () => wp.evaluate(() => getComputedStyle(document.querySelector('[data-wa]')).visibility);
+  const top = await vis();
+  const box = await wp.evaluate(() => { const r = document.querySelector('[data-wa]').getBoundingClientRect(); return [r.width, r.height, innerWidth - r.right, innerHeight - r.bottom].map(Math.round); });
+  await wp.evaluate(() => document.querySelector('[data-quote]').scrollIntoView({ block: 'center', behavior: 'instant' })); await wp.waitForTimeout(500);
+  const atForm = await vis();
+  await wp.evaluate(() => scrollTo(0, document.documentElement.scrollHeight)); await wp.waitForTimeout(500);
+  const atKit = await vis();
+  await wp.evaluate(() => scrollTo(0, 2500)); await wp.waitForTimeout(500);
+  await wp.click('[data-burger]'); await wp.waitForTimeout(400);
+  const atMenu = await vis();
+  ok('WhatsApp: visible abajo a la derecha (56 px, 16 px del borde)', top === 'visible' && box[0] >= 48 && box[2] <= 20 && box[3] <= 20 + 34, JSON.stringify(box));
+  ok('WhatsApp: se aparta sobre el formulario, en la franja del Kit Digital y con el menú abierto', atForm === 'hidden' && atKit === 'hidden' && atMenu === 'hidden', [atForm, atKit, atMenu].join('/'));
+  await m.close();
+}
+
 const fails = results.filter((r) => !r.pass);
 console.log(`\n${results.length - fails.length}/${results.length} comprobaciones superadas`);
 if (fails.length) { console.log('FALLOS:'); fails.forEach((f) => console.log(' - ' + f.name + ' · ' + f.info)); }

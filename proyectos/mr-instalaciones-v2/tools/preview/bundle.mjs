@@ -35,6 +35,7 @@ html = html
   .replace(/<script src="\/assets\/js\/film\.js[^"]*" defer><\/script>/, () => script('assets/js/film.js'))
   .replace(/<script src="\/assets\/vendor\/scrollcraft\/scrollcraft\.js[^"]*" defer><\/script>/, () => script('assets/vendor/scrollcraft/scrollcraft.js'))
   .replace(/<script src="\/assets\/js\/site\.js[^"]*" defer><\/script>/, () => script('assets/js/site.js'))
+  .replace(/<script src="\/assets\/js\/wa\.js[^"]*" defer><\/script>/, () => script('assets/js/wa.js'))
   .replace(/<form class="tb"/, '<form class="tb" data-demo');
 
 // Recursos binarios del marcado (src, srcset, data-sc-src, data-webm...).

@@ -48,7 +48,22 @@ writeFileSync(join(root, '.htaccess'), ht.replace('# MRI · configuración', '# 
 // Las páginas interiores salen de las plantillas de la V1; solo cambian la
 // fuente de titulares que se precarga (Instrument Serif), el color de la
 // barra del navegador y la versión de los recursos.
-const v2ify = (html) => {
+// Botón flotante de WhatsApp en todas las páginas, con un mensaje ya escrito.
+// En las páginas de servicio el mensaje nombra el servicio.
+const WA = { number: '34667369838', display: '+34 667 36 98 38' };
+const WA_TOPIC = {
+  'fontaneria-saneamiento': 'fontanería y saneamiento', 'calefaccion-climatizacion': 'calefacción y climatización',
+  aerotermia: 'aerotermia', 'instalaciones-de-gas': 'una instalación de gas', ventilacion: 'ventilación', domotica: 'domótica',
+};
+const waButton = (rel) => {
+  const topic = WA_TOPIC[(rel.match(/^servicios\/([^/]+)\//) || [])[1]];
+  const text = `Hola, os escribo desde la web de MRI. Quería pedir información${topic ? ` sobre ${topic}` : ''}.`;
+  return `<a class="wa" href="https://wa.me/${WA.number}?text=${encodeURIComponent(text)}" target="_blank" rel="noopener" data-wa data-track="click_whatsapp" data-track-loc="flotante" aria-label="Escribir por WhatsApp al ${WA.display} (se abre en otra pestaña)">`
+    + '<svg class="wa__ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="wa__b" d="M12 3.2a8.7 8.7 0 0 0-7.5 13.2L3.3 20.8l4.5-1.2A8.7 8.7 0 1 0 12 3.2z"/><path class="wa__h" d="M9 8.2c.3-.6.6-.6.9-.6h.6c.2 0 .4.1.5.4l.8 1.9c.1.2 0 .5-.1.6l-.6.7c-.1.1-.2.3 0 .5.4.7 1.6 2 3 2.6.2.1.4 0 .5-.1l.7-.8c.2-.2.4-.2.6-.1l1.8.9c.2.1.3.3.3.5 0 .6-.3 1.6-1.6 1.9-1 .2-2.7-.2-4.6-1.8-1.6-1.4-2.6-3.1-2.8-3.9-.3-1.1.2-2.1.6-2.7z"/></svg></a>\n'
+    + `<script src="/assets/js/wa.js?v=${ASSET_V}" defer></script>\n`;
+};
+
+const v2ify = (html, rel) => {
   let h = must(html, '/assets/fonts/archivo-wdth.woff2', '/assets/fonts/instrument-serif.woff2');
   h = must(h, '<meta name="theme-color" content="#EDEEEB">', '<meta name="theme-color" content="#EFECE6">');
   // Logotipo claro para la barra sobre la imagen, en el marcado (no en JS):
@@ -56,13 +71,14 @@ const v2ify = (html) => {
   // con la barra sobre una imagen.
   if (h.includes('class="page-home')) h = must(h, '<img src="/assets/brand/logo-mri.webp" width="284" height="180" alt="MRI · Martínez Rojas Instalaciones">',
     '<img src="/assets/brand/logo-mri.webp" width="284" height="180" alt="MRI · Martínez Rojas Instalaciones"><img class="bar__logo-alt" src="/assets/brand/logo-mri-claro.webp" width="284" height="180" alt="" aria-hidden="true">');
+  h = must(h, '</body>', waButton(rel) + '</body>');
   return h.replaceAll(`?v=${V1_ASSET_V}`, `?v=${ASSET_V}`);
 };
 
 const out = (rel, html) => {
   const f = join(root, rel);
   mkdirSync(dirname(f), { recursive: true });
-  writeFileSync(f, v2ify(html).replace(/\n{3,}/g, '\n\n'));
+  writeFileSync(f, v2ify(html, rel).replace(/\n{3,}/g, '\n\n'));
 };
 
 // El clip se versiona por su contenido: el nombre no cambia y la caché es de un año.

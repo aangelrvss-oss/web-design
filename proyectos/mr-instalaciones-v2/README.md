@@ -6,6 +6,8 @@ Segunda versión de la web de MRI (Martínez Rojas Instalaciones). La portada ab
 
 **V2.2 (23/10/2026)**: vuelve a la portada el **plano técnico** de la V1 (la casa en sección que se dibuja capa a capa con el scroll, con su leyenda que aísla sistemas y los marca en el formulario), recuperado de su código y recompuesto para escritorio, tableta y móvil; el vídeo tiene una **versión vertical para móvil** (recorte del original que sigue un recorrido de cámara) y los sectores pasan a una rejilla sin fijar. La V2.1 queda en `a56f39d`.
 
+**WhatsApp (28/10/2026)**: botón flotante abajo a la derecha en todas las páginas, que abre WhatsApp con el **+34 667 36 98 38** y un mensaje ya escrito («Hola, os escribo desde la web de MRI. Quería pedir información.»; en cada página de servicio, «… sobre aerotermia», etc.). Número y textos en `src/build.mjs` (`WA`, `WA_TOPIC`); estilos en `site.css` (bloque «whatsapp»); `site/assets/js/wa.js` lo aparta mientras el formulario está en pantalla y sobre la franja del Kit Digital, y el CSS con el menú móvil abierto. Sin JavaScript se ve siempre.
+
 **La V1 no se ha tocado.** Vive en `proyectos/mr-instalaciones/` y sigue funcionando igual. La V2 lee de ella el contenido, las plantillas de las páginas interiores y los archivos estáticos; lo propio de la V2 está en esta carpeta.
 
 > **El vídeo.** `assets-src/video/mri-original.mp4` es el vídeo del cliente, sin modificar (1280×720, 24 fps, 10 s, un único fotograma clave y pista de audio). Lo que se publica es su versión codificada para scrub en `site/assets/film/`. Tiempos y lectura del plano en `src/film.mjs` y `docs/DIRECCION.md`.
@@ -73,7 +75,7 @@ La portada completa en un HTML autónomo (CSS, JS, fuentes, imágenes y clips de
 ## QA
 
 ```bash
-npm run qa:mri2                    # suite funcional (286 comprobaciones)
+npm run qa:mri2                    # suite funcional (290 comprobaciones)
 npm run qa:mri2:film               # capturas de la secuencia (añadir --w 390 --h 844 --mobile, --reduced, --novideo, --nojs)
 node proyectos/mr-instalaciones-v2/qa/hero-contrast.mjs http://127.0.0.1:4512 [--w 390 --h 844 --mobile]
                                    # contraste del hero; necesita un servidor sin CSP: MRI_NO_CSP=1 php -S 127.0.0.1:4512 tools/dev/router.php
