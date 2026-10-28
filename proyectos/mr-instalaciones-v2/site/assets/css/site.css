@@ -425,7 +425,7 @@ body.page-home.menu-open .bar:not(.is-solid) .bar__logo .bar__logo-alt { opacity
   .hero__h .br-m { display: inline; }
   .hero__h .br-d { display: none; }
   .hero__lede { max-width: 32ch; font-size: 1rem; }
-  .hero__cta { display: grid; grid-template-columns: 1fr; gap: .4rem; justify-items: start; }
+  .hero__cta { display: grid; grid-template-columns: 1fr; gap: 1rem; justify-items: start; }
   .cta { width: 100%; justify-content: space-between; }
   .hero__scroll { display: none; }
   .cap-veil, .cap-veil--right { -webkit-mask-image: none; mask-image: none;
@@ -833,16 +833,15 @@ html:not(.sc-ready) .lg { width: auto; }
   box-shadow: 0 8px 22px rgb(16 13 10 / .26), 0 1px 3px rgb(16 13 10 / .22);
   transition: opacity 200ms var(--sc-ease-out), transform 200ms var(--sc-ease-out), background-color 160ms var(--sc-ease-out), visibility 0s linear 0s;
 }
-.wa__ic { width: 31px; height: 31px; }
-.wa__b { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; }
-.wa__h { fill: currentColor; }
+/* Glifo de WhatsApp (Simple Icons, CC0): una sola forma rellena. */
+.wa__ic { width: 30px; height: 30px; fill: currentColor; }
 .wa:focus-visible { outline: 3px solid #FF6500; outline-offset: 3px; }
 @media (hover: hover) and (pointer: fine) { .wa:hover { background: #168F44; } }
 .wa.wa--off, body.menu-open .wa {
   opacity: 0; visibility: hidden; transform: translate3d(0, 12px, 0) scale(.92); pointer-events: none;
   transition: opacity 200ms var(--sc-ease-out), transform 200ms var(--sc-ease-out), visibility 0s linear 200ms;
 }
-@media (max-width: 380px) { .wa { --wa-s: 52px; right: .75rem; bottom: calc(.75rem + env(safe-area-inset-bottom, 0px)); } .wa__ic { width: 28px; height: 28px; } }
+@media (max-width: 380px) { .wa { --wa-s: 52px; right: .75rem; bottom: calc(.75rem + env(safe-area-inset-bottom, 0px)); } .wa__ic { width: 27px; height: 27px; } }
 @media (prefers-reduced-motion: reduce) { .wa, .wa.wa--off { transition: none; transform: none; } }
 @media print { .wa { display: none; } }
 .film__rail { right: calc(var(--edge) + 4.5rem); }

@@ -6,7 +6,7 @@ import { picto, icon } from '../../mr-instalaciones/src/pictos.mjs';
 import { house } from '../../mr-instalaciones/src/house.mjs';
 import { FILM } from './film.mjs';
 
-export const ASSET_V = '20261028a';
+export const ASSET_V = '20261028b';
 const a = (p) => `${p}?v=${ASSET_V}`;
 
 const r3 = (x) => Math.round(x * 1000) / 1000;
